@@ -13,12 +13,12 @@ import {z} from 'genkit';
 const SummarizeOperationalReportInputSchema = z.object({
   report: z
     .string()
-    .describe('The operational report to summarize.'),
+    .describe('O relatório operacional a ser resumido.'),
 });
 export type SummarizeOperationalReportInput = z.infer<typeof SummarizeOperationalReportInputSchema>;
 
 const SummarizeOperationalReportOutputSchema = z.object({
-  summary: z.string().describe('The summary of the operational report.'),
+  summary: z.string().describe('O resumo do relatório operacional.'),
 });
 export type SummarizeOperationalReportOutput = z.infer<typeof SummarizeOperationalReportOutputSchema>;
 
@@ -30,7 +30,7 @@ const prompt = ai.definePrompt({
   name: 'summarizeOperationalReportPrompt',
   input: {schema: SummarizeOperationalReportInputSchema},
   output: {schema: SummarizeOperationalReportOutputSchema},
-  prompt: `You are an expert at summarizing operational reports. Please provide a concise summary of the following report, highlighting key insights and findings.\n\nReport:\n{{{report}}}`,
+  prompt: `Você é um especialista em resumir relatórios operacionais. Forneça um resumo conciso do seguinte relatório, destacando os principais insights e descobertas.\n\nRelatório:\n{{{report}}}`,
 });
 
 const summarizeOperationalReportFlow = ai.defineFlow(

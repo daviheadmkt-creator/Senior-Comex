@@ -24,10 +24,10 @@ import { UserNav } from '@/components/user-nav';
 import { Separator } from '@/components/ui/separator';
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", isActive: true },
-  { href: "#", icon: FileText, label: "Operations" },
-  { href: "#", icon: Warehouse, label: "Logistics" },
-  { href: "#", icon: DollarSign, label: "Finance" },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Painel", isActive: true },
+  { href: "#", icon: FileText, label: "Operações" },
+  { href: "#", icon: Warehouse, label: "Logística" },
+  { href: "#", icon: DollarSign, label: "Finanças" },
   { href: "#", icon: Shield, label: "Admin" },
 ];
 
@@ -65,13 +65,13 @@ export default function DashboardLayout({
              <SidebarMenuItem>
                 <SidebarMenuButton href="#">
                   <Settings />
-                  Settings
+                  Configurações
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton href="#">
                   <LifeBuoy />
-                  Support
+                  Suporte
                 </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarMenu>
@@ -81,7 +81,7 @@ export default function DashboardLayout({
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-6">
           <SidebarTrigger className="md:hidden" />
           <div className="flex-1">
-            <h1 className="text-xl font-semibold">Dashboard</h1>
+            <h1 className="text-xl font-semibold">Painel</h1>
           </div>
           <UserNav />
         </header>

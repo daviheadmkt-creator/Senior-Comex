@@ -30,26 +30,26 @@ export default function LoginPage() {
                     <TrendingUp className="h-8 w-8" />
                 </div>
             </div>
-          <CardTitle className="text-2xl font-bold font-headline">SeniorComex Login</CardTitle>
-          <CardDescription>Enter your credentials to access your dashboard</CardDescription>
+          <CardTitle className="text-2xl font-bold font-headline">Login SeniorComex</CardTitle>
+          <CardDescription>Insira suas credenciais para acessar seu painel</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" placeholder="m@example.com" required />
+              <Input id="email" type="email" placeholder="m@exemplo.com" required />
             </div>
             <div className="space-y-2">
               <div className="flex items-center">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">Senha</Label>
                 <a href="#" className="ml-auto inline-block text-sm text-primary/80 hover:text-primary hover:underline">
-                  Forgot password?
+                  Esqueceu a senha?
                 </a>
               </div>
               <Input id="password" type="password" required defaultValue="password" />
             </div>
             <Button type="submit" className="w-full !mt-6" disabled={isLoading}>
-              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Log In'}
+              {isLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Entrar'}
             </Button>
           </form>
         </CardContent>

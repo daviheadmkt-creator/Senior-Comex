@@ -8,26 +8,26 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Loader2, Sparkles } from 'lucide-react';
 import { useToast } from "@/hooks/use-toast";
 
-const placeholderReport = `Operational Report: Q2 2024
+const placeholderReport = `Relatório Operacional: Q2 2024
 
-Date: July 15, 2024
-Prepared by: Operations Team
+Data: 15 de julho de 2024
+Preparado por: Equipe de Operações
 
-Executive Summary:
-The second quarter of 2024 showed strong performance in our logistics division, with a 15% increase in on-time deliveries compared to Q1. However, the finance department faced challenges with currency fluctuations, impacting overall profitability by 5%. Import from Brazil increased by 20% for soybeans, while corn exports to Mexico remained stable.
+Resumo Executivo:
+O segundo trimestre de 2024 mostrou um forte desempenho em nossa divisão de logística, com um aumento de 15% nas entregas pontuais em comparação com o Q1. No entanto, o departamento financeiro enfrentou desafios com as flutuações cambiais, impactando a lucratividade geral em 5%. A importação de soja do Brasil aumentou 20%, enquanto as exportações de milho para o México permaneceram estáveis.
 
-Key Activities:
-1.  Logistics: Implemented new tracking system, reducing package loss by 8%. Average transit time was reduced by 12 hours for major routes.
-2.  Finance: Hedging strategies were partially successful against the dollar's strength. A new audit revealed compliance gaps in customs declarations for Canadian wheat shipments.
-3.  Operations: New partnership with a Colombian coffee supplier secured. Negotiations are ongoing for expanding sugar cane exports to India. Two major shipments were put on hold due to documentation issues.
+Principais Atividades:
+1.  Logística: Implementado novo sistema de rastreamento, reduzindo a perda de pacotes em 8%. O tempo médio de trânsito foi reduzido em 12 horas para as principais rotas.
+2.  Finanças: As estratégias de hedge foram parcialmente bem-sucedidas contra a força do dólar. Uma nova auditoria revelou lacunas de conformidade nas declarações alfandegárias para remessas de trigo canadense.
+3.  Operações: Nova parceria com um fornecedor de café colombiano garantida. As negociações estão em andamento para expandir as exportações de cana-de-açúcar para a Índia. Duas grandes remessas foram suspensas devido a problemas de documentação.
 
-Challenges:
--   Port congestion in China continues to be a major bottleneck.
--   Rising fuel costs are increasing operational expenses.
--   Regulatory changes in the EU require updated compliance protocols.
+Desafios:
+-   O congestionamento portuário na China continua sendo um grande gargalo.
+-   O aumento dos custos de combustível está elevando as despesas operacionais.
+-   Mudanças regulatórias na UE exigem protocolos de conformidade atualizados.
 
-Outlook for Q3 2024:
-Focus will be on mitigating financial risks and resolving logistics bottlenecks. We project a steady growth of 5-7% in overall trade volume, driven by new partnerships.
+Perspectivas para o Q3 2024:
+O foco será na mitigação de riscos financeiros e na resolução de gargalos logísticos. Projetamos um crescimento constante de 5-7% no volume comercial geral, impulsionado por novas parcerias.
 `;
 
 export default function AISummarizer() {
@@ -39,8 +39,8 @@ export default function AISummarizer() {
   const handleSummarize = async () => {
     if (!report.trim()) {
       toast({
-        title: "Error",
-        description: "Report content cannot be empty.",
+        title: "Erro",
+        description: "O conteúdo do relatório não pode estar vazio.",
         variant: "destructive",
       });
       return;
@@ -51,10 +51,10 @@ export default function AISummarizer() {
       const result = await summarizeOperationalReport({ report });
       setSummary(result.summary);
     } catch (error) {
-      console.error('Error summarizing report:', error);
+      console.error('Erro ao resumir o relatório:', error);
       toast({
-        title: "Summarization Failed",
-        description: "An error occurred while summarizing the report. Please try again.",
+        title: "Falha ao Resumir",
+        description: "Ocorreu um erro ao resumir o relatório. Por favor, tente novamente.",
         variant: "destructive",
       });
     } finally {
@@ -66,7 +66,7 @@ export default function AISummarizer() {
     <div className="grid lg:grid-cols-2 gap-6">
       <div className="space-y-4">
         <Textarea
-          placeholder="Paste your operational report here or load an example to test."
+          placeholder="Cole seu relatório operacional aqui ou carregue um exemplo para testar."
           value={report}
           onChange={(e) => setReport(e.target.value)}
           className="min-h-[300px] text-sm"
@@ -78,17 +78,17 @@ export default function AISummarizer() {
             ) : (
                 <Sparkles className="mr-2 h-4 w-4" />
             )}
-            Summarize
+            Resumir
             </Button>
             <Button variant="outline" onClick={() => setReport(placeholderReport)} disabled={isLoading}>
-                Load Example
+                Carregar Exemplo
             </Button>
         </div>
       </div>
       <div>
         <Card className="min-h-[300px] h-full bg-secondary/30 flex flex-col">
           <CardHeader>
-            <CardTitle className="text-lg">AI Summary</CardTitle>
+            <CardTitle className="text-lg">Resumo da IA</CardTitle>
           </CardHeader>
           <CardContent className="flex-grow flex items-center justify-center">
             {isLoading ? (
@@ -101,7 +101,7 @@ export default function AISummarizer() {
               </div>
             ) : (
               <p className="text-muted-foreground text-center">
-                Your AI-generated summary will appear here.
+                Seu resumo gerado por IA aparecerá aqui.
               </p>
             )}
           </CardContent>

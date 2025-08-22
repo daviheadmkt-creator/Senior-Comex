@@ -22,55 +22,55 @@ import  AISummarizer  from '@/components/ai-summarizer';
 const operations = [
   {
     id: 'ORD-001',
-    product: 'Soybeans',
-    origin: 'Brazil',
+    product: 'Soja',
+    origin: 'Brasil',
     destination: 'China',
-    status: 'In Transit',
+    status: 'Em Trânsito',
     updated: '2024-05-22',
     by: 'logistics_op1',
   },
   {
     id: 'ORD-002',
-    product: 'Corn',
-    origin: 'USA',
-    destination: 'Mexico',
-    status: 'Delivered',
+    product: 'Milho',
+    origin: 'EUA',
+    destination: 'México',
+    status: 'Entregue',
     updated: '2024-05-20',
     by: 'finance_user',
   },
   {
     id: 'ORD-003',
-    product: 'Wheat',
-    origin: 'Canada',
-    destination: 'Egypt',
-    status: 'Processing',
+    product: 'Trigo',
+    origin: 'Canadá',
+    destination: 'Egito',
+    status: 'Processando',
     updated: '2024-05-23',
     by: 'operator2',
   },
   {
     id: 'ORD-004',
-    product: 'Coffee Beans',
-    origin: 'Colombia',
-    destination: 'Germany',
-    status: 'Delivered',
+    product: 'Grãos de Café',
+    origin: 'Colômbia',
+    destination: 'Alemanha',
+    status: 'Entregue',
     updated: '2024-05-19',
     by: 'admin',
   },
   {
     id: 'ORD-005',
-    product: 'Sugar Cane',
-    origin: 'Brazil',
-    destination: 'India',
-    status: 'On Hold',
+    product: 'Cana de Açúcar',
+    origin: 'Brasil',
+    destination: 'Índia',
+    status: 'Em Espera',
     updated: '2024-05-21',
     by: 'logistics_op2',
   },
   {
     id: 'ORD-006',
-    product: 'Cotton',
-    origin: 'USA',
-    destination: 'Vietnam',
-    status: 'In Transit',
+    product: 'Algodão',
+    origin: 'EUA',
+    destination: 'Vietnã',
+    status: 'Em Trânsito',
     updated: '2024-05-23',
     by: 'logistics_op1',
   },
@@ -78,13 +78,13 @@ const operations = [
 
 const getStatusVariant = (status: string): 'default' | 'secondary' | 'outline' | 'destructive' => {
   switch (status) {
-    case 'Delivered':
+    case 'Entregue':
       return 'default';
-    case 'In Transit':
+    case 'Em Trânsito':
       return 'secondary';
-    case 'Processing':
+    case 'Processando':
       return 'outline';
-    case 'On Hold':
+    case 'Em Espera':
       return 'destructive';
     default:
       return 'secondary';
@@ -96,9 +96,9 @@ export default function DashboardPage() {
     <div className="grid gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>AI Report Summarization</CardTitle>
+          <CardTitle>Resumo de Relatórios por IA</CardTitle>
           <CardDescription>
-            Generate a concise summary of your operational reports using AI for quick insights.
+            Gere um resumo conciso de seus relatórios operacionais usando IA para insights rápidos.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -109,23 +109,23 @@ export default function DashboardPage() {
         <CardHeader>
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <CardTitle>Recent Operations</CardTitle>
+              <CardTitle>Operações Recentes</CardTitle>
               <CardDescription>
-                An overview of recent trade and logistics operations.
+                Uma visão geral das operações recentes de comércio e logística.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2 flex-wrap">
               <div className="relative flex-grow sm:flex-grow-0">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search operations..." className="pl-8 w-full sm:w-64" />
+                <Input placeholder="Buscar operações..." className="pl-8 w-full sm:w-64" />
               </div>
               <Button variant="outline">
                 <FileUp className="mr-2 h-4 w-4" />
-                Import
+                Importar
               </Button>
               <Button>
                 <FileDown className="mr-2 h-4 w-4" />
-                Export PDF
+                Exportar PDF
               </Button>
             </div>
           </div>
@@ -134,13 +134,13 @@ export default function DashboardPage() {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Order ID</TableHead>
-                <TableHead className="hidden md:table-cell">Product</TableHead>
-                <TableHead className="hidden lg:table-cell">Origin</TableHead>
-                <TableHead className="hidden lg:table-cell">Destination</TableHead>
+                <TableHead>ID do Pedido</TableHead>
+                <TableHead className="hidden md:table-cell">Produto</TableHead>
+                <TableHead className="hidden lg:table-cell">Origem</TableHead>
+                <TableHead className="hidden lg:table-cell">Destino</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="hidden md:table-cell">Last Updated</TableHead>
-                <TableHead className="hidden sm:table-cell">Updated By</TableHead>
+                <TableHead className="hidden md:table-cell">Última Atualização</TableHead>
+                <TableHead className="hidden sm:table-cell">Atualizado Por</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
