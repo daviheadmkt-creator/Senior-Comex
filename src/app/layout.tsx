@@ -6,8 +6,8 @@ import { Inter } from 'next/font/google';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'WowDash',
-  description: 'Um painel de controle incrível',
+  title: 'Senior Assessoria',
+  description: 'Painel de Controle',
 };
 
 export default function RootLayout({
