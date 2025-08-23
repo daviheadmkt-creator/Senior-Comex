@@ -338,7 +338,7 @@ export default function DashboardLayout({
         <SidebarFooter>
           <SidebarMenu>
              <SidebarMenuItem>
-                <SidebarMenuButton href="#">
+                <SidebarMenuButton href="/dashboard/configuracoes">
                   <Settings />
                   Configurações
                 </SidebarMenuButton>
