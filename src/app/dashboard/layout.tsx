@@ -50,6 +50,10 @@ import {
   CircleDollarSign,
   Files,
   LineChart,
+  ShieldBan,
+  CalendarCheck,
+  History,
+  ClipboardCheck,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -107,6 +111,12 @@ const gestaoFinanceiraItems = [
     { href: "/dashboard/gestao-financeira/controle-recebiveis", icon: CircleDollarSign, label: "Controle de Recebíveis" },
     { href: "/dashboard/gestao-financeira/gestao-credito", icon: Files, label: "Gestão de Crédito" },
     { href: "/dashboard/gestao-financeira/relatorios-margem", icon: LineChart, label: "Relatórios de Margem" },
+]
+
+const complianceItems = [
+    { href: "/dashboard/compliance-auditoria/validacao-clientes-paises", icon: ShieldBan, label: "Validação de Clientes" },
+    { href: "/dashboard/compliance-auditoria/controle-prazos", icon: CalendarCheck, label: "Controle de Prazos" },
+    { href: "/dashboard/compliance-auditoria/registro-auditoria", icon: History, label: "Registro de Auditoria" },
 ]
 
 export default function DashboardLayout({
@@ -260,6 +270,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {gestaoFinanceiraItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+             <Collapsible>
+                <SidebarMenuItem  className="my-1">
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <ClipboardCheck />
+                            Compliance e Auditoria
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {complianceItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
