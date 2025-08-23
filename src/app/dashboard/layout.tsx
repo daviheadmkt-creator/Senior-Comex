@@ -57,6 +57,7 @@ import {
   BarChart,
   Activity,
   Gauge,
+  UserCog,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -127,6 +128,12 @@ const relatoriosBiItems = [
     { href: "/dashboard/relatorios-bi/indicadores-performance", icon: Gauge, label: "Indicadores de Performance" },
     { href: "/dashboard/relatorios-bi/dashboards-tempo-real", icon: Activity, label: "Dashboards em Tempo Real" },
 ]
+
+const adminItems = [
+    { href: "/dashboard/administrativo/gestao-usuarios", icon: Users, label: "Gestão de Usuários" },
+    { href: "/dashboard/configuracoes", icon: Settings, label: "Configurações" },
+];
+
 
 export default function DashboardLayout({
   children,
@@ -337,12 +344,28 @@ export default function DashboardLayout({
         </SidebarContent>
         <SidebarFooter>
           <SidebarMenu>
-             <SidebarMenuItem>
-                <SidebarMenuButton href="/dashboard/configuracoes">
-                  <Settings />
-                  Configurações
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+              <Collapsible>
+                <SidebarMenuItem  className="my-1">
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <UserCog />
+                            Administrativo
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {adminItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
               <SidebarMenuItem>
                 <SidebarMenuButton href="#">
                   <LifeBuoy />
