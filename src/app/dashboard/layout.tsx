@@ -24,6 +24,7 @@ import {
   Building,
   Box,
   Globe,
+  Building2,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -39,6 +40,7 @@ const navItems = [
 ];
 
 const cadastroItems = [
+    { href: "/dashboard/cadastros/empresa", icon: Building2, label: "Empresa" },
     { href: "/dashboard/cadastros/clientes", icon: Users, label: "Clientes Internacionais" },
     { href: "/dashboard/cadastros/fornecedores", icon: Building, label: "Fornecedor" },
     { href: "/dashboard/cadastros/produtos", icon: Box, label: "Produtos" },
