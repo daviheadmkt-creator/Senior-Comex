@@ -33,7 +33,7 @@ import {
   FileArchive,
   FileBox,
   FileCheck2,
-  FileAward,
+  Award,
   FileUp,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
@@ -68,7 +68,7 @@ const gestaoDocumentalItems = [
     { href: "/dashboard/gestao-documental/commercial-invoice", icon: FileText, label: "Commercial Invoice" },
     { href: "/dashboard/gestao-documental/packing-list", icon: FileBox, label: "Packing List" },
     { href: "/dashboard/gestao-documental/conhecimento-embarque", icon: FileCheck2, label: "Conhecimento de Embarque" },
-    { href: "/dashboard/gestao-documental/certificado-origem", icon: FileAward, label: "Certificado de Origem" },
+    { href: "/dashboard/gestao-documental/certificado-origem", icon: Award, label: "Certificado de Origem" },
     { href: "/dashboard/gestao-documental/due", icon: FileUp, label: "Declaração Única (DU-E)" },
 ]
 
