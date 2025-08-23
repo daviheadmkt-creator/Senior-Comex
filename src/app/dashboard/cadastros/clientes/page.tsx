@@ -164,48 +164,9 @@ export default function ClientesInternacionaisPage() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-2">
-                                            <Dialog>
-                                                <DialogTrigger asChild>
-                                                     <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
-                                                        <Eye className="h-4 w-4" />
-                                                    </Button>
-                                                </DialogTrigger>
-                                                <DialogContent className="sm:max-w-[625px]">
-                                                    <DialogHeader>
-                                                        <DialogTitle className="flex items-center gap-2"> <Building className="h-5 w-5 text-primary" /> {cliente.nome}</DialogTitle>
-                                                        <DialogDescription>{cliente.taxId} - {cliente.endereco}</DialogDescription>
-                                                    </DialogHeader>
-                                                    <div className="grid gap-4 py-4">
-                                                        <div className="grid grid-cols-2 gap-4">
-                                                            <Card>
-                                                                <CardHeader className="p-3">
-                                                                    <CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" /> Contato</CardTitle>
-                                                                </CardHeader>
-                                                                <CardContent className="p-3 text-sm">
-                                                                    <p><strong>Responsável:</strong> {cliente.contato}</p>
-                                                                    <p><strong>E-mail:</strong> {cliente.email}</p>
-                                                                    <p><strong>Telefone:</strong> {cliente.telefone}</p>
-                                                                </CardContent>
-                                                            </Card>
-                                                             <Card>
-                                                                <CardHeader className="p-3">
-                                                                    <CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4" /> Comercial</CardTitle>
-                                                                </CardHeader>
-                                                                <CardContent className="p-3 text-sm">
-                                                                    <p><strong>Tipo:</strong> {cliente.tipo}</p>
-                                                                    <p><strong>Setor:</strong> {cliente.setor}</p>
-                                                                    <p><strong>Incoterm:</strong> {cliente.incoterm}</p>
-                                                                    <p><strong>Pagamento:</strong> {cliente.condicaoPagamento}</p>
-                                                                </CardContent>
-                                                            </Card>
-                                                        </div>
-                                                        <Button asChild variant="outline">
-                                                            <Link href={cliente.portalLink}>Acessar Portal do Cliente</Link>
-                                                        </Button>
-                                                    </div>
-                                                </DialogContent>
-                                            </Dialog>
-
+                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700" onClick={() => setSelectedClient(cliente)}>
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
                                             <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
@@ -503,6 +464,46 @@ export default function ClientesInternacionaisPage() {
         </CardContent>
         </Card>
       </TabsContent>
+        <Dialog open={selectedClient !== null} onOpenChange={(isOpen) => !isOpen && setSelectedClient(null)}>
+            <DialogContent className="sm:max-w-[625px]">
+                {selectedClient && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2"> <Building className="h-5 w-5 text-primary" /> {selectedClient.nome}</DialogTitle>
+                            <DialogDescription>{selectedClient.taxId} - {selectedClient.endereco}</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4">
+                            <div className="grid grid-cols-2 gap-4">
+                                <Card>
+                                    <CardHeader className="p-3">
+                                        <CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" /> Contato</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-3 text-sm">
+                                        <p><strong>Responsável:</strong> {selectedClient.contato}</p>
+                                        <p><strong>E-mail:</strong> {selectedClient.email}</p>
+                                        <p><strong>Telefone:</strong> {selectedClient.telefone}</p>
+                                    </CardContent>
+                                </Card>
+                                <Card>
+                                    <CardHeader className="p-3">
+                                        <CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4" /> Comercial</CardTitle>
+                                    </CardHeader>
+                                    <CardContent className="p-3 text-sm">
+                                        <p><strong>Tipo:</strong> {selectedClient.tipo}</p>
+                                        <p><strong>Setor:</strong> {selectedClient.setor}</p>
+                                        <p><strong>Incoterm:</strong> {selectedClient.incoterm}</p>
+                                        <p><strong>Pagamento:</strong> {selectedClient.condicaoPagamento}</p>
+                                    </CardContent>
+                                </Card>
+                            </div>
+                            <Button asChild variant="outline">
+                                <Link href={selectedClient.portalLink}>Acessar Portal do Cliente</Link>
+                            </Button>
+                        </div>
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
     </Tabs>
   );
 }
