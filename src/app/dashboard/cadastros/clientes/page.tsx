@@ -496,9 +496,6 @@ export default function ClientesInternacionaisPage() {
                                     </CardContent>
                                 </Card>
                             </div>
-                            <Button asChild variant="outline">
-                                <Link href={selectedClient.portalLink}>Acessar Portal do Cliente</Link>
-                            </Button>
                         </div>
                     </>
                 )}
