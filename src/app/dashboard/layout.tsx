@@ -35,6 +35,11 @@ import {
   FileCheck2,
   Award,
   FileUp,
+  ShieldCheck,
+  BookText,
+  Calculator,
+  Repeat,
+  Handshake,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -72,6 +77,13 @@ const gestaoDocumentalItems = [
     { href: "/dashboard/gestao-documental/due", icon: FileUp, label: "Declaração Única (DU-E)" },
 ]
 
+const gestaoAduaneiraItems = [
+    { href: "/dashboard/gestao-aduaneira/classificacao-fiscal", icon: BookText, label: "Classificação Fiscal" },
+    { href: "/dashboard/gestao-aduaneira/calculo-impostos", icon: Calculator, label: "Cálculo de Impostos" },
+    { href: "/dashboard/gestao-aduaneira/regimes-aduaneiros", icon: Repeat, label: "Regimes Aduaneiros" },
+    { href: "/dashboard/gestao-aduaneira/integracao-despachantes", icon: Handshake, label: "Integração com Despachantes" },
+]
+
 export default function DashboardLayout({
   children,
 }: {
@@ -94,7 +106,7 @@ export default function DashboardLayout({
         <SidebarContent>
           <SidebarMenu>
             {navItems.map((item) => (
-              <SidebarMenuItem key={item.label}>
+              <SidebarMenuItem key={item.label} className="my-1">
                 <SidebarMenuButton href={item.href} isActive={item.href === '/dashboard'}>
                   <item.icon />
                   {item.label}
@@ -102,7 +114,7 @@ export default function DashboardLayout({
               </SidebarMenuItem>
             ))}
              <Collapsible>
-                <SidebarMenuItem>
+                <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton>
                             <Database />
@@ -124,7 +136,7 @@ export default function DashboardLayout({
                  </CollapsibleContent>
             </Collapsible>
              <Collapsible>
-                <SidebarMenuItem>
+                <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton>
                             <Briefcase />
@@ -146,7 +158,7 @@ export default function DashboardLayout({
                  </CollapsibleContent>
             </Collapsible>
              <Collapsible>
-                <SidebarMenuItem>
+                <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
                         <SidebarMenuButton>
                             <FileArchive />
@@ -157,6 +169,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {gestaoDocumentalItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+            <Collapsible>
+                <SidebarMenuItem  className="my-1">
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <ShieldCheck />
+                            Gestão Aduaneira
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {gestaoAduaneiraItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
