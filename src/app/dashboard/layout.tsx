@@ -45,6 +45,11 @@ import {
   Package,
   MapPin,
   FileSignature,
+  Landmark,
+  ReceiptText,
+  CircleDollarSign,
+  Files,
+  LineChart,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -94,6 +99,14 @@ const gestaoLogisticaItems = [
     { href: "/dashboard/gestao-logistica/gestao-containers", icon: Package, label: "Gestão de Contêineres" },
     { href: "/dashboard/gestao-logistica/rastreio-embarques", icon: MapPin, label: "Rastreio de Embarques" },
     { href: "/dashboard/gestao-logistica/instrucoes-embarque", icon: FileSignature, label: "Instruções de Embarque" },
+]
+
+const gestaoFinanceiraItems = [
+    { href: "/dashboard/gestao-financeira/controle-cambio", icon: Landmark, label: "Controle de Câmbio" },
+    { href: "/dashboard/gestao-financeira/faturas-boletos", icon: ReceiptText, label: "Faturas e Boletos" },
+    { href: "/dashboard/gestao-financeira/controle-recebiveis", icon: CircleDollarSign, label: "Controle de Recebíveis" },
+    { href: "/dashboard/gestao-financeira/gestao-credito", icon: Files, label: "Gestão de Crédito" },
+    { href: "/dashboard/gestao-financeira/relatorios-margem", icon: LineChart, label: "Relatórios de Margem" },
 ]
 
 export default function DashboardLayout({
@@ -225,6 +238,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {gestaoLogisticaItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+            <Collapsible>
+                <SidebarMenuItem  className="my-1">
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <DollarSign />
+                            Gestão Financeira
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {gestaoFinanceiraItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
