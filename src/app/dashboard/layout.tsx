@@ -40,7 +40,7 @@ const navItems = [
 
 const cadastroItems = [
     { href: "/dashboard/cadastros/clientes", icon: Users, label: "Clientes Internacionais" },
-    { href: "/dashboard/cadastros/fornecedores", icon: Building, label: "Fornecedores e Parceiros" },
+    { href: "/dashboard/cadastros/fornecedores", icon: Building, label: "Fornecedor" },
     { href: "/dashboard/cadastros/produtos", icon: Box, label: "Produtos" },
     { href: "/dashboard/cadastros/paises", icon: Globe, label: "Países e Moedas" },
 ]

@@ -4,8 +4,8 @@ export default function FornecedoresPage() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Cadastro de Fornecedores, Transportadoras e Despachantes</CardTitle>
-        <CardDescription>Gerencie seus parceiros comerciais.</CardDescription>
+        <CardTitle>Cadastro de Fornecedores</CardTitle>
+        <CardDescription>Gerencie seus fornecedores.</CardDescription>
       </CardHeader>
       <CardContent>
         <p>Formulário de cadastro aqui.</p>
