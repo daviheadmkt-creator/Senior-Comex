@@ -44,6 +44,7 @@ import { Badge } from '@/components/ui/badge';
 import { PlusCircle, MoreHorizontal, FileDown, Trash2, Edit, Copy, Search } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
 
 
 const getStatusClass = (status: string) => {
