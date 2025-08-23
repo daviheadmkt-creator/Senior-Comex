@@ -30,6 +30,11 @@ import {
   FileText,
   ClipboardList,
   DollarSign,
+  FileArchive,
+  FileBox,
+  FileCheck2,
+  FileAward,
+  FileUp,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -57,6 +62,14 @@ const gestaoComercialItems = [
     { href: "/dashboard/gestao-comercial/commercial-invoice", icon: FileText, label: "Commercial Invoice" },
     { href: "/dashboard/gestao-comercial/pedidos", icon: ClipboardList, label: "Controle de Pedidos" },
     { href: "/dashboard/gestao-comercial/precos", icon: DollarSign, label: "Gestão de Preços" },
+]
+
+const gestaoDocumentalItems = [
+    { href: "/dashboard/gestao-documental/commercial-invoice", icon: FileText, label: "Commercial Invoice" },
+    { href: "/dashboard/gestao-documental/packing-list", icon: FileBox, label: "Packing List" },
+    { href: "/dashboard/gestao-documental/conhecimento-embarque", icon: FileCheck2, label: "Conhecimento de Embarque" },
+    { href: "/dashboard/gestao-documental/certificado-origem", icon: FileAward, label: "Certificado de Origem" },
+    { href: "/dashboard/gestao-documental/due", icon: FileUp, label: "Declaração Única (DU-E)" },
 ]
 
 export default function DashboardLayout({
@@ -122,6 +135,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {gestaoComercialItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+             <Collapsible>
+                <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <FileArchive />
+                            Gestão Documental
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {gestaoDocumentalItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
