@@ -110,8 +110,9 @@ export function UserNav() {
     <div className="flex items-center gap-4">
        <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon">
+          <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
+            <Badge className="absolute top-0 right-0 h-4 w-4 justify-center p-0 bg-destructive text-destructive-foreground rounded-full">5</Badge>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-80" align="end">
