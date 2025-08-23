@@ -107,12 +107,16 @@ export function UserNav() {
     router.push('/dashboard/chat');
   };
 
+  const handleCalendar = () => {
+    router.push('/dashboard/calendar');
+  }
+
   const totalUnreadMessages = messages.reduce((acc, msg) => acc + (msg.unread > 0 ? 1 : 0), 0);
 
   return (
     <div className="flex items-center gap-2">
         <ThemeToggle />
-         <Button variant="ghost" size="icon">
+         <Button variant="ghost" size="icon" onClick={handleCalendar}>
             <Calendar className="h-5 w-5" />
         </Button>
        <DropdownMenu>
@@ -244,5 +248,3 @@ export function UserNav() {
     </div>
   )
 }
-
-    

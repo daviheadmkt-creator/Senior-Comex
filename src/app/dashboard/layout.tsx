@@ -61,6 +61,7 @@ import {
   Webhook,
   MessageSquare,
   ArrowLeftRight,
+  Calendar,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -72,6 +73,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/dashboard/chat", icon: MessageSquare, label: "Comunicação" },
+  { href: "/dashboard/calendar", icon: Calendar, label: "Calendário" },
 ];
 
 const cadastroItems = [
