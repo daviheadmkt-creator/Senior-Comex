@@ -102,6 +102,10 @@ export function UserNav() {
     router.push('/');
   };
 
+  const handleViewMessages = () => {
+    router.push('/dashboard/chat');
+  };
+
   return (
     <div className="flex items-center gap-4">
        <DropdownMenu>
@@ -185,7 +189,7 @@ export function UserNav() {
                 ))}
              </DropdownMenuGroup>
              <DropdownMenuSeparator />
-            <DropdownMenuItem className="justify-center text-primary hover:!text-primary font-semibold py-2">
+            <DropdownMenuItem onClick={handleViewMessages} className="justify-center text-primary hover:!text-primary font-semibold py-2 cursor-pointer">
                 Ver Todas as Mensagens
             </DropdownMenuItem>
         </DropdownMenuContent>

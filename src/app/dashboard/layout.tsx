@@ -59,6 +59,7 @@ import {
   Gauge,
   UserCog,
   Webhook,
+  MessageSquare,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -70,6 +71,7 @@ import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/component
 const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "#", icon: Wallet, label: "Investimento" },
+  { href: "/dashboard/chat", icon: MessageSquare, label: "Chat" },
   { href: "#", icon: AreaChart, label: "Análises" },
 ];
 
@@ -395,7 +397,6 @@ export default function DashboardLayout({
           </div>
         </header>
         <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
-          <h1 className="text-2xl font-semibold mb-6">Dashboard</h1>
           {children}
         </main>
       </SidebarInset>
