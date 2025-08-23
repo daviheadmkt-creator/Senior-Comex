@@ -47,54 +47,56 @@ export default function ConhecimentoEmbarquePage() {
           <Accordion type="multiple" defaultValue={['item-1', 'item-2']}>
             <AccordionItem value="item-1">
               <AccordionTrigger>1. Partes Envolvidas</AccordionTrigger>
-              <AccordionContent className="space-y-6 p-1">
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                  <div className="space-y-4 p-4 border rounded-md">
-                     <h4 className="font-semibold">Embarcador (Shipper)</h4>
-                     <div className="space-y-2">
-                        <Label htmlFor="shipper-name">Nome / Razão Social</Label>
-                        <Input id="shipper-name" placeholder="Empresa Exportadora Ltda" />
-                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="shipper-address">Endereço Completo</Label>
-                        <Textarea id="shipper-address" placeholder="Rua, número, cidade, estado, CEP, país" />
-                     </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="shipper-contact">Contato</Label>
-                        <Input id="shipper-contact" placeholder="Telefone ou e-mail" />
-                     </div>
-                  </div>
-                   <div className="space-y-4 p-4 border rounded-md">
-                     <h4 className="font-semibold">Consignatário (Consignee)</h4>
-                     <div className="space-y-2">
-                        <Label htmlFor="consignee-name">Nome / Razão Social</Label>
-                        <Input id="consignee-name" placeholder="Empresa Importadora LLC" />
-                     </div>
-                     <div className="space-y-2">
-                        <Label htmlFor="consignee-address">Endereço Completo</Label>
-                        <Textarea id="consignee-address" placeholder="Rua, número, cidade, estado, CEP, país" />
-                     </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="consignee-contact">Contato</Label>
-                        <Input id="consignee-contact" placeholder="Telefone ou e-mail" />
-                     </div>
-                  </div>
-                   <div className="space-y-4 p-4 border rounded-md">
+               <AccordionContent className="space-y-6 p-1">
+                 <div className="grid md:grid-cols-2 gap-6">
+                    <div className="space-y-4 p-4 border rounded-md">
+                         <h4 className="font-semibold">Embarcador (Shipper)</h4>
+                         <p className="text-sm text-muted-foreground">
+                            <strong>Razão Social:</strong> Senior Assessoria em Comércio Exterior Ltda<br />
+                            <strong>Endereço:</strong> Avenida Brasil, 1234, São Paulo - SP, Brasil<br />
+                            <strong>CNPJ:</strong> 00.123.456/0001-00<br />
+                            <strong>Contato:</strong> contato@seniorcomex.com / (11) 98765-4321
+                         </p>
+                    </div>
+                     <div className="space-y-4 p-4 border rounded-md">
+                         <h4 className="font-semibold">Consignatário (Consignee)</h4>
+                         <div className="space-y-2">
+                            <Label htmlFor="cliente">Selecione o Cliente</Label>
+                            <Select>
+                                <SelectTrigger id="cliente">
+                                    <SelectValue placeholder="Selecione um cliente cadastrado" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="cliente1">Importadora Exemplo LLC</SelectItem>
+                                    <SelectItem value="cliente2">Global Trade Corp</SelectItem>
+                                </SelectContent>
+                            </Select>
+                         </div>
+                         <p className="text-sm text-muted-foreground">
+                            <strong>Endereço:</strong> 1234 Main Street, New York, NY, USA<br />
+                            <strong>País:</strong> Estados Unidos<br />
+                            <strong>Tax ID:</strong> 98-7654321<br />
+                             <strong>Contato:</strong> John Doe / john.doe@example.com
+                         </p>
+                    </div>
+                 </div>
+                 <div className="space-y-4 p-4 border rounded-md">
                      <h4 className="font-semibold">Notificante (Notify Party)</h4>
-                     <div className="space-y-2">
-                        <Label htmlFor="notify-name">Nome / Razão Social</Label>
-                        <Input id="notify-name" placeholder="Agente ou Despachante" />
+                     <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="notify-name">Nome / Razão Social</Label>
+                            <Input id="notify-name" placeholder="Agente ou Despachante" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="notify-contact">Contato</Label>
+                            <Input id="notify-contact" placeholder="Telefone ou e-mail" />
+                        </div>
                      </div>
                      <div className="space-y-2">
                         <Label htmlFor="notify-address">Endereço Completo</Label>
                         <Textarea id="notify-address" placeholder="Rua, número, cidade, estado, CEP, país" />
                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="notify-contact">Contato</Label>
-                        <Input id="notify-contact" placeholder="Telefone ou e-mail" />
-                     </div>
                   </div>
-                </div>
               </AccordionContent>
             </AccordionItem>
 
