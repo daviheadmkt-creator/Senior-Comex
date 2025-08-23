@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useRouter } from "next/navigation";
@@ -56,6 +57,44 @@ const notifications = [
   },
 ];
 
+const messages = [
+    {
+        name: 'Kathryn Murphy',
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026710d',
+        message: 'hey! there i’...',
+        time: '12:30 PM',
+        unread: 8,
+    },
+    {
+        name: 'Kathryn Murphy',
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026711d',
+        message: 'hey! there i’...',
+        time: '12:30 PM',
+        unread: 2,
+    },
+    {
+        name: 'Kathryn Murphy',
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026712d',
+        message: 'hey! there i’...',
+        time: '12:30 PM',
+        unread: 0,
+    },
+    {
+        name: 'Kathryn Murphy',
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026713d',
+        message: 'hey! there i’...',
+        time: '12:30 PM',
+        unread: 0,
+    },
+    {
+        name: 'Kathryn Murphy',
+        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026714d',
+        message: 'hey! there i’...',
+        time: '12:30 PM',
+        unread: 8,
+    },
+]
+
 export function UserNav() {
   const router = useRouter();
 
@@ -108,9 +147,49 @@ export function UserNav() {
            </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <Button variant="ghost" size="icon">
-        <MessageSquare className="h-5 w-5" />
-      </Button>
+       <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon">
+                <MessageSquare className="h-5 w-5" />
+            </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent className="w-80" align="end">
+            <DropdownMenuLabel>
+                <div className="flex items-center justify-between">
+                    <p className="font-bold">Message</p>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">05</Badge>
+                </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+             <DropdownMenuGroup className="overflow-y-auto max-h-[300px]">
+                {messages.map((msg, index) => (
+                    <DropdownMenuItem key={index} className="flex items-start gap-3 p-2 cursor-pointer">
+                        <div className="relative">
+                            <Avatar className="h-10 w-10">
+                                <AvatarImage src={msg.avatar} alt={msg.name} />
+                                <AvatarFallback>{msg.name.charAt(0)}</AvatarFallback>
+                            </Avatar>
+                            <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-white"></span>
+                        </div>
+                        <div className="flex-1">
+                            <p className="text-sm font-medium">{msg.name}</p>
+                            <p className="text-xs text-muted-foreground">{msg.message}</p>
+                        </div>
+                        <div className="text-right">
+                             <p className="text-xs text-muted-foreground">{msg.time}</p>
+                             {msg.unread > 0 && (
+                                <Badge className="mt-1 h-5 w-5 p-0 justify-center rounded-full bg-yellow-400 text-black">{msg.unread}</Badge>
+                             )}
+                        </div>
+                    </DropdownMenuItem>
+                ))}
+             </DropdownMenuGroup>
+             <DropdownMenuSeparator />
+            <DropdownMenuItem className="justify-center text-primary hover:!text-primary font-semibold py-2">
+                See All Message
+            </DropdownMenuItem>
+        </DropdownMenuContent>
+       </DropdownMenu>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
