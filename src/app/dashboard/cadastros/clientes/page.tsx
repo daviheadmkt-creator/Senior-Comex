@@ -32,27 +32,32 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const clientes = [
     {
+        id: 'importadora-exemplo-llc',
         nome: 'Importadora Exemplo LLC',
         pais: 'Estados Unidos',
         contato: 'John Doe',
         status: 'Ativo'
     },
     {
+        id: 'global-trade-corp',
         nome: 'Global Trade Corp',
         pais: 'Argentina',
         contato: 'Maria Garcia',
         status: 'Ativo'
     },
     {
+        id: 'euro-importers',
         nome: 'Euro Importers',
         pais: 'Alemanha',
         contato: 'Hans Müller',
         status: 'Inativo'
     },
      {
+        id: 'asian-buyers-co',
         nome: 'Asian Buyers Co.',
         pais: 'Japão',
         contato: 'Yuki Tanaka',
@@ -120,8 +125,10 @@ export default function ClientesInternacionaisPage() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-2">
-                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
-                                                <Eye className="h-4 w-4" />
+                                            <Button asChild variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
+                                                <Link href={`/dashboard/cadastros/clientes/${cliente.id}`}>
+                                                   <Eye className="h-4 w-4" />
+                                                </Link>
                                             </Button>
                                             <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
                                                 <Edit className="h-4 w-4" />
