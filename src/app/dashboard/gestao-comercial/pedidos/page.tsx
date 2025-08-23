@@ -89,7 +89,7 @@ export default function PedidosContratosPage() {
           <CardHeader>
             <CardTitle>Controle de Pedidos Internacionais</CardTitle>
             <CardDescription>
-              Gerencie os pedidos internacionais e seus status.
+              Acompanhe e gerencie todos os pedidos de exportação.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -253,3 +253,5 @@ export default function PedidosContratosPage() {
     </Tabs>
   );
 }
+
+    
