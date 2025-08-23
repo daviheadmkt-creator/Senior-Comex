@@ -30,6 +30,7 @@ import {
   Download,
   Building,
 } from 'lucide-react';
+import React from 'react';
 import { useParams } from 'next/navigation';
 
 const getStatusClass = (status: string) => {
@@ -110,7 +111,7 @@ const messages = [
 
 export default function ClientPortalPage() {
   const params = useParams();
-  const id = typeof params.id === 'string' ? params.id : '';
+  const id = React.use(params ?? {}).id ?? '';
   const companyName = id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
@@ -204,7 +205,7 @@ export default function ClientPortalPage() {
             </Card>
         </div>
         <div className="lg:col-span-1 sticky top-6">
-            <Card className="flex flex-col h-[calc(100vh-8rem)]">
+            <Card className="flex flex-col h-[calc(100vh-10rem)]">
                 <CardHeader>
                     <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Chat</CardTitle>
                 </CardHeader>
