@@ -25,6 +25,11 @@ import {
   Box,
   Globe,
   Building2,
+  Briefcase,
+  FilePlus2,
+  FileText,
+  ClipboardList,
+  DollarSign,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -45,6 +50,13 @@ const cadastroItems = [
     { href: "/dashboard/cadastros/fornecedores", icon: Building, label: "Fornecedor" },
     { href: "/dashboard/cadastros/produtos", icon: Box, label: "Produtos" },
     { href: "/dashboard/cadastros/paises", icon: Globe, label: "Países e Moedas" },
+];
+
+const gestaoComercialItems = [
+    { href: "/dashboard/gestao-comercial/proforma-invoice", icon: FilePlus2, label: "Proforma Invoice" },
+    { href: "/dashboard/gestao-comercial/commercial-invoice", icon: FileText, label: "Commercial Invoice" },
+    { href: "/dashboard/gestao-comercial/pedidos", icon: ClipboardList, label: "Controle de Pedidos" },
+    { href: "/dashboard/gestao-comercial/precos", icon: DollarSign, label: "Gestão de Preços" },
 ]
 
 export default function DashboardLayout({
@@ -88,6 +100,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {cadastroItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+             <Collapsible>
+                <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <Briefcase />
+                            Gestão Comercial
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {gestaoComercialItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
