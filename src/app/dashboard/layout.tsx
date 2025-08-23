@@ -72,7 +72,6 @@ const navItems = [
   { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "#", icon: Wallet, label: "Investimento" },
   { href: "/dashboard/chat", icon: MessageSquare, label: "Comunicação" },
-  { href: "#", icon: AreaChart, label: "Análises" },
 ];
 
 const cadastroItems = [
