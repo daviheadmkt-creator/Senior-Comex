@@ -83,7 +83,7 @@ const cadastroItems = [
 
 const gestaoComercialItems = [
     { href: "/dashboard/gestao-comercial/proforma-invoice", icon: FilePlus2, label: "Proforma Invoice" },
-    { href: "/dashboard/gestao-comercial/commercial-invoice", icon: FileText, label: "Commercial Invoice" },
+    { href: "/dashboard/gestao-comercial/commercial-invoice", icon: FileText, label: "Comercial Invoice" },
     { href: "/dashboard/gestao-comercial/pedidos", icon: ClipboardList, label: "Controle de Pedidos" },
     { href: "/dashboard/gestao-comercial/precos", icon: DollarSign, label: "Gestão de Preços" },
 ]
