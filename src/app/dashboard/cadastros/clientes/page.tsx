@@ -27,12 +27,13 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MoreHorizontal, PlusCircle, Trash2, Edit, Eye } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Edit, Eye, User, Building, Phone, Mail, Globe, Briefcase, FileText, Banknote, Ship, Settings } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 
 const clientes = [
     {
@@ -40,28 +41,64 @@ const clientes = [
         nome: 'Importadora Exemplo LLC',
         pais: 'Estados Unidos',
         contato: 'John Doe',
-        status: 'Ativo'
+        status: 'Ativo',
+        taxId: '98-7654321',
+        endereco: '1234 Main Street, Apt 4B, New York, NY 10001',
+        email: 'john.doe@example.com',
+        telefone: '+1 (212) 555-1234',
+        tipo: 'Distribuidor',
+        setor: 'Alimentos e Bebidas',
+        incoterm: 'FOB (Free On Board)',
+        condicaoPagamento: '30 dias',
+        portalLink: '/dashboard/cadastros/clientes/importadora-exemplo-llc'
     },
     {
         id: 'global-trade-corp',
         nome: 'Global Trade Corp',
         pais: 'Argentina',
         contato: 'Maria Garcia',
-        status: 'Ativo'
+        status: 'Ativo',
+        taxId: '20-12345678-9',
+        endereco: 'Av. Corrientes 123, Buenos Aires, C1043AAS',
+        email: 'maria.garcia@globaltrade.com.ar',
+        telefone: '+54 11 4321-9876',
+        tipo: 'Atacadista',
+        setor: 'Commodities',
+        incoterm: 'CIF (Cost, Insurance and Freight)',
+        condicaoPagamento: 'Carta de Crédito (L/C)',
+        portalLink: '/dashboard/cadastros/clientes/global-trade-corp'
     },
     {
         id: 'euro-importers',
         nome: 'Euro Importers',
         pais: 'Alemanha',
         contato: 'Hans Müller',
-        status: 'Inativo'
+        status: 'Inativo',
+        taxId: 'DE123456789',
+        endereco: 'Musterstraße 1, 10117 Berlin',
+        email: 'hans.muller@euroimporters.de',
+        telefone: '+49 30 1234567',
+        tipo: 'Varejista',
+        setor: 'Manufaturados',
+        incoterm: 'EXW (Ex Works)',
+        condicaoPagamento: '60 dias',
+        portalLink: '/dashboard/cadastros/clientes/euro-importers'
     },
      {
         id: 'asian-buyers-co',
         nome: 'Asian Buyers Co.',
         pais: 'Japão',
         contato: 'Yuki Tanaka',
-        status: 'Em prospecção'
+        status: 'Em prospecção',
+        taxId: '123-456-789',
+        endereco: '1-1-2 Otemachi, Chiyoda-ku, Tokyo 100-8111',
+        email: 'y.tanaka@asianbuyers.jp',
+        telefone: '+81 3-1234-5678',
+        tipo: 'Consumidor final',
+        setor: 'Eletrônicos',
+        incoterm: 'FOB (Free On Board)',
+        condicaoPagamento: 'Antecipado',
+        portalLink: '/dashboard/cadastros/clientes/asian-buyers-co'
     }
 ];
 
@@ -81,6 +118,8 @@ const getStatusClass = (status: string) => {
 
 export default function ClientesInternacionaisPage() {
     const [activeTab, setActiveTab] = useState("listagem");
+    const [selectedClient, setSelectedClient] = useState<(typeof clientes)[0] | null>(null);
+
 
     return (
      <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -111,12 +150,12 @@ export default function ClientesInternacionaisPage() {
                                 <TableHead>País</TableHead>
                                 <TableHead>Contato Principal</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="w-[10%] text-center">Ação</TableHead>
+                                <TableHead className="w-[15%] text-center">Ação</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
                             {clientes.map((cliente) => (
-                                <TableRow key={cliente.nome}>
+                                <TableRow key={cliente.id}>
                                     <TableCell className="font-medium">{cliente.nome}</TableCell>
                                     <TableCell>{cliente.pais}</TableCell>
                                     <TableCell>{cliente.contato}</TableCell>
@@ -125,11 +164,48 @@ export default function ClientesInternacionaisPage() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                         <div className="flex justify-center gap-2">
-                                            <Button asChild variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
-                                                <Link href={`/dashboard/cadastros/clientes/${cliente.id}`}>
-                                                   <Eye className="h-4 w-4" />
-                                                </Link>
-                                            </Button>
+                                            <Dialog>
+                                                <DialogTrigger asChild>
+                                                     <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
+                                                        <Eye className="h-4 w-4" />
+                                                    </Button>
+                                                </DialogTrigger>
+                                                <DialogContent className="sm:max-w-[625px]">
+                                                    <DialogHeader>
+                                                        <DialogTitle className="flex items-center gap-2"> <Building className="h-5 w-5 text-primary" /> {cliente.nome}</DialogTitle>
+                                                        <DialogDescription>{cliente.taxId} - {cliente.endereco}</DialogDescription>
+                                                    </DialogHeader>
+                                                    <div className="grid gap-4 py-4">
+                                                        <div className="grid grid-cols-2 gap-4">
+                                                            <Card>
+                                                                <CardHeader className="p-3">
+                                                                    <CardTitle className="text-base flex items-center gap-2"><User className="h-4 w-4" /> Contato</CardTitle>
+                                                                </CardHeader>
+                                                                <CardContent className="p-3 text-sm">
+                                                                    <p><strong>Responsável:</strong> {cliente.contato}</p>
+                                                                    <p><strong>E-mail:</strong> {cliente.email}</p>
+                                                                    <p><strong>Telefone:</strong> {cliente.telefone}</p>
+                                                                </CardContent>
+                                                            </Card>
+                                                             <Card>
+                                                                <CardHeader className="p-3">
+                                                                    <CardTitle className="text-base flex items-center gap-2"><Briefcase className="h-4 w-4" /> Comercial</CardTitle>
+                                                                </CardHeader>
+                                                                <CardContent className="p-3 text-sm">
+                                                                    <p><strong>Tipo:</strong> {cliente.tipo}</p>
+                                                                    <p><strong>Setor:</strong> {cliente.setor}</p>
+                                                                    <p><strong>Incoterm:</strong> {cliente.incoterm}</p>
+                                                                    <p><strong>Pagamento:</strong> {cliente.condicaoPagamento}</p>
+                                                                </CardContent>
+                                                            </Card>
+                                                        </div>
+                                                        <Button asChild variant="outline">
+                                                            <Link href={cliente.portalLink}>Acessar Portal do Cliente</Link>
+                                                        </Button>
+                                                    </div>
+                                                </DialogContent>
+                                            </Dialog>
+
                                             <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
                                                 <Edit className="h-4 w-4" />
                                             </Button>
