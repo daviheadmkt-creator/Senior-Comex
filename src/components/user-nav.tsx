@@ -106,6 +106,8 @@ export function UserNav() {
     router.push('/dashboard/chat');
   };
 
+  const totalUnreadMessages = messages.reduce((acc, msg) => acc + (msg.unread > 0 ? 1 : 0), 0);
+
   return (
     <div className="flex items-center gap-4">
        <DropdownMenu>
@@ -154,15 +156,18 @@ export function UserNav() {
       </DropdownMenu>
        <DropdownMenu>
         <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon">
+            <Button variant="ghost" size="icon" className="relative">
                 <MessageSquare className="h-5 w-5" />
+                {totalUnreadMessages > 0 && (
+                  <Badge className="absolute top-0 right-0 h-4 w-4 justify-center p-0 bg-yellow-400 text-black rounded-full">{totalUnreadMessages}</Badge>
+                )}
             </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-80" align="end">
             <DropdownMenuLabel>
                 <div className="flex items-center justify-between">
                     <p className="font-bold">Message</p>
-                    <Badge variant="secondary" className="bg-primary/10 text-primary">05</Badge>
+                    <Badge variant="secondary" className="bg-primary/10 text-primary">{totalUnreadMessages > 0 ? totalUnreadMessages.toString().padStart(2, '0') : '0'}</Badge>
                 </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
