@@ -186,7 +186,7 @@ export function UserNav() {
              </DropdownMenuGroup>
              <DropdownMenuSeparator />
             <DropdownMenuItem className="justify-center text-primary hover:!text-primary font-semibold py-2">
-                See All Message
+                Ver Todas as Mensagens
             </DropdownMenuItem>
         </DropdownMenuContent>
        </DropdownMenu>
