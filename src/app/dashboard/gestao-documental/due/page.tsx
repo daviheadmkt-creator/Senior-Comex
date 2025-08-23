@@ -41,7 +41,7 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { PlusCircle, MoreHorizontal, FileDown, Trash2, Edit, Copy, Link, Search } from 'lucide-react';
+import { PlusCircle, MoreHorizontal, FileDown, Trash2, Edit, Copy, Link, Search, FileUp } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
