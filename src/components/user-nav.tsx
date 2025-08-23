@@ -17,7 +17,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, User, Settings, Bell, MessageSquare, Check } from "lucide-react"
+import { LogOut, User, Settings, Bell, MessageSquare, Check, Calendar } from "lucide-react"
 import { Badge } from "./ui/badge";
 import { ThemeToggle } from "./theme-toggle";
 
@@ -110,8 +110,11 @@ export function UserNav() {
   const totalUnreadMessages = messages.reduce((acc, msg) => acc + (msg.unread > 0 ? 1 : 0), 0);
 
   return (
-    <div className="flex items-center gap-4">
+    <div className="flex items-center gap-2">
         <ThemeToggle />
+         <Button variant="ghost" size="icon">
+            <Calendar className="h-5 w-5" />
+        </Button>
        <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
@@ -241,3 +244,5 @@ export function UserNav() {
     </div>
   )
 }
+
+    
