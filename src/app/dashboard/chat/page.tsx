@@ -3,7 +3,7 @@
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -14,166 +14,192 @@ import {
   Paperclip,
   Smile,
   Send,
+  Pencil,
+  Home,
+  AtSign,
+  Star,
+  Users,
+  MessageSquare,
+  Plus,
+  ArrowDown,
+  UserPlus,
+  Link,
+  ClipboardCheck,
+  Languages,
+  BarChart3,
+  ListTodo,
 } from 'lucide-react';
-
-const conversations = [
-  {
-    name: 'Kathryn Murphy',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026710d',
-    message: 'hey! there i’m...',
-    time: '12:30 PM',
-    unread: 8,
-    online: true,
-  },
-  {
-    name: 'James Michael',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026705d',
-    message: 'Sure, I can do that.',
-    time: '12:28 PM',
-    unread: 0,
-    online: true,
-  },
-  {
-    name: 'Russell Lucas',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026706d',
-    message: 'Thanks for the update!',
-    time: '12:25 PM',
-    unread: 0,
-    online: false,
-  },
-   {
-    name: 'Caleb Bradley',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026707d',
-    message: 'Let\'s schedule a call.',
-    time: '12:20 PM',
-    unread: 2,
-    online: true,
-  },
-   {
-    name: 'Bobby Roy',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026708d',
-    message: 'See you tomorrow.',
-    time: '12:15 PM',
-    unread: 0,
-    online: false,
-  },
-   {
-    name: 'Vincent Liam',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026709d',
-    message: 'Please send the file.',
-    time: '12:10 PM',
-    unread: 0,
-    online: true,
-  },
-];
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const messages = [
-  {
+   {
     id: 1,
-    sender: 'Kathryn Murphy',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026710d',
-    text: 'It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters.',
-    time: '6:30 pm',
-    isMe: false,
+    isMe: true,
+    text: 'Ola',
+    time: 'Agora',
   },
   {
     id: 2,
-    sender: 'Me',
-    avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-    text: 'It is a long established fact that a reader will',
-    time: '6:31 pm',
     isMe: true,
+    text: 'tudi bem?',
+    time: 'Agora',
   },
 ];
 
+
 export default function ChatPage() {
   return (
-    <Card className="h-[calc(100vh-10rem)] flex">
-      <div className="w-1/3 border-r flex flex-col">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-bold">Chat</h2>
-          <div className="relative mt-2">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Search..." className="pl-9" />
-          </div>
-        </div>
-        <div className="flex-1 overflow-y-auto">
-          {conversations.map((convo) => (
-            <div
-              key={convo.name}
-              className="flex items-center gap-3 p-3 hover:bg-accent cursor-pointer border-b"
-            >
-              <div className="relative">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src={convo.avatar} alt={convo.name} />
-                  <AvatarFallback>{convo.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                {convo.online && <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card"></span>}
-              </div>
-              <div className="flex-1">
-                <p className="font-semibold">{convo.name}</p>
-                <p className="text-sm text-muted-foreground truncate">{convo.message}</p>
-              </div>
-              <div className="text-right text-xs text-muted-foreground">
-                <p>{convo.time}</p>
-                {convo.unread > 0 && <Badge className="mt-1 h-5 w-5 p-0 justify-center rounded-full bg-yellow-400 text-black">{convo.unread}</Badge>}
-              </div>
+    <div className="flex h-[calc(100vh-8rem)] bg-card border rounded-lg">
+      {/* Left Sidebar */}
+      <div className="w-[280px] border-r flex flex-col p-3 gap-4">
+        <Button size="lg" className="justify-start gap-3 rounded-xl h-12">
+            <Pencil className="h-5 w-5" />
+            Novo chat
+        </Button>
+        <div className="flex-1 space-y-4">
+            <div className="space-y-1">
+                <h3 className="text-xs font-semibold text-muted-foreground px-2">Atalhos</h3>
+                <nav className="space-y-1">
+                    <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent">
+                        <Home className="h-5 w-5 text-muted-foreground" />
+                        <span>Início</span>
+                    </a>
+                    <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent">
+                        <AtSign className="h-5 w-5 text-muted-foreground" />
+                        <span>Menções</span>
+                    </a>
+                    <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent">
+                        <Star className="h-5 w-5 text-muted-foreground" />
+                        <span>Com estrela</span>
+                    </a>
+                </nav>
             </div>
-          ))}
+            <div className="space-y-1">
+                <h3 className="text-xs font-semibold text-muted-foreground px-2">Espaços</h3>
+                <nav className="space-y-1">
+                     <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md bg-primary/10 text-primary">
+                        <Avatar className="h-6 w-6 text-xs">
+                            <AvatarFallback className="bg-blue-200 text-blue-800">C</AvatarFallback>
+                        </Avatar>
+                        <span>Comercial</span>
+                    </a>
+                    <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent">
+                        <Avatar className="h-6 w-6 text-xs">
+                            <AvatarFallback className="bg-red-200 text-red-800">F</AvatarFallback>
+                        </Avatar>
+                        <span>Financeiro</span>
+                    </a>
+                    <a href="#" className="flex items-center gap-3 px-3 py-2 text-sm font-medium rounded-md hover:bg-accent">
+                        <Plus className="h-5 w-5 text-muted-foreground" />
+                        <span>Procurar espaços</span>
+                    </a>
+                </nav>
+            </div>
+        </div>
+        <div className="text-center text-xs text-muted-foreground">
+            <p>Ainda não há apps</p>
+            <Button variant="link" size="sm" className="h-auto p-0">Conheça os apps</Button>
         </div>
       </div>
-      <div className="w-2/3 flex flex-col">
-        <div className="p-4 border-b flex items-center justify-between">
-            <div className="flex items-center gap-3">
-                 <div className="relative">
-                    <Avatar className="h-10 w-10">
-                        <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026710d" alt="Kathryn Murphy" />
-                        <AvatarFallback>KM</AvatarFallback>
+
+      {/* Main Content */}
+      <div className="flex-1 flex flex-col">
+        <Tabs defaultValue="chat">
+            <CardHeader className="flex flex-row items-center justify-between border-b p-3">
+                 <div className="flex items-center gap-2">
+                    <Avatar className="h-8 w-8">
+                        <AvatarFallback className="bg-blue-200 text-blue-800">C</AvatarFallback>
                     </Avatar>
-                     <span className="absolute bottom-0 right-0 block h-2.5 w-2.5 rounded-full bg-green-500 border-2 border-card"></span>
-                </div>
-                <div>
-                    <p className="font-semibold">Kathryn Murphy</p>
-                    <p className="text-sm text-green-500">Available</p>
-                </div>
-            </div>
-            <div className="flex items-center gap-2">
-                <Button variant="ghost" size="icon"><Phone /></Button>
-                <Button variant="ghost" size="icon"><Video /></Button>
-                <Button variant="ghost" size="icon"><MoreHorizontal /></Button>
-            </div>
-        </div>
-        <div className="flex-1 overflow-y-auto p-6 space-y-4 bg-muted/20">
-            {messages.map((msg) => (
-                <div key={msg.id} className={`flex items-end gap-3 ${msg.isMe ? 'justify-end' : ''}`}>
-                    {!msg.isMe && (
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={msg.avatar} alt={msg.sender} />
-                            <AvatarFallback>{msg.sender.charAt(0)}</AvatarFallback>
-                        </Avatar>
-                    )}
-                    <div className={`max-w-md rounded-lg p-3 ${msg.isMe ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>
-                        <p className="text-sm">{msg.text}</p>
-                        <p className={`text-xs mt-1 ${msg.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
+                    <div>
+                        <h2 className="font-semibold text-lg">Comercial</h2>
+                        <p className="text-xs text-muted-foreground">1 participante</p>
                     </div>
-                     {msg.isMe && (
-                        <Avatar className="h-8 w-8">
-                            <AvatarImage src={msg.avatar} alt={msg.sender} />
-                            <AvatarFallback>Me</AvatarFallback>
-                        </Avatar>
-                    )}
                 </div>
-            ))}
-        </div>
-        <div className="p-4 border-t bg-card">
-            <div className="flex items-center gap-2">
-                <Input placeholder="Write message" className="flex-1" />
-                <Button variant="ghost" size="icon"><Paperclip /></Button>
-                <Button variant="ghost" size="icon"><Smile /></Button>
-                <Button><Send /></Button>
+                <TabsList>
+                    <TabsTrigger value="chat">Chat</TabsTrigger>
+                    <TabsTrigger value="shared">Compartilhados</TabsTrigger>
+                    <TabsTrigger value="tasks">Tarefas</TabsTrigger>
+                </TabsList>
+                 <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon"><Search className="h-5 w-5" /></Button>
+                    <Button variant="ghost" size="icon"><ListTodo className="h-5 w-5" /></Button>
+                    <Button variant="ghost" size="icon"><MoreHorizontal className="h-5 w-5" /></Button>
+                </div>
+            </CardHeader>
+
+            <TabsContent value="chat" className="flex-1 flex flex-col justify-between p-4 bg-muted/20">
+                <div className="space-y-4 text-center">
+                    <div className="flex justify-center items-center gap-2">
+                        <Switch id="history-switch" defaultChecked />
+                        <Label htmlFor="history-switch">Histórico ativado</Label>
+                    </div>
+                     <div className="flex flex-col items-center justify-center">
+                        <Image src="https://placehold.co/200x150.png" alt="Welcome Illustration" width={200} height={150} data-ai-hint="collaboration team" />
+                        <Button size="sm" className="rounded-full -mt-4">
+                            <ArrowDown className="mr-2 h-4 w-4" />
+                            Ir para o fim
+                        </Button>
+                     </div>
+                     <div>
+                        <p className="font-bold">Davi, este é seu novo espaço de colaboração! Vamos começar:</p>
+                        <div className="flex justify-center gap-2 mt-2">
+                            <Button variant="outline" size="sm"><UserPlus className="mr-2 h-4 w-4" /> Adicionar partici...</Button>
+                            <Button variant="outline" size="sm"><Link className="mr-2 h-4 w-4" /> Compartilhar um ...</Button>
+                            <Button variant="outline" size="sm"><ClipboardCheck className="mr-2 h-4 w-4" /> Atribuir ta...</Button>
+                        </div>
+                     </div>
+                      <Card className="text-left">
+                        <CardHeader className="p-2">
+                            <h3 className="text-sm font-semibold">Apps sugeridos para melhorar seu espaço</h3>
+                        </CardHeader>
+                        <CardContent className="flex justify-around p-2">
+                            <div className="text-center">
+                                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl"><Languages /></Button>
+                                <p className="text-xs mt-1">Abang Translator</p>
+                            </div>
+                             <div className="text-center">
+                                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl"><Smile /></Button>
+                                <p className="text-xs mt-1">Able Poll</p>
+                            </div>
+                              <div className="text-center">
+                                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl"><BarChart3 /></Button>
+                                <p className="text-xs mt-1">Absolute Poll</p>
+                            </div>
+                             <div className="text-center">
+                                <Button variant="outline" size="icon" className="h-12 w-12 rounded-2xl"><MoreHorizontal /></Button>
+                            </div>
+                        </CardContent>
+                    </Card>
+                    <p className="text-xs text-muted-foreground">Você criou este espaço hoje</p>
+                </div>
+                 <div className="flex-1 overflow-y-auto space-y-4 mt-4">
+                    {messages.map((msg) => (
+                        <div key={msg.id} className={`flex items-end gap-3 ${msg.isMe ? 'justify-end' : ''}`}>
+                            <div className={`max-w-md rounded-lg p-3 ${msg.isMe ? 'bg-primary text-primary-foreground' : 'bg-card'}`}>
+                                <p className="text-sm">{msg.text}</p>
+                                <p className={`text-xs mt-1 ${msg.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
+                            </div>
+                        </div>
+                    ))}
+                </div>
+            </TabsContent>
+        </Tabs>
+        <div className="p-3 border-t bg-card">
+            <div className="relative">
+                <Input placeholder="O histórico está ativado" className="rounded-full bg-muted pr-24 pl-10 h-12" />
+                 <div className="absolute left-3 top-1/2 -translate-y-1/2">
+                     <Button variant="ghost" size="icon" className="rounded-full"><Plus className="text-muted-foreground" /></Button>
+                 </div>
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 flex items-center gap-1">
+                    <Button variant="ghost" size="icon" className="rounded-full"><Smile className="text-muted-foreground" /></Button>
+                    <Button variant="ghost" size="icon" className="rounded-full"><Paperclip className="text-muted-foreground" /></Button>
+                    <Button size="icon" className="rounded-full"><Send /></Button>
+                </div>
             </div>
         </div>
       </div>
-    </Card>
+    </div>
   );
 }
