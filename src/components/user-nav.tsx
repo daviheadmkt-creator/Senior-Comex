@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { LogOut, User, Settings, Bell, MessageSquare, Check } from "lucide-react"
 import { Badge } from "./ui/badge";
+import { ThemeToggle } from "./theme-toggle";
 
 const notifications = [
   {
@@ -110,11 +111,12 @@ export function UserNav() {
 
   return (
     <div className="flex items-center gap-4">
+        <ThemeToggle />
        <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="h-5 w-5" />
-            <Badge className="absolute top-0 right-0 h-4 w-4 justify-center p-0 bg-destructive text-destructive-foreground rounded-full">5</Badge>
+            <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center p-1 bg-destructive text-destructive-foreground rounded-full">5</Badge>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-80" align="end">
@@ -159,7 +161,7 @@ export function UserNav() {
             <Button variant="ghost" size="icon" className="relative">
                 <MessageSquare className="h-5 w-5" />
                 {totalUnreadMessages > 0 && (
-                  <Badge className="absolute top-0 right-0 h-4 w-4 justify-center p-0 bg-yellow-400 text-black rounded-full">{totalUnreadMessages}</Badge>
+                  <Badge className="absolute -top-1 -right-1 h-5 w-5 justify-center p-1 bg-yellow-400 text-black rounded-full">{totalUnreadMessages}</Badge>
                 )}
             </Button>
         </DropdownMenuTrigger>
