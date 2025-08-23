@@ -186,7 +186,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -208,7 +208,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -230,7 +230,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -252,7 +252,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -274,7 +274,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -296,7 +296,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -318,7 +318,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -340,7 +340,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}
@@ -366,7 +366,7 @@ export default function DashboardLayout({
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
-                                {item.label}
+                                <span>{item.label}</span>
                             </SidebarMenuSubButton>
                         </SidebarMenuItem>
                     ))}

@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Link from "next/link"
 import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
@@ -539,6 +540,7 @@ const SidebarMenuButton = React.forwardRef<
     asChild?: boolean
     isActive?: boolean
     tooltip?: string | React.ComponentProps<typeof TooltipContent>
+    href?: string
   } & VariantProps<typeof sidebarMenuButtonVariants>
 >(
   (
@@ -549,26 +551,30 @@ const SidebarMenuButton = React.forwardRef<
       size = "default",
       tooltip,
       className,
+      href,
+      children,
       ...props
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
-
-    const button = (
+    const Comp = asChild ? Slot : href ? Link : "button"
+    const buttonContent = (
       <Comp
-        ref={ref}
+        ref={ref as any}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
         className={cn(sidebarMenuButtonVariants({ variant, size }), className)}
+        {...(href ? { href } : {})}
         {...props}
-      />
+      >
+        {children}
+      </Comp>
     )
 
     if (!tooltip) {
-      return button
+      return buttonContent
     }
 
     if (typeof tooltip === "string") {
@@ -579,7 +585,7 @@ const SidebarMenuButton = React.forwardRef<
 
     return (
       <Tooltip>
-        <TooltipTrigger asChild>{button}</TooltipTrigger>
+        <TooltipTrigger asChild>{buttonContent}</TooltipTrigger>
         <TooltipContent
           side="right"
           align="center"
@@ -712,12 +718,12 @@ const SidebarMenuSubButton = React.forwardRef<
     size?: "sm" | "md"
     isActive?: boolean
   }
->(({ asChild = false, size = "md", isActive, className, ...props }, ref) => {
-  const Comp = asChild ? Slot : "a"
+>(({ asChild = false, size = "md", isActive, className, children, href, ...props }, ref) => {
+  const Comp = asChild ? Slot : Link
 
   return (
     <Comp
-      ref={ref}
+      ref={ref as any}
       data-sidebar="menu-sub-button"
       data-size={size}
       data-active={isActive}
@@ -729,8 +735,11 @@ const SidebarMenuSubButton = React.forwardRef<
         "group-data-[collapsible=icon]:hidden",
         className
       )}
+      href={href ?? '#'}
       {...props}
-    />
+    >
+        {children}
+    </Comp>
   )
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
