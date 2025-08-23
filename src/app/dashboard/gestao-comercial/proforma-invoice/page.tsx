@@ -25,7 +25,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import {
   Table,
   TableHeader,
@@ -35,7 +34,7 @@ import {
   TableBody,
   TableFooter,
 } from '@/components/ui/table';
-import { PlusCircle, Trash2, FileDown, MoreHorizontal, Edit } from 'lucide-react';
+import { PlusCircle, Trash2, FileDown, MoreHorizontal, Edit, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -131,18 +130,17 @@ export default function ProformaInvoicePage() {
                                         <Badge className={getStatusClass(proforma.status)}>{proforma.status}</Badge>
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem><Edit className="mr-2 h-4 w-4" /> Ver / Editar</DropdownMenuItem>
-                                                <DropdownMenuItem><FileDown className="mr-2 h-4 w-4" /> Gerar PDF</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Cancelar</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <div className="flex justify-center gap-2">
+                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                             <Button variant="outline" size="icon" className="h-8 w-8 bg-red-100/60 text-red-600 border-red-200/70 hover:bg-red-100 hover:text-red-700">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
