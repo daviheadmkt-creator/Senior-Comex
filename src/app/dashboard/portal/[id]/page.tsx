@@ -111,7 +111,7 @@ const messages = [
 
 export default function ClientPortalPage() {
   const params = useParams();
-  const id = React.use(params ?? {}).id ?? '';
+  const id = (params?.id as string) || '';
   const companyName = id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
@@ -204,33 +204,35 @@ export default function ClientPortalPage() {
                 </CardFooter>
             </Card>
         </div>
-        <div className="lg:col-span-1 sticky top-6">
-            <Card className="flex flex-col h-[calc(100vh-10rem)]">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Chat</CardTitle>
-                </CardHeader>
-                <CardContent className="flex-1 overflow-y-auto space-y-4">
-                     {messages.map((msg, i) => (
-                        <div key={i} className={`flex items-end gap-2 ${msg.isMe ? 'justify-end' : ''}`}>
-                             {!msg.isMe && <Avatar className="h-8 w-8"><AvatarFallback>C</AvatarFallback></Avatar>}
-                            <div className={`max-w-xs rounded-lg p-3 ${msg.isMe ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                                <p className="text-sm">{msg.text}</p>
-                                <p className={`text-xs mt-1 ${msg.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
+        <div className="lg:col-span-1">
+            <div className="sticky top-6">
+                <Card className="flex flex-col h-[calc(100vh-10rem)]">
+                    <CardHeader>
+                        <CardTitle className="flex items-center gap-2"><MessageSquare className="h-5 w-5" /> Chat</CardTitle>
+                    </CardHeader>
+                    <CardContent className="flex-1 overflow-y-auto space-y-4">
+                        {messages.map((msg, i) => (
+                            <div key={i} className={`flex items-end gap-2 ${msg.isMe ? 'justify-end' : ''}`}>
+                                {!msg.isMe && <Avatar className="h-8 w-8"><AvatarFallback>C</AvatarFallback></Avatar>}
+                                <div className={`max-w-xs rounded-lg p-3 ${msg.isMe ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+                                    <p className="text-sm">{msg.text}</p>
+                                    <p className={`text-xs mt-1 ${msg.isMe ? 'text-primary-foreground/70' : 'text-muted-foreground'}`}>{msg.time}</p>
+                                </div>
+                                {msg.isMe && <Avatar className="h-8 w-8"><AvatarFallback>S</AvatarFallback></Avatar>}
                             </div>
-                              {msg.isMe && <Avatar className="h-8 w-8"><AvatarFallback>S</AvatarFallback></Avatar>}
+                        ))}
+                    </CardContent>
+                    <CardFooter className="pt-4 border-t">
+                        <div className="relative w-full">
+                            <Input placeholder="Digite sua mensagem..." className="pr-16" />
+                            <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
+                                <Button variant="ghost" size="icon"><Paperclip className="h-5 w-5 text-muted-foreground" /></Button>
+                                <Button size="icon"><Send className="h-5 w-5" /></Button>
+                            </div>
                         </div>
-                    ))}
-                </CardContent>
-                <CardFooter className="pt-4 border-t">
-                     <div className="relative w-full">
-                        <Input placeholder="Digite sua mensagem..." className="pr-16" />
-                        <div className="absolute right-1 top-1/2 -translate-y-1/2 flex items-center">
-                            <Button variant="ghost" size="icon"><Paperclip className="h-5 w-5 text-muted-foreground" /></Button>
-                             <Button size="icon"><Send className="h-5 w-5" /></Button>
-                        </div>
-                    </div>
-                </CardFooter>
-            </Card>
+                    </CardFooter>
+                </Card>
+            </div>
         </div>
       </div>
     </div>
