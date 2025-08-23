@@ -27,7 +27,7 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { MoreHorizontal, PlusCircle, Trash2, Edit } from 'lucide-react';
+import { MoreHorizontal, PlusCircle, Trash2, Edit, Eye } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -106,7 +106,7 @@ export default function FornecedoresPage() {
                                 <TableHead>Tipo</TableHead>
                                 <TableHead>Contato Principal</TableHead>
                                 <TableHead>Status</TableHead>
-                                <TableHead className="w-[5%]"></TableHead>
+                                <TableHead className="w-[10%] text-center">Ação</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
@@ -118,18 +118,18 @@ export default function FornecedoresPage() {
                                     <TableCell>
                                         <Badge className={getStatusClass(fornecedor.status)}>{fornecedor.status}</Badge>
                                     </TableCell>
-                                    <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem><Edit className="mr-2 h-4 w-4" /> Editar</DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive"><Trash2 className="mr-2 h-4 w-4" /> Excluir</DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                    <TableCell className="text-center">
+                                       <div className="flex justify-center gap-2">
+                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
+                                                <Eye className="h-4 w-4" />
+                                            </Button>
+                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
+                                                <Edit className="h-4 w-4" />
+                                            </Button>
+                                             <Button variant="outline" size="icon" className="h-8 w-8 bg-red-100/60 text-red-600 border-red-200/70 hover:bg-red-100 hover:text-red-700">
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))}
@@ -429,3 +429,5 @@ export default function FornecedoresPage() {
     </Tabs>
     );
 }
+
+    
