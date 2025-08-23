@@ -1,3 +1,6 @@
+"use client";
+
+import { useRouter } from "next/navigation";
 import {
   Avatar,
   AvatarFallback,
@@ -54,6 +57,12 @@ const notifications = [
 ];
 
 export function UserNav() {
+  const router = useRouter();
+
+  const handleLogout = () => {
+    router.push('/');
+  };
+
   return (
     <div className="flex items-center gap-4">
        <DropdownMenu>
@@ -132,7 +141,7 @@ export function UserNav() {
             </DropdownMenuItem>
           </DropdownMenuGroup>
           <DropdownMenuSeparator />
-          <DropdownMenuItem>
+          <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 h-4 w-4" />
               <span>Sair</span>
           </DropdownMenuItem>
