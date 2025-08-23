@@ -144,7 +144,7 @@ export default function DashboardLayout({
 }) {
   return (
     <SidebarProvider>
-      <Sidebar>
+      <Sidebar collapsible="icon">
         <SidebarHeader>
           <div className="flex items-center gap-3 p-2 pr-4">
              <div className="text-primary">
@@ -160,18 +160,18 @@ export default function DashboardLayout({
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.label} className="my-1">
-                <SidebarMenuButton href={item.href} isActive={item.href === '/dashboard'}>
+                <SidebarMenuButton href={item.href} isActive={item.href === '/dashboard'} tooltip={item.label}>
                   <item.icon />
-                  {item.label}
+                  <span>{item.label}</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
              <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Cadastros">
                             <Database />
-                            Cadastros
+                            <span>Cadastros</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -191,9 +191,9 @@ export default function DashboardLayout({
              <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Gestão Comercial">
                             <Briefcase />
-                            Gestão Comercial
+                            <span>Gestão Comercial</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -213,9 +213,9 @@ export default function DashboardLayout({
              <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Gestão Documental">
                             <FileArchive />
-                            Gestão Documental
+                            <span>Gestão Documental</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -235,9 +235,9 @@ export default function DashboardLayout({
             <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Gestão Aduaneira">
                             <ShieldCheck />
-                            Gestão Aduaneira
+                            <span>Gestão Aduaneira</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -257,9 +257,9 @@ export default function DashboardLayout({
             <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Gestão Logística">
                             <Warehouse />
-                            Gestão Logística
+                            <span>Gestão Logística</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -279,9 +279,9 @@ export default function DashboardLayout({
             <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Gestão Financeira">
                             <DollarSign />
-                            Gestão Financeira
+                            <span>Gestão Financeira</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -301,9 +301,9 @@ export default function DashboardLayout({
              <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Compliance e Auditoria">
                             <ClipboardCheck />
-                            Compliance e Auditoria
+                            <span>Compliance e Auditoria</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -323,9 +323,9 @@ export default function DashboardLayout({
             <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Relatórios e BI">
                             <AreaChart />
-                            Relatórios e BI
+                            <span>Relatórios e BI</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -349,9 +349,9 @@ export default function DashboardLayout({
               <Collapsible>
                 <SidebarMenuItem  className="my-1">
                     <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
+                        <SidebarMenuButton tooltip="Administrativo">
                             <UserCog />
-                            Administrativo
+                           <span>Administrativo</span>
                         </SidebarMenuButton>
                     </CollapsibleTrigger>
                 </SidebarMenuItem>
@@ -369,9 +369,9 @@ export default function DashboardLayout({
                  </CollapsibleContent>
             </Collapsible>
               <SidebarMenuItem>
-                <SidebarMenuButton href="#">
+                <SidebarMenuButton href="#" tooltip="Suporte">
                   <LifeBuoy />
-                  Suporte
+                  <span>Suporte</span>
                 </SidebarMenuButton>
               </SidebarMenuItem>
           </SidebarMenu>
@@ -379,11 +379,8 @@ export default function DashboardLayout({
       </Sidebar>
       <SidebarInset>
         <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-6">
-           <SidebarTrigger className="md:hidden" />
+           <SidebarTrigger />
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="ghost" size="icon">
-              <Menu className="h-5 w-5" />
-            </Button>
             <div className="relative">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input placeholder="Search..." className="pl-8 bg-background" />
