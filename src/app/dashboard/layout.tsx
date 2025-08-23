@@ -61,7 +61,6 @@ import {
   Webhook,
   MessageSquare,
   ArrowLeftRight,
-  WalletCards,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -116,7 +115,7 @@ const gestaoFinanceiraItems = [
     { href: "/dashboard/gestao-financeira/controle-cambio", icon: Landmark, label: "Controle de Câmbio" },
     { href: "/dashboard/gestao-financeira/faturas-boletos", icon: ReceiptText, label: "Faturas e Boletos" },
     { href: "/dashboard/gestao-financeira/controle-recebiveis", icon: CircleDollarSign, label: "Contas a Receber" },
-    { href: "/dashboard/gestao-financeira/contas-a-pagar", icon: WalletCards, label: "Contas a Pagar" },
+    { href: "/dashboard/gestao-financeira/contas-a-pagar", icon: Wallet, label: "Contas a Pagar" },
     { href: "/dashboard/gestao-financeira/fluxo-de-caixa", icon: ArrowLeftRight, label: "Fluxo de Caixa" },
     { href: "/dashboard/gestao-financeira/gestao-credito", icon: Files, label: "Gestão de Crédito" },
     { href: "/dashboard/gestao-financeira/relatorios-margem", icon: LineChart, label: "Relatórios de Margem" },
