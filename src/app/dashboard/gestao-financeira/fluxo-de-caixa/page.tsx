@@ -28,7 +28,7 @@ import {
   TableBody,
   TableFooter
 } from '@/components/ui/table';
-import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, Search } from 'lucide-react';
+import { ArrowDownCircle, ArrowLeftRight, ArrowUpCircle, Search, DollarSign } from 'lucide-react';
 import { Bar, BarChart, CartesianGrid, Legend, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 
 const cashFlowData = [
