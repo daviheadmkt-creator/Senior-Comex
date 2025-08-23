@@ -40,6 +40,11 @@ import {
   Calculator,
   Repeat,
   Handshake,
+  Warehouse,
+  Truck,
+  Package,
+  MapPin,
+  FileSignature,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -82,6 +87,13 @@ const gestaoAduaneiraItems = [
     { href: "/dashboard/gestao-aduaneira/calculo-impostos", icon: Calculator, label: "Cálculo de Impostos" },
     { href: "/dashboard/gestao-aduaneira/regimes-aduaneiros", icon: Repeat, label: "Regimes Aduaneiros" },
     { href: "/dashboard/gestao-aduaneira/integracao-despachantes", icon: Handshake, label: "Integração com Despachantes" },
+]
+
+const gestaoLogisticaItems = [
+    { href: "/dashboard/gestao-logistica/controle-fretes", icon: Truck, label: "Controle de Fretes" },
+    { href: "/dashboard/gestao-logistica/gestao-containers", icon: Package, label: "Gestão de Contêineres" },
+    { href: "/dashboard/gestao-logistica/rastreio-embarques", icon: MapPin, label: "Rastreio de Embarques" },
+    { href: "/dashboard/gestao-logistica/instrucoes-embarque", icon: FileSignature, label: "Instruções de Embarque" },
 ]
 
 export default function DashboardLayout({
@@ -191,6 +203,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {gestaoAduaneiraItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+            <Collapsible>
+                <SidebarMenuItem  className="my-1">
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <Warehouse />
+                            Gestão Logística
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {gestaoLogisticaItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
