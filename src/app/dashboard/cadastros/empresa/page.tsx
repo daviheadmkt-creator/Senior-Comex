@@ -27,11 +27,13 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { FileUp, PlusCircle, MoreHorizontal, Edit, Trash2, Eye } from 'lucide-react';
+import { FileUp, PlusCircle, MoreHorizontal, Edit, Trash2, Eye, Building, Hash, MapPin, CheckSquare } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+
 
 const empresas = [
     {
@@ -71,8 +73,10 @@ const getStatusClass = (status: string) => {
 
 export default function EmpresaPage() {
   const [activeTab, setActiveTab] = useState("listagem");
+  const [selectedEmpresa, setSelectedEmpresa] = useState<(typeof empresas)[0] | null>(null);
 
   return (
+    <>
     <Tabs value={activeTab} onValueChange={setActiveTab}>
       <div className="flex justify-between items-center mb-4">
         <TabsList>
@@ -116,7 +120,7 @@ export default function EmpresaPage() {
                                     </TableCell>
                                     <TableCell className="text-center">
                                        <div className="flex justify-center gap-2">
-                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700">
+                                            <Button variant="outline" size="icon" className="h-8 w-8 bg-blue-100/60 text-blue-600 border-blue-200/70 hover:bg-blue-100 hover:text-blue-700" onClick={() => setSelectedEmpresa(empresa)}>
                                                 <Eye className="h-4 w-4" />
                                             </Button>
                                             <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
@@ -403,5 +407,36 @@ export default function EmpresaPage() {
         </Card>
       </TabsContent>
     </Tabs>
+
+     <Dialog open={selectedEmpresa !== null} onOpenChange={(isOpen) => !isOpen && setSelectedEmpresa(null)}>
+            <DialogContent className="sm:max-w-[425px]">
+                {selectedEmpresa && (
+                    <>
+                        <DialogHeader>
+                            <DialogTitle className="flex items-center gap-2"> <Building className="h-5 w-5 text-primary" /> {selectedEmpresa.razaoSocial}</DialogTitle>
+                            <DialogDescription>Detalhes da empresa cadastrada.</DialogDescription>
+                        </DialogHeader>
+                        <div className="grid gap-4 py-4 text-sm">
+                           <div className="flex items-center gap-2">
+                                <Hash className="h-4 w-4 text-muted-foreground" />
+                                <strong>CNPJ:</strong>
+                                <span>{selectedEmpresa.cnpj}</span>
+                           </div>
+                           <div className="flex items-center gap-2">
+                                <MapPin className="h-4 w-4 text-muted-foreground" />
+                                <strong>Localização:</strong>
+                                <span>{selectedEmpresa.cidade} / {selectedEmpresa.uf}</span>
+                           </div>
+                           <div className="flex items-center gap-2">
+                                <CheckSquare className="h-4 w-4 text-muted-foreground" />
+                                <strong>Status:</strong>
+                                 <Badge className={getStatusClass(selectedEmpresa.status)}>{selectedEmpresa.status}</Badge>
+                           </div>
+                        </div>
+                    </>
+                )}
+            </DialogContent>
+        </Dialog>
+    </>
   );
 }
