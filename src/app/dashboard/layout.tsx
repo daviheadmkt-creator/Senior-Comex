@@ -15,7 +15,6 @@ import {
 import {
   LayoutDashboard,
   Wallet,
-  AreaChart,
   Settings,
   LifeBuoy,
   Menu,
@@ -54,6 +53,10 @@ import {
   CalendarCheck,
   History,
   ClipboardCheck,
+  AreaChart,
+  BarChart,
+  Activity,
+  Gauge,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -117,6 +120,12 @@ const complianceItems = [
     { href: "/dashboard/compliance-auditoria/validacao-clientes-paises", icon: ShieldBan, label: "Validação de Clientes" },
     { href: "/dashboard/compliance-auditoria/controle-prazos", icon: CalendarCheck, label: "Controle de Prazos" },
     { href: "/dashboard/compliance-auditoria/registro-auditoria", icon: History, label: "Registro de Auditoria" },
+]
+
+const relatoriosBiItems = [
+    { href: "/dashboard/relatorios-bi/relatorios-exportacao", icon: BarChart, label: "Relatórios de Exportação" },
+    { href: "/dashboard/relatorios-bi/indicadores-performance", icon: Gauge, label: "Indicadores de Performance" },
+    { href: "/dashboard/relatorios-bi/dashboards-tempo-real", icon: Activity, label: "Dashboards em Tempo Real" },
 ]
 
 export default function DashboardLayout({
@@ -292,6 +301,28 @@ export default function DashboardLayout({
                  <CollapsibleContent>
                     <SidebarMenuSub>
                     {complianceItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
+            <Collapsible>
+                <SidebarMenuItem  className="my-1">
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <AreaChart />
+                            Relatórios e BI
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {relatoriosBiItems.map((item) => (
                         <SidebarMenuItem key={item.label}>
                             <SidebarMenuSubButton href={item.href}>
                                 <item.icon />
