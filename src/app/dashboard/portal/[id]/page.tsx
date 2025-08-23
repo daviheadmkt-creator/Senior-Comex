@@ -30,6 +30,7 @@ import {
   Download,
   Building,
 } from 'lucide-react';
+import { useParams } from 'next/navigation';
 
 const getStatusClass = (status: string) => {
     switch (status) {
@@ -107,8 +108,10 @@ const messages = [
   { from: 'Cliente', text: 'Obrigado pela informação! Previsão de chegada se mantém?', time: 'Ontem 11:15', isMe: false },
 ]
 
-export default function ClientPortalPage({ params }: { params: { id: string } }) {
-  const companyName = params.id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+export default function ClientPortalPage() {
+  const params = useParams();
+  const id = typeof params.id === 'string' ? params.id : '';
+  const companyName = id.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
 
   return (
     <div className="space-y-6">
