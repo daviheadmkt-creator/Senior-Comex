@@ -15,6 +15,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -27,16 +28,18 @@ import {
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { FileUp, PlusCircle, MoreHorizontal, Edit, Trash2, Eye, Building, Hash, MapPin, CheckSquare } from 'lucide-react';
+import { FileUp, PlusCircle, MoreHorizontal, Edit, Trash2, Eye, Building, Hash, MapPin, CheckSquare, ExternalLink } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import Link from 'next/link';
 
 
 const empresas = [
     {
+        id: 'senior-assessoria',
         razaoSocial: 'Senior Assessoria em Comércio Exterior Ltda',
         cnpj: '00.123.456/0001-00',
         cidade: 'São Paulo',
@@ -44,6 +47,7 @@ const empresas = [
         status: 'Ativa'
     },
     {
+        id: 'fornecedor-nacional',
         razaoSocial: 'Fornecedor Nacional Exemplo',
         cnpj: '11.222.333/0001-44',
         cidade: 'Curitiba',
@@ -51,6 +55,7 @@ const empresas = [
         status: 'Ativa'
     },
      {
+        id: 'empresa-inativa',
         razaoSocial: 'Empresa Inativa Teste',
         cnpj: '99.888.777/0001-66',
         cidade: 'Rio de Janeiro',
@@ -433,6 +438,14 @@ export default function EmpresaPage() {
                                  <Badge className={getStatusClass(selectedEmpresa.status)}>{selectedEmpresa.status}</Badge>
                            </div>
                         </div>
+                        <DialogFooter>
+                            <Link href={`/dashboard/portal/${selectedEmpresa.id}`} passHref>
+                                <Button variant="outline">
+                                    <ExternalLink className="mr-2 h-4 w-4" />
+                                    Acessar Portal
+                                </Button>
+                            </Link>
+                        </DialogFooter>
                     </>
                 )}
             </DialogContent>
