@@ -58,6 +58,7 @@ import {
   Activity,
   Gauge,
   UserCog,
+  Webhook,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -131,6 +132,7 @@ const relatoriosBiItems = [
 
 const adminItems = [
     { href: "/dashboard/administrativo/gestao-usuarios", icon: Users, label: "Gestão de Usuários" },
+    { href: "/dashboard/administrativo/integracao-api", icon: Webhook, label: "Integração API" },
     { href: "/dashboard/configuracoes", icon: Settings, label: "Configurações" },
 ];
 
