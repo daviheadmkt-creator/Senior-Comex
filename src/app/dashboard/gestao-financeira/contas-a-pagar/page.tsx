@@ -1,3 +1,6 @@
+
+'use client';
+
 import {
   Card,
   CardContent,
@@ -30,16 +33,16 @@ import {
   DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { MoreHorizontal, DollarSign, Send, FileText, Search } from 'lucide-react';
+import { MoreHorizontal, DollarSign, FileText, Search } from 'lucide-react';
 
 
 const getStatusClass = (status: string) => {
     switch (status) {
-        case 'Recebido':
+        case 'Paga':
             return 'bg-green-100 text-green-800';
-        case 'A Receber':
+        case 'A Pagar':
             return 'bg-yellow-100 text-yellow-800';
-        case 'Vencido':
+        case 'Vencida':
             return 'bg-red-100 text-red-800';
         default:
             return '';
@@ -47,30 +50,30 @@ const getStatusClass = (status: string) => {
 }
 
 
-export default function ControleRecebiveisPage() {
+export default function ContasAPagarPage() {
   return (
     <Card>
       <CardHeader>
         <div className="flex justify-between items-center">
             <div>
-                <CardTitle>Controle de Contas a Receber</CardTitle>
+                <CardTitle>Controle de Contas a Pagar</CardTitle>
                 <CardDescription>
-                Acompanhe o status de todos os seus pagamentos a receber.
+                Acompanhe o status de todas as suas faturas de fornecedores e parceiros.
                 </CardDescription>
             </div>
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid md:grid-cols-4 gap-4">
-            <Input placeholder="Buscar por cliente ou fatura..." className="md:col-span-2" />
+            <Input placeholder="Buscar por fornecedor ou fatura..." className="md:col-span-2" />
             <Select>
                 <SelectTrigger>
                 <SelectValue placeholder="Filtrar por status" />
                 </SelectTrigger>
                 <SelectContent>
-                    <SelectItem value="receber">A Receber</SelectItem>
-                    <SelectItem value="recebido">Recebido</SelectItem>
-                    <SelectItem value="vencido">Vencido</SelectItem>
+                    <SelectItem value="pagar">A Pagar</SelectItem>
+                    <SelectItem value="paga">Paga</SelectItem>
+                    <SelectItem value="vencida">Vencida</SelectItem>
                 </SelectContent>
             </Select>
             <Input type="date" placeholder="Filtrar por data de vencimento" />
@@ -79,46 +82,48 @@ export default function ControleRecebiveisPage() {
             <Table>
             <TableHeader>
                 <TableRow>
-                <TableHead>Fatura Nº</TableHead>
-                <TableHead>Cliente</TableHead>
+                <TableHead>Fornecedor/Parceiro</TableHead>
+                <TableHead>Fatura Ref.</TableHead>
                 <TableHead>Data de Emissão</TableHead>
                 <TableHead>Data de Vencimento</TableHead>
-                <TableHead>Valor (USD)</TableHead>
+                <TableHead>Valor</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead className="w-[5%]"></TableHead>
                 </TableRow>
             </TableHeader>
             <TableBody>
                 <TableRow>
-                    <TableCell className="font-medium">CI-2024-001</TableCell>
-                    <TableCell>Importadora Exemplo LLC</TableCell>
+                    <TableCell className="font-medium">Transportadora Rápida Ltda</TableCell>
+                    <TableCell>FAT-TR-00123</TableCell>
+                    <TableCell>10/07/2024</TableCell>
+                    <TableCell>10/08/2024</TableCell>
+                    <TableCell>R$ 3.500,00</TableCell>
+                    <TableCell>
+                        <Badge className={getStatusClass('A Pagar')}>A Pagar</Badge>
+                    </TableCell>
+                    <TableCell>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem><DollarSign className="mr-2 h-4 w-4" /> Registrar Pagamento</DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem><FileText className="mr-2 h-4 w-4" /> Ver Fatura</DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </TableCell>
+                </TableRow>
+                 <TableRow>
+                    <TableCell className="font-medium">Despachante Ágil</TableCell>
+                    <TableCell>FAT-DA-456</TableCell>
+                    <TableCell>01/07/2024</TableCell>
                     <TableCell>15/07/2024</TableCell>
-                    <TableCell>14/08/2024</TableCell>
-                    <TableCell>$ 21.800,00</TableCell>
+                    <TableCell>R$ 1.800,00</TableCell>
                     <TableCell>
-                        <Badge className={getStatusClass('Recebido')}>Recebido</Badge>
-                    </TableCell>
-                    <TableCell>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon">
-                                    <MoreHorizontal className="h-4 w-4" />
-                                </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                                <DropdownMenuItem><FileText className="mr-2 h-4 w-4" /> Ver Fatura</DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </TableCell>
-                </TableRow>
-                 <TableRow>
-                    <TableCell className="font-medium">CI-2024-002</TableCell>
-                    <TableCell>Global Trade Corp</TableCell>
-                    <TableCell>01/07/2024</TableCell>
-                    <TableCell>01/08/2024</TableCell>
-                    <TableCell>$ 5.400,00</TableCell>
-                    <TableCell>
-                        <Badge className={getStatusClass('A Receber')}>A Receber</Badge>
+                        <Badge className={getStatusClass('Vencida')}>Vencida</Badge>
                     </TableCell>
                     <TableCell>
                         <DropdownMenu>
@@ -129,7 +134,6 @@ export default function ControleRecebiveisPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                                 <DropdownMenuItem><DollarSign className="mr-2 h-4 w-4" /> Registrar Pagamento</DropdownMenuItem>
-                                <DropdownMenuItem><Send className="mr-2 h-4 w-4" /> Enviar Lembrete</DropdownMenuItem>
                                 <DropdownMenuSeparator />
                                 <DropdownMenuItem><FileText className="mr-2 h-4 w-4" /> Ver Fatura</DropdownMenuItem>
                             </DropdownMenuContent>
@@ -137,13 +141,13 @@ export default function ControleRecebiveisPage() {
                     </TableCell>
                 </TableRow>
                  <TableRow>
-                    <TableCell className="font-medium">CI-2024-003</TableCell>
-                    <TableCell>Comercial Andina S.A.</TableCell>
-                    <TableCell>01/06/2024</TableCell>
-                    <TableCell>01/07/2024</TableCell>
-                    <TableCell>$ 12.300,00</TableCell>
+                    <TableCell className="font-medium">Embalagens Seguras S.A.</TableCell>
+                    <TableCell>NFE-9987</TableCell>
+                    <TableCell>25/06/2024</TableCell>
+                    <TableCell>25/07/2024</TableCell>
+                    <TableCell>R$ 5.200,00</TableCell>
                     <TableCell>
-                        <Badge className={getStatusClass('Vencido')}>Vencido</Badge>
+                        <Badge className={getStatusClass('Paga')}>Paga</Badge>
                     </TableCell>
                     <TableCell>
                         <DropdownMenu>
@@ -153,9 +157,6 @@ export default function ControleRecebiveisPage() {
                                 </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                                <DropdownMenuItem><DollarSign className="mr-2 h-4 w-4" /> Registrar Pagamento</DropdownMenuItem>
-                                <DropdownMenuItem><Send className="mr-2 h-4 w-4" /> Enviar Cobrança</DropdownMenuItem>
-                                <DropdownMenuSeparator />
                                 <DropdownMenuItem><FileText className="mr-2 h-4 w-4" /> Ver Fatura</DropdownMenuItem>
                             </DropdownMenuContent>
                         </DropdownMenu>
