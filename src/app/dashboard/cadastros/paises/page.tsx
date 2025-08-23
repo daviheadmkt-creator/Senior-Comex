@@ -32,6 +32,33 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
+const paises = [
+  {
+    nome: 'Brasil',
+    codigo_iso: 'BR',
+    continente: 'América do Sul',
+    status: 'Ativo'
+  },
+  {
+    nome: 'Estados Unidos',
+    codigo_iso: 'US',
+    continente: 'América do Norte',
+    status: 'Ativo'
+  },
+  {
+    nome: 'Argentina',
+    codigo_iso: 'AR',
+    continente: 'América do Sul',
+    status: 'Ativo'
+  },
+  {
+    nome: 'Alemanha',
+    codigo_iso: 'DE',
+    continente: 'Europa',
+    status: 'Inativo'
+  }
+];
+
 export default function PaisesPage() {
   return (
     <Card>
@@ -51,8 +78,44 @@ export default function PaisesPage() {
           </TabsList>
           <TabsContent value="paises" className="space-y-6">
             <Card>
+                <CardHeader>
+                    <CardTitle>Países Cadastrados</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <div className="border rounded-md">
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nome do País</TableHead>
+                                    <TableHead>Código ISO</TableHead>
+                                    <TableHead>Ações</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {paises.map((pais) => (
+                                    <TableRow key={pais.codigo_iso}>
+                                        <TableCell className="font-medium">{pais.nome}</TableCell>
+                                        <TableCell>{pais.codigo_iso}</TableCell>
+                                        <TableCell>
+                                            <div className="flex gap-2">
+                                                <Button variant="outline" size="icon" className="h-8 w-8 bg-green-100/60 text-green-600 border-green-200/70 hover:bg-green-100 hover:text-green-700">
+                                                    <Edit className="h-4 w-4" />
+                                                </Button>
+                                                <Button variant="outline" size="icon" className="h-8 w-8 bg-red-100/60 text-red-600 border-red-200/70 hover:bg-red-100 hover:text-red-700">
+                                                    <Trash2 className="h-4 w-4" />
+                                                </Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                </CardContent>
+            </Card>
+            <Card>
               <CardHeader>
-                <CardTitle>Cadastro de Países</CardTitle>
+                <CardTitle>Adicionar Novo País</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid md:grid-cols-2 gap-4">
