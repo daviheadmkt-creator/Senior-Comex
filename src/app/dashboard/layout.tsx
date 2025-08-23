@@ -9,6 +9,8 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarFooter,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -17,17 +19,31 @@ import {
   Settings,
   LifeBuoy,
   Menu,
+  Database,
+  Users,
+  Building,
+  Box,
+  Globe,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
+import { Collapsible, CollapsibleTrigger, CollapsibleContent } from '@/components/ui/collapsible';
+
 
 const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard", isActive: true },
+  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
   { href: "#", icon: Wallet, label: "Investimento" },
   { href: "#", icon: AreaChart, label: "Análises" },
 ];
+
+const cadastroItems = [
+    { href: "/dashboard/cadastros/clientes", icon: Users, label: "Clientes Internacionais" },
+    { href: "/dashboard/cadastros/fornecedores", icon: Building, label: "Fornecedores e Parceiros" },
+    { href: "/dashboard/cadastros/produtos", icon: Box, label: "Produtos" },
+    { href: "/dashboard/cadastros/paises", icon: Globe, label: "Países e Moedas" },
+]
 
 export default function DashboardLayout({
   children,
@@ -52,12 +68,34 @@ export default function DashboardLayout({
           <SidebarMenu>
             {navItems.map((item) => (
               <SidebarMenuItem key={item.label}>
-                <SidebarMenuButton href={item.href} isActive={item.isActive}>
+                <SidebarMenuButton href={item.href} isActive={item.href === '/dashboard'}>
                   <item.icon />
                   {item.label}
                 </SidebarMenuButton>
               </SidebarMenuItem>
             ))}
+             <Collapsible>
+                <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <Database />
+                            Cadastros
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                </SidebarMenuItem>
+                 <CollapsibleContent>
+                    <SidebarMenuSub>
+                    {cadastroItems.map((item) => (
+                        <SidebarMenuItem key={item.label}>
+                            <SidebarMenuSubButton href={item.href}>
+                                <item.icon />
+                                {item.label}
+                            </SidebarMenuSubButton>
+                        </SidebarMenuItem>
+                    ))}
+                    </SidebarMenuSub>
+                 </CollapsibleContent>
+            </Collapsible>
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter>
