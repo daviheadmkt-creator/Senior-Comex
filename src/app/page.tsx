@@ -160,10 +160,10 @@ export default function LoginPage() {
        <div className="relative hidden w-0 flex-1 lg:block">
         <Image
           className="absolute inset-0 h-full w-full object-cover"
-          src="https://placehold.co/1000x1200.png"
+          src="https://img.freepik.com/fotos-gratis/vista-aerea-do-navio-de-carga-e-do-conteiner-de-carga-no-porto_335224-1380.jpg?t=st=1755996289~exp=1755999889~hmac=9a7138dbde97973314eda533384e04570bf38a33a300f5ac47a695bf15eb4bdf&w=1060"
           alt="Port with shipping containers"
           data-ai-hint="port logistics"
-          width={1000}
+          width={1060}
           height={1200}
         />
       </div>
