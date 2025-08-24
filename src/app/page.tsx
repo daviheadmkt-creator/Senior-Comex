@@ -40,17 +40,18 @@ export default function LoginPage() {
       <div className="flex flex-1 flex-col justify-center py-12 px-4 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-sm lg:w-96">
           <div>
-            <div className="flex items-center gap-2">
-                 <svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16 3.5C8.25 3.5 2 9.75 2 17.5C2 25.25 8.25 31.5 16 31.5C23.75 31.5 30 25.25 30 17.5C30 9.75 23.75 3.5 16 3.5ZM21.325 12.1625L16.2625 17.225L11.2 12.1625L8.975 14.3875L16.2625 21.675L23.55 14.3875L21.325 12.1625Z" fill="#2563EB"/>
-                </svg>
-                <h2 className="text-2xl font-bold tracking-tight text-foreground">WowDash</h2>
+             <div className="text-primary">
+              <svg xmlns="http://www.w3.org/2000/svg" width="200" height="40" viewBox="0 0 200 40">
+                <path fill="currentColor" d="M20 40C9 40 0 31 0 20S9 0 20 0s20 9 20 20-9 20-20 20zm-4.3-7.7L25 22.6a1.4 1.4 0 000-2.3L15.7 10a1.4 1.4 0 00-2.3 0L3.7 20l9.7 7.7a1.4 1.4 0 002.3 0zM24.3 30L15 22.6a1.4 1.4 0 010-2.3L24.3 10a1.4 1.4 0 012.3 0L36.3 20l-9.7 7.7a1.4 1.4 0 01-2.3 0z"/>
+                <text x="50" y="24" fontFamily="sans-serif" fontSize="22" fontWeight="bold" fill="currentColor">senior</text>
+                <text x="50" y="36" fontFamily="sans-serif" fontSize="9" fill="currentColor">Assessoria em Comércio Exterior Ltda</text>
+              </svg>
             </div>
             <h2 className="mt-8 text-3xl font-extrabold text-foreground">
-              Sign In to your Account
+              Acesse sua Conta
             </h2>
             <p className="mt-2 text-sm text-muted-foreground">
-                Welcome back! please enter your detail
+                Bem-vindo de volta! Por favor, insira seus dados.
             </p>
           </div>
 
@@ -58,7 +59,7 @@ export default function LoginPage() {
             <div className="mt-6">
               <form onSubmit={handleLogin} className="space-y-6">
                 <div>
-                    <Label htmlFor="email">Email</Label>
+                    <Label htmlFor="email">E-mail</Label>
                     <div className="relative mt-1">
                         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <Mail className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
@@ -68,7 +69,7 @@ export default function LoginPage() {
                             name="email"
                             type="email"
                             autoComplete="email"
-                            placeholder="name@mail.com"
+                            placeholder="nome@email.com"
                             required
                             className="pl-10"
                         />
@@ -76,7 +77,7 @@ export default function LoginPage() {
                 </div>
 
                 <div>
-                    <Label htmlFor="password">Password</Label>
+                    <Label htmlFor="password">Senha</Label>
                     <div className="relative mt-1">
                          <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                             <Lock className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
@@ -102,13 +103,13 @@ export default function LoginPage() {
                   <div className="flex items-center">
                     <Checkbox id="remember-me" name="remember-me" />
                     <Label htmlFor="remember-me" className="ml-2 block text-sm text-foreground">
-                      Remember me
+                      Lembrar de mim
                     </Label>
                   </div>
 
                   <div className="text-sm">
                     <a href="#" className="font-medium text-primary hover:text-primary/80">
-                      Forgot Password?
+                      Esqueceu a senha?
                     </a>
                   </div>
                 </div>
@@ -116,7 +117,7 @@ export default function LoginPage() {
                 <div>
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Sign In
+                    Entrar
                   </Button>
                 </div>
               </form>
@@ -127,7 +128,7 @@ export default function LoginPage() {
                     <div className="w-full border-t border-border" />
                   </div>
                   <div className="relative flex justify-center text-sm">
-                    <span className="bg-background px-2 text-muted-foreground">Or sign in with</span>
+                    <span className="bg-background px-2 text-muted-foreground">Ou entre com</span>
                   </div>
                 </div>
 
@@ -146,9 +147,9 @@ export default function LoginPage() {
                   </div>
                 </div>
                  <p className="mt-8 text-center text-sm text-muted-foreground">
-                    Don't have an account?{' '}
+                    Não tem uma conta?{' '}
                     <a href="#" className="font-medium text-primary hover:text-primary/80">
-                        Sign Up
+                        Cadastre-se
                     </a>
                 </p>
               </div>
@@ -169,5 +170,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
