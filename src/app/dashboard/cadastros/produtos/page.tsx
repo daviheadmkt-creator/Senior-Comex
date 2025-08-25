@@ -308,18 +308,32 @@ export default function ProdutosPage() {
                 <AccordionItem value="item-6">
                   <AccordionTrigger>6. Configurações do Sistema</AccordionTrigger>
                   <AccordionContent className="space-y-4 p-1">
-                    <div className="space-y-2">
-                        <Label>Status</Label>
-                        <RadioGroup defaultValue="ativo" className="flex items-center gap-6 pt-2">
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="ativo" id="r1" />
-                                <Label htmlFor="r1">Ativo</Label>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                                <RadioGroupItem value="inativo" id="r2" />
-                                <Label htmlFor="r2">Inativo</Label>
-                            </div>
-                        </RadioGroup>
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label>Status</Label>
+                            <RadioGroup defaultValue="ativo" className="flex items-center gap-6 pt-2">
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="ativo" id="r1" />
+                                    <Label htmlFor="r1">Ativo</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <RadioGroupItem value="inativo" id="r2" />
+                                    <Label htmlFor="r2">Inativo</Label>
+                                </div>
+                            </RadioGroup>
+                        </div>
+                         <div className="space-y-2">
+                            <Label>Empresa Nacional Vinculada</Label>
+                             <Select>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Selecione a empresa" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="senior">Senior Assessoria em Comércio Exterior Ltda</SelectItem>
+                                    <SelectItem value="fornecedor">Fornecedor Nacional Exemplo</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="usuario-responsavel">Usuário responsável pelo cadastro</Label>
