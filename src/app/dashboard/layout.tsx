@@ -16,6 +16,7 @@ import {
 import {
   LayoutDashboard,
   Users,
+  Package,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -55,6 +56,12 @@ export default function DashboardLayout({
                     <SidebarMenuButton href="/dashboard/cadastros/clientes">
                         <Users />
                         <span>Clientes</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                    <SidebarMenuButton href="/dashboard/cadastros/produtos">
+                        <Package />
+                        <span>Produtos</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
