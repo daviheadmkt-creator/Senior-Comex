@@ -23,6 +23,7 @@ import {
   AlarmClock,
   FileText,
   Mail,
+  Globe
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -116,6 +117,15 @@ export default function DashboardLayout({
                     <SidebarMenuButton href="/dashboard/comunicacao/follow-up">
                         <Mail />
                         <span>Follow Up Automático</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
+             <SidebarGroup>
+                <SidebarGroupLabel>Portal do Cliente</SidebarGroupLabel>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/portal/login">
+                        <Globe />
+                        <span>Acesso Externo</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
