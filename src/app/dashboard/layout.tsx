@@ -11,6 +11,9 @@ import {
   SidebarInset,
   SidebarTrigger,
   SidebarGroup,
+  SidebarMenuSub,
+  SidebarMenuSubItem,
+  SidebarMenuSubButton
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
@@ -27,6 +30,9 @@ import {
   Landmark,
   Coins,
   DollarSign,
+  LineChart,
+  Target,
+  FileBarChart
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -60,88 +66,94 @@ export default function DashboardLayout({
                     <span>Dashboard</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/cadastros/clientes">
-                        <Users />
-                        <span>Clientes</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                 <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/cadastros/produtos">
-                        <Package />
-                        <span>Produtos</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/cadastros/armadores">
-                        <Anchor />
-                        <span>Armadores / Agentes</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/cadastros/usuarios">
-                        <UserCog />
-                        <span>Usuários</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/gestao-embarques">
-                        <Ship />
-                        <span>Embarques</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-             <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/controle-deadlines">
-                        <AlarmClock />
-                        <span>Deadlines</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/gestao-documental">
-                        <FileText />
-                        <span>Documentos</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/comunicacao/follow-up">
-                        <Mail />
-                        <span>Follow Up Automático</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/financeiro/lancamentos">
-                        <DollarSign />
-                        <span>Lançamentos</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-             <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/portal/login">
-                        <Globe />
-                        <span>Acesso Externo</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
-            <SidebarGroup>
-                <SidebarMenuItem>
-                    <SidebarMenuButton href="/dashboard/configuracoes">
-                        <Settings />
-                        <span>Configurações</span>
-                    </SidebarMenuButton>
-                </SidebarMenuItem>
-            </SidebarGroup>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/cadastros/clientes">
+                    <Users />
+                    <span>Clientes</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/cadastros/produtos">
+                    <Package />
+                    <span>Produtos</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/cadastros/armadores">
+                    <Anchor />
+                    <span>Armadores / Agentes</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/cadastros/usuarios">
+                    <UserCog />
+                    <span>Usuários</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/gestao-embarques">
+                    <Ship />
+                    <span>Embarques</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/controle-deadlines">
+                    <AlarmClock />
+                    <span>Deadlines</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/gestao-documental">
+                    <FileText />
+                    <span>Documentos</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/comunicacao/follow-up">
+                    <Mail />
+                    <span>Follow Up Automático</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton>
+                    <DollarSign />
+                    <span>Financeiro</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/financeiro/lancamentos">
+                            Lançamentos
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="#">
+                            Projeção de Caixa
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="#">
+                            KPIs Financeiro
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="#">
+                            Relatórios
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/portal/login">
+                    <Globe />
+                    <span>Acesso Externo</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/configuracoes">
+                    <Settings />
+                    <span>Configurações</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
