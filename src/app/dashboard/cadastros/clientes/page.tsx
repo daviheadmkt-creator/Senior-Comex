@@ -109,6 +109,7 @@ export default function ListaClientesPage() {
               <TableHead>Nome da Empresa</TableHead>
               <TableHead>CNPJ</TableHead>
               <TableHead>Contato Principal</TableHead>
+              <TableHead>Status</TableHead>
               <TableHead>Ação</TableHead>
             </TableRow>
           </TableHeader>
@@ -118,6 +119,11 @@ export default function ListaClientesPage() {
                 <TableCell className="font-medium">{client.nomeEmpresa}</TableCell>
                 <TableCell>{client.cnpj}</TableCell>
                 <TableCell>{client.contatoPrincipal}</TableCell>
+                <TableCell>
+                    <Badge variant={getStatusVariant(client.status)}>
+                        {client.status}
+                    </Badge>
+                </TableCell>
                 <TableCell>
                     <div className='flex gap-2'>
                         <Link href={`/dashboard/cadastros/clientes/novo?id=${client.id}&edit=true`} passHref>
