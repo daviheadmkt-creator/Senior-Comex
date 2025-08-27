@@ -19,21 +19,28 @@ import {
 import { Download } from 'lucide-react';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 const reportOptions = [
     {
+        id: 'dre',
         title: 'DRE (Demonstrativo de Resultados)',
         description: 'Visão completa de receitas, custos e despesas para apurar o resultado líquido do exercício.',
     },
     {
+        id: 'fluxo_caixa',
         title: 'Fluxo de Caixa Consolidado',
         description: 'Relatório detalhado de todas as entradas e saídas de caixa por período.',
     },
     {
+        id: 'centro_custo',
         title: 'Relatório por Centro de Custo',
         description: 'Análise de despesas e receitas agrupadas por departamento ou centro de custo.',
     },
     {
+        id: 'cliente_fornecedor',
         title: 'Relatório por Cliente/Fornecedor',
         description: 'Extrato financeiro consolidado para um cliente ou fornecedor específico.',
     }
@@ -48,6 +55,42 @@ const clients = [
 
 
 export default function RelatoriosFinanceirosPage() {
+
+    const generatePdf = (reportTitle: string) => {
+        const doc = new jsPDF();
+        const today = new Date();
+        const dateStr = today.toLocaleDateString('pt-BR');
+
+        doc.setFontSize(18);
+        doc.text(reportTitle, 14, 22);
+        doc.setFontSize(11);
+        doc.text(`Gerado em: ${dateStr}`, 14, 30);
+        
+        // Exemplo de dados para a tabela
+        const tableColumn = ["Descrição", "Valor (R$)"];
+        const tableRows = [
+            ["Receita Bruta", "150.000,00"],
+            ["(-) Deduções e Impostos", "-18.000,00"],
+            ["(=) Receita Líquida", "132.000,00"],
+            ["(-) Custos (CPV)", "-75.000,00"],
+            ["(=) Lucro Bruto", "57.000,00"],
+            ["(-) Despesas Operacionais", "-22.000,00"],
+            ["(=) Lucro Operacional", "35.000,00"],
+             ["(-) Despesas Financeiras", "-5.000,00"],
+            ["(=) Lucro Líquido", "30.000,00"],
+        ];
+
+        (doc as any).autoTable({
+            startY: 40,
+            head: [tableColumn],
+            body: tableRows,
+            theme: 'striped',
+            headStyles: { fillColor: [22, 163, 74] },
+        });
+
+        doc.save(`${reportTitle.replace(/\s/g, '_')}_${dateStr}.pdf`);
+    };
+
   return (
     <div className="space-y-6">
         <Card>
@@ -85,12 +128,12 @@ export default function RelatoriosFinanceirosPage() {
                 </div>
                  <div className="space-y-4">
                     {reportOptions.map((option) => (
-                        <div key={option.title} className="flex items-center justify-between rounded-lg border p-4">
+                        <div key={option.id} className="flex items-center justify-between rounded-lg border p-4">
                            <div>
                                 <p className="font-semibold">{option.title}</p>
                                 <p className="text-sm text-muted-foreground">{option.description}</p>
                             </div>
-                           <Button variant="outline">
+                           <Button variant="outline" onClick={() => generatePdf(option.title)}>
                              <Download className="mr-2 h-4 w-4" />
                              Gerar Relatório
                            </Button>
