@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark, Coins, Mail } from 'lucide-react';
+import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog } from 'lucide-react';
 
 const configOptions = [
     {
@@ -34,6 +34,12 @@ const configOptions = [
         description: 'Configure e gerencie os e-mails e alertas automáticos.',
         href: '/dashboard/comunicacao/follow-up',
         icon: Mail,
+    },
+    {
+        title: 'Gerenciamento de Usuários',
+        description: 'Adicione, edite e defina permissões para os usuários.',
+        href: '/dashboard/cadastros/usuarios',
+        icon: UserCog,
     },
 ]
 

@@ -85,12 +85,6 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <SidebarMenuButton href="/dashboard/cadastros/usuarios">
-                    <UserCog />
-                    <span>Usuários</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
                 <SidebarMenuButton href="/dashboard/gestao-embarques">
                     <Ship />
                     <span>Embarques</span>
