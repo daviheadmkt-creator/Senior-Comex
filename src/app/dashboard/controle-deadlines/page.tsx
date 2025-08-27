@@ -28,6 +28,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 const deadlines = [
   {
@@ -157,9 +158,11 @@ export default function ControleDeadlinesPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                  <Button variant="outline" size="sm">
-                    Ver Detalhes
-                  </Button>
+                    <Link href={`/dashboard/gestao-embarques/novo?id=${deadline.id}&edit=true`} passHref>
+                        <Button variant="outline" size="sm">
+                            Ver Detalhes
+                        </Button>
+                  </Link>
                 </TableCell>
               </TableRow>
             ))}
