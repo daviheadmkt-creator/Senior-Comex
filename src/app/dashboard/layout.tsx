@@ -22,7 +22,7 @@ import {
   Ship,
   AlarmClock,
   FileText,
-  ClipboardCheck,
+  Mail,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -107,6 +107,15 @@ export default function DashboardLayout({
                     <SidebarMenuButton href="/dashboard/gestao-documental">
                         <FileText />
                         <span>Documentos</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
+            <SidebarGroup>
+                <SidebarGroupLabel>Comunicação</SidebarGroupLabel>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/dashboard/comunicacao/follow-up">
+                        <Mail />
+                        <span>Follow Up Automático</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
