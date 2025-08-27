@@ -58,7 +58,6 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarGroup>
-                <SidebarGroupLabel>Cadastros</SidebarGroupLabel>
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/dashboard/cadastros/clientes">
                         <Users />
@@ -85,7 +84,6 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
             </SidebarGroup>
             <SidebarGroup>
-                <SidebarGroupLabel>Gestão de Embarques</SidebarGroupLabel>
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/dashboard/gestao-embarques">
                         <Ship />
@@ -94,7 +92,6 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
             </SidebarGroup>
              <SidebarGroup>
-                <SidebarGroupLabel>Controle de Deadlines</SidebarGroupLabel>
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/dashboard/controle-deadlines">
                         <AlarmClock />
@@ -103,7 +100,6 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
             </SidebarGroup>
             <SidebarGroup>
-                <SidebarGroupLabel>Gestão Documental</SidebarGroupLabel>
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/dashboard/gestao-documental">
                         <FileText />
@@ -112,7 +108,6 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
             </SidebarGroup>
             <SidebarGroup>
-                <SidebarGroupLabel>Comunicação</SidebarGroupLabel>
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/dashboard/comunicacao/follow-up">
                         <Mail />
@@ -121,7 +116,6 @@ export default function DashboardLayout({
                 </SidebarMenuItem>
             </SidebarGroup>
              <SidebarGroup>
-                <SidebarGroupLabel>Portal do Cliente</SidebarGroupLabel>
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/portal/login">
                         <Globe />
