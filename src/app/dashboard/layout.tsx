@@ -26,6 +26,7 @@ import {
   Settings,
   Landmark,
   Coins,
+  DollarSign,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -114,6 +115,14 @@ export default function DashboardLayout({
                     <SidebarMenuButton href="/dashboard/comunicacao/follow-up">
                         <Mail />
                         <span>Follow Up Automático</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
+            <SidebarGroup>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/dashboard/financeiro/lancamentos">
+                        <DollarSign />
+                        <span>Lançamentos</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
