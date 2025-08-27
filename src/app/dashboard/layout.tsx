@@ -23,7 +23,8 @@ import {
   FileText,
   Mail,
   Globe,
-  Settings
+  Settings,
+  Landmark,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
