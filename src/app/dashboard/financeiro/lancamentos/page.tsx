@@ -63,7 +63,7 @@ const lancamentos = [
     descricao: 'Receita Venda Milho EXP-002',
     clienteFornecedor: 'Comércio de Grãos Brasil S.A.',
     valor: 'R$ 35.000,00',
-    v-vencimento: '10/08/2024',
+    vencimento: '10/08/2024',
     status: 'A Receber',
   },
    {
