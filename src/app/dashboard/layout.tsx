@@ -19,6 +19,7 @@ import {
   Package,
   Anchor,
   UserCog,
+  Ship,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -76,6 +77,15 @@ export default function DashboardLayout({
                     <SidebarMenuButton href="/dashboard/cadastros/usuarios">
                         <UserCog />
                         <span>Usuários</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
+            <SidebarGroup>
+                <SidebarGroupLabel>Gestão de Embarques</SidebarGroupLabel>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/dashboard/gestao-embarques">
+                        <Ship />
+                        <span>Embarques</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
