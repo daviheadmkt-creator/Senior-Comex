@@ -19,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Edit, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, Edit, PlusCircle, Trash2, Save } from 'lucide-react';
 import Link from 'next/link';
 
 const tiposCadastro = [
@@ -43,47 +43,46 @@ export default function TiposCadastroPage() {
             </Link>
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">
-                    Tipos de Cadastro
+                    Ambiente de Cadastro
                 </h1>
                 <p className="text-muted-foreground">
-                    Gerencie os tipos de cadastros utilizados no sistema.
+                    Gerencie os tipos de cadastros e as referências sequenciais do sistema.
                 </p>
             </div>
         </div>
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-            <Card>
-                <CardHeader>
-                    <CardTitle>Tipos Cadastrados</CardTitle>
-                </CardHeader>
-                <CardContent>
-                     <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Descrição</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead>Ações</TableHead>
+      <div className="space-y-6">
+        <Card>
+            <CardHeader>
+                <CardTitle>Tipos Cadastrados</CardTitle>
+            </CardHeader>
+            <CardContent>
+                    <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Descrição</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Ações</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {tiposCadastro.map((cat) => (
+                            <TableRow key={cat.id}>
+                                <TableCell className="font-medium">{cat.descricao}</TableCell>
+                                <TableCell>{cat.status}</TableCell>
+                                <TableCell>
+                                    <div className='flex gap-2'>
+                                        <Button variant="outline" size="icon"><Edit className="h-4 w-4" /></Button>
+                                        <Button variant="outline" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                                    </div>
+                                </TableCell>
                             </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {tiposCadastro.map((cat) => (
-                                <TableRow key={cat.id}>
-                                    <TableCell className="font-medium">{cat.descricao}</TableCell>
-                                    <TableCell>{cat.status}</TableCell>
-                                    <TableCell>
-                                        <div className='flex gap-2'>
-                                            <Button variant="outline" size="icon"><Edit className="h-4 w-4" /></Button>
-                                            <Button variant="outline" size="icon"><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-            </Card>
-        </div>
-        <div>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+
+        <div className="grid lg:grid-cols-2 gap-6">
             <Card>
                 <CardHeader>
                     <CardTitle>Novo Tipo</CardTitle>
@@ -98,6 +97,34 @@ export default function TiposCadastroPage() {
                         <Button className="w-full">
                             <PlusCircle className="mr-2 h-4 w-4" />
                             Adicionar Tipo
+                        </Button>
+                    </form>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Configurar Referência Sequencial</CardTitle>
+                    <CardDescription>Defina o padrão para a geração de referências.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <form className="space-y-4">
+                        <div className="grid grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="ref-prefixo">Prefixo</Label>
+                                <Input id="ref-prefixo" placeholder="SEN" defaultValue="SEN"/>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="ref-numero">Nº Inicial</Label>
+                                <Input id="ref-numero" placeholder="1858" defaultValue="1858" />
+                            </div>
+                             <div className="space-y-2">
+                                <Label htmlFor="ref-sufixo">Sufixo (Ano)</Label>
+                                <Input id="ref-sufixo" placeholder="23" defaultValue="23" />
+                            </div>
+                        </div>
+                        <Button className="w-full">
+                            <Save className="mr-2 h-4 w-4" />
+                            Salvar Configuração da Referência
                         </Button>
                     </form>
                 </CardContent>
