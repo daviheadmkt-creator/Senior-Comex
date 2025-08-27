@@ -136,7 +136,7 @@ export default function DashboardLayout({
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="#">
+                        <SidebarMenuSubButton href="/dashboard/financeiro/relatorios">
                             Relatórios
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
