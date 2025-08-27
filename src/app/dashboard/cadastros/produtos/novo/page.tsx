@@ -14,6 +14,44 @@ import { Label } from '@/components/ui/label';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+
+const clients = [
+  {
+    id: 1,
+    nomeEmpresa: 'Agrícola Exemplo LTDA',
+    cnpj: '12.345.678/0001-99',
+    contatoPrincipal: 'João da Silva',
+    status: 'Ativo',
+  },
+  {
+    id: 2,
+    nomeEmpresa: 'Comércio de Grãos Brasil S.A.',
+    cnpj: '98.765.432/0001-11',
+    contatoPrincipal: 'Maria Oliveira',
+    status: 'Ativo',
+  },
+  {
+    id: 3,
+    nomeEmpresa: 'Fazenda Sol Nascente',
+    cnpj: '45.678.912/0001-33',
+    contatoPrincipal: 'Carlos Pereira',
+    status: 'Inativo',
+  },
+  {
+    id: 4,
+    nomeEmpresa: 'Produtores Associados',
+    cnpj: '32.198.765/0001-55',
+    contatoPrincipal: 'Ana Souza',
+    status: 'Em prospecção',
+  },
+];
 
 
 export default function NovoProdutoPage() {
@@ -66,6 +104,23 @@ export default function NovoProdutoPage() {
                 <Input id="unidade-medida" placeholder="Ex: SC 60kg, TN, KG" defaultValue={isEditing ? 'SC 60kg' : ''}/>
               </div>
             </div>
+             <div className="grid md:grid-cols-1 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="cliente-vinculado">Cliente Vinculado</Label>
+                    <Select defaultValue={isEditing ? '1' : undefined}>
+                        <SelectTrigger id="cliente-vinculado">
+                            <SelectValue placeholder="Selecione um cliente" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {clients.map((client) => (
+                                <SelectItem key={client.id} value={String(client.id)}>
+                                    {client.nomeEmpresa}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+             </div>
 
              <div className="flex justify-end gap-2 pt-4">
                   <Link href="/dashboard/cadastros/produtos" passHref>

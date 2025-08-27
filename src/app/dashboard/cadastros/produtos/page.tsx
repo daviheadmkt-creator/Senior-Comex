@@ -38,6 +38,7 @@ const products = [
     descricao: 'Feijão Carioca Tipo 1',
     ncm: '0713.33.19',
     unidade: 'SC 60kg',
+    cliente: 'Agrícola Exemplo LTDA',
   },
   {
     id: 2,
@@ -45,6 +46,7 @@ const products = [
     descricao: 'Soja em Grãos',
     ncm: '1201.90.00',
     unidade: 'TN',
+     cliente: 'Comércio de Grãos Brasil S.A.',
   },
   {
     id: 3,
@@ -52,6 +54,7 @@ const products = [
     descricao: 'Milho em Grãos',
     ncm: '1005.90.10',
     unidade: 'TN',
+     cliente: 'Fazenda Sol Nascente',
   },
   {
     id: 4,
@@ -59,6 +62,7 @@ const products = [
     descricao: 'Gergelim Branco',
     ncm: '1207.40.90',
     unidade: 'KG',
+    cliente: 'Produtores Associados',
   },
 ];
 
@@ -94,6 +98,7 @@ export default function ListaProdutosPage() {
             <TableRow>
               <TableHead>Código Interno</TableHead>
               <TableHead>Descrição</TableHead>
+              <TableHead>Cliente Vinculado</TableHead>
               <TableHead>NCM</TableHead>
               <TableHead>Unidade de Medida</TableHead>
               <TableHead>Ação</TableHead>
@@ -104,6 +109,7 @@ export default function ListaProdutosPage() {
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.codigo}</TableCell>
                 <TableCell>{product.descricao}</TableCell>
+                <TableCell>{product.cliente}</TableCell>
                 <TableCell>{product.ncm}</TableCell>
                 <TableCell>{product.unidade}</TableCell>
                 <TableCell>
