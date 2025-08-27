@@ -1,3 +1,5 @@
+
+'use client';
 import {
   SidebarProvider,
   Sidebar,
@@ -8,20 +10,16 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarTrigger,
+  SidebarGroup,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
-  Menu,
+  Users,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Search } from 'lucide-react';
-
-
-const navItems = [
-  { href: "/dashboard", icon: LayoutDashboard, label: "Dashboard" },
-];
 
 
 export default function DashboardLayout({
@@ -45,14 +43,21 @@ export default function DashboardLayout({
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {navItems.map((item) => (
-              <SidebarMenuItem key={item.label} className="my-1">
-                <SidebarMenuButton href={item.href} isActive={item.href === '/dashboard'} tooltip={item.label}>
-                  <item.icon />
-                  <span>{item.label}</span>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard" isActive>
+                    <LayoutDashboard />
+                    <span>Dashboard</span>
                 </SidebarMenuButton>
-              </SidebarMenuItem>
-            ))}
+            </SidebarMenuItem>
+            <SidebarGroup>
+                <SidebarGroupLabel>Cadastros</SidebarGroupLabel>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/dashboard/cadastros/clientes">
+                        <Users />
+                        <span>Clientes</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
           </SidebarMenu>
         </SidebarContent>
       </Sidebar>
