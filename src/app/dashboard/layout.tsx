@@ -20,6 +20,7 @@ import {
   Anchor,
   UserCog,
   Ship,
+  AlarmClock,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -86,6 +87,15 @@ export default function DashboardLayout({
                     <SidebarMenuButton href="/dashboard/gestao-embarques">
                         <Ship />
                         <span>Embarques</span>
+                    </SidebarMenuButton>
+                </SidebarMenuItem>
+            </SidebarGroup>
+             <SidebarGroup>
+                <SidebarGroupLabel>Controle de Deadlines</SidebarGroupLabel>
+                <SidebarMenuItem>
+                    <SidebarMenuButton href="/dashboard/controle-deadlines">
+                        <AlarmClock />
+                        <span>Deadlines</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>
