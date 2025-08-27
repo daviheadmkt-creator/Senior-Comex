@@ -67,23 +67,28 @@ export default function DashboardLayout({
                     <span>Dashboard</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/dashboard/cadastros/clientes">
+             <SidebarMenuItem>
+                <SidebarMenuButton>
                     <Users />
-                    <span>Clientes</span>
+                    <span>Cadastros</span>
                 </SidebarMenuButton>
-            </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton href="/dashboard/cadastros/produtos">
-                    <Package />
-                    <span>Produtos</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/dashboard/cadastros/armadores">
-                    <Anchor />
-                    <span>Armadores / Agentes</span>
-                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/cadastros/clientes">
+                            Clientes
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/cadastros/produtos">
+                            Produtos
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/cadastros/armadores">
+                            Armadores / Agentes
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton href="/dashboard/gestao-embarques">
