@@ -54,7 +54,7 @@ export default function DashboardLayout({
                 <SidebarMenuItem>
                     <SidebarMenuButton href="/dashboard/cadastros/clientes">
                         <Users />
-                        <span>Clientes</span>
+                        <span>Clientes Nacionais</span>
                     </SidebarMenuButton>
                 </SidebarMenuItem>
             </SidebarGroup>

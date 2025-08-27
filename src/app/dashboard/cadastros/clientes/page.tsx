@@ -1,5 +1,4 @@
 
-
 import {
   Card,
   CardContent,
@@ -36,30 +35,30 @@ import {
 const clients = [
   {
     id: 1,
-    nomeEmpresa: 'Importadora Exemplo LLC',
-    pais: 'Estados Unidos',
-    contatoPrincipal: 'John Doe',
+    nomeEmpresa: 'Agrícola Exemplo LTDA',
+    cnpj: '12.345.678/0001-99',
+    contatoPrincipal: 'João da Silva',
     status: 'Ativo',
   },
   {
     id: 2,
-    nomeEmpresa: 'Global Trade Corp',
-    pais: 'Argentina',
-    contatoPrincipal: 'Maria Garcia',
+    nomeEmpresa: 'Comércio de Grãos Brasil S.A.',
+    cnpj: '98.765.432/0001-11',
+    contatoPrincipal: 'Maria Oliveira',
     status: 'Ativo',
   },
   {
     id: 3,
-    nomeEmpresa: 'Euro Importers',
-    pais: 'Alemanha',
-    contatoPrincipal: 'Hans Müller',
+    nomeEmpresa: 'Fazenda Sol Nascente',
+    cnpj: '45.678.912/0001-33',
+    contatoPrincipal: 'Carlos Pereira',
     status: 'Inativo',
   },
   {
     id: 4,
-    nomeEmpresa: 'Asian Buyers Co.',
-    pais: 'Japão',
-    contatoPrincipal: 'Yuki Tanaka',
+    nomeEmpresa: 'Produtores Associados',
+    cnpj: '32.198.765/0001-55',
+    contatoPrincipal: 'Ana Souza',
     status: 'Em prospecção',
   },
 ];
@@ -84,9 +83,9 @@ export default function ListaClientesPage() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Clientes Internacionais</CardTitle>
+            <CardTitle>Clientes Nacionais</CardTitle>
             <CardDescription>
-              Gerencie os clientes e importadores da sua empresa.
+              Gerencie os clientes nacionais da sua empresa.
             </CardDescription>
           </div>
           <Link href="/dashboard/cadastros/clientes/novo" passHref>
@@ -108,7 +107,7 @@ export default function ListaClientesPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nome da Empresa</TableHead>
-              <TableHead>País</TableHead>
+              <TableHead>CNPJ</TableHead>
               <TableHead>Contato Principal</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ação</TableHead>
@@ -118,7 +117,7 @@ export default function ListaClientesPage() {
             {clients.map((client) => (
               <TableRow key={client.id}>
                 <TableCell className="font-medium">{client.nomeEmpresa}</TableCell>
-                <TableCell>{client.pais}</TableCell>
+                <TableCell>{client.cnpj}</TableCell>
                 <TableCell>{client.contatoPrincipal}</TableCell>
                 <TableCell>
                     <Badge variant={getStatusVariant(client.status)} className={

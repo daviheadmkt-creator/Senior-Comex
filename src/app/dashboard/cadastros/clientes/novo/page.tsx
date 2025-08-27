@@ -27,10 +27,10 @@ const exportHistory = [
 export default function NovoClientePage() {
   const searchParams = useSearchParams();
   const isEditing = searchParams.has('edit');
-  const pageTitle = isEditing ? 'Editar Cliente' : 'Novo Cliente';
+  const pageTitle = isEditing ? 'Editar Cliente Nacional' : 'Novo Cliente Nacional';
   const pageDescription = isEditing
-    ? 'Altere as informações do cliente selecionado.'
-    : 'Adicione um novo cliente à sua base de dados.';
+    ? 'Altere as informações do cliente nacional selecionado.'
+    : 'Adicione um novo cliente nacional à sua base de dados.';
 
   return (
     <div className="space-y-6">
@@ -57,17 +57,17 @@ export default function NovoClientePage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="razao-social">Razão Social</Label>
-                <Input id="razao-social" placeholder="Insira a razão social" defaultValue={isEditing ? 'Importadora Exemplo LLC' : ''} />
+                <Input id="razao-social" placeholder="Insira a razão social" defaultValue={isEditing ? 'Agrícola Exemplo LTDA' : ''} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nome-fantasia">Nome Fantasia</Label>
-                <Input id="nome-fantasia" placeholder="Insira o nome fantasia" defaultValue={isEditing ? 'Importadora Exemplo' : ''}/>
+                <Input id="nome-fantasia" placeholder="Insira o nome fantasia" defaultValue={isEditing ? 'Agrícola Exemplo' : ''}/>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="cnpj">CNPJ</Label>
-                <Input id="cnpj" placeholder="00.000.000/0000-00" />
+                <Input id="cnpj" placeholder="00.000.000/0000-00" defaultValue={isEditing ? '12.345.678/0001-99' : ''} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="inscricao-estadual">Inscrição Estadual</Label>
@@ -101,7 +101,7 @@ export default function NovoClientePage() {
                     <div className="grid gap-4">
                          <div className="space-y-2">
                             <Label htmlFor="comercial-nome">Comercial - Nome</Label>
-                            <Input id="comercial-nome" placeholder="Nome do contato comercial" defaultValue={isEditing ? 'John Doe' : ''} />
+                            <Input id="comercial-nome" placeholder="Nome do contato comercial" defaultValue={isEditing ? 'João da Silva' : ''} />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="comercial-email">Comercial - E-mail</Label>
