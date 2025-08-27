@@ -22,6 +22,7 @@ import {
   Ship,
   AlarmClock,
   FileText,
+  ClipboardCheck,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';

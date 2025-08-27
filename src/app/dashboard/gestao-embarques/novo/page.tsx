@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ClipboardCheck } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import {
@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
 
 const clients = [
   { id: 1, nomeEmpresa: 'Agrícola Exemplo LTDA' },
@@ -41,6 +42,13 @@ const analistas = [
   { id: 2, nome: 'Carlos Dias' },
   { id: 3, nome: 'Daniela Lima' },
 ];
+
+const timelineEvents = [
+    {date: '03/07/2024', event: 'Reserva feita no CMA CGM BUZIOS'},
+    {date: '27/07/2024', event: 'Embarque previsto'},
+    {date: '31/07/2024', event: 'Carga embarcada'},
+    {date: '08/09/2024', event: 'Previsão de chegada'},
+]
 
 export default function NovoEmbarquePage() {
   const searchParams = useSearchParams();
@@ -151,6 +159,44 @@ export default function NovoEmbarquePage() {
           </form>
         </CardContent>
       </Card>
+
+      {isEditing && (
+        <Card>
+            <CardHeader>
+                <CardTitle>Status da Carga (Timeline)</CardTitle>
+                <CardDescription>Acompanhe os eventos do embarque em ordem cronológica.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-8">
+                     <ul className="space-y-6">
+                        {timelineEvents.map((item, index) => (
+                            <li key={index} className="flex items-start gap-4">
+                                <div className="flex flex-col items-center">
+                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+                                        <ClipboardCheck className="h-4 w-4" />
+                                    </div>
+                                    {index < timelineEvents.length - 1 && (
+                                    <div className="h-12 w-px bg-border" />
+                                    )}
+                                </div>
+                                <div>
+                                    <p className="font-semibold">{item.event}</p>
+                                    <time className="text-sm text-muted-foreground">{item.date}</time>
+                                </div>
+                            </li>
+                        ))}
+                    </ul>
+                    <div className="space-y-4">
+                        <Label htmlFor="new-event">Adicionar Novo Evento</Label>
+                        <div className="flex gap-2">
+                            <Input id="new-event" placeholder="Descreva o novo evento..."/>
+                            <Button>Adicionar</Button>
+                        </div>
+                    </div>
+                </div>
+            </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
