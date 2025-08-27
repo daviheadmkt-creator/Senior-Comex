@@ -160,7 +160,7 @@ export default function ControleDeadlinesPage() {
                 <TableCell>
                     <Link href={`/dashboard/gestao-embarques/novo?id=${deadline.id}&edit=true`} passHref>
                         <Button variant="outline" size="sm">
-                            Ver Detalhes
+                            Ver Embarque
                         </Button>
                   </Link>
                 </TableCell>

@@ -22,6 +22,9 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
+import { Separator } from '@/components/ui/separator';
+import { DatePicker } from '@/components/ui/date-picker';
+
 
 const clients = [
   { id: 1, nomeEmpresa: 'Agrícola Exemplo LTDA' },
@@ -149,6 +152,27 @@ export default function NovoEmbarquePage() {
                     </Select>
                 </div>
              </div>
+
+            <Separator />
+            
+            <div>
+                <h3 className="text-lg font-medium mb-4">Deadlines do Embarque</h3>
+                <div className="grid md:grid-cols-3 gap-6">
+                    <div className="space-y-2">
+                        <Label htmlFor="deadline-draft">Deadline Draft</Label>
+                        <DatePicker />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="deadline-vgm">Deadline VGM</Label>
+                        <DatePicker />
+                    </div>
+                    <div className="space-y-2">
+                        <Label htmlFor="deadline-carga">Deadline Carga</Label>
+                       <DatePicker />
+                    </div>
+                </div>
+            </div>
+
 
              <div className="flex justify-end gap-2 pt-4">
                   <Link href="/dashboard/gestao-embarques" passHref>
