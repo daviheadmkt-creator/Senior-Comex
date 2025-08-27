@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark } from 'lucide-react';
+import { ArrowRight, Wallet, Landmark, Coins } from 'lucide-react';
 
 const configOptions = [
     {
@@ -22,6 +22,12 @@ const configOptions = [
         description: 'Cadastre contas, caixas e meios de pagamento.',
         href: '/dashboard/configuracoes/contas-bancarias',
         icon: Landmark,
+    },
+     {
+        title: 'Moedas e Câmbio',
+        description: 'Gerencie moedas e taxas de câmbio aplicadas.',
+        href: '/dashboard/configuracoes/moedas-e-cambio',
+        icon: Coins,
     },
 ]
 

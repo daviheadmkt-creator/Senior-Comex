@@ -25,6 +25,7 @@ import {
   Globe,
   Settings,
   Landmark,
+  Coins,
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
