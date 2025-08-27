@@ -8,9 +8,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog, History } from 'lucide-react';
+import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog, History, ClipboardList } from 'lucide-react';
 
 const configOptions = [
+    {
+        title: 'Ambiente de Cadastro',
+        description: 'Gerencie os tipos de cadastros do sistema.',
+        href: '/dashboard/configuracoes/tipos-cadastro',
+        icon: ClipboardList,
+    },
     {
         title: 'Financeiro',
         description: 'Gerencie categorias, centros de custo e contas.',
