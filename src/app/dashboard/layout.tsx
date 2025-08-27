@@ -32,7 +32,8 @@ import {
   DollarSign,
   LineChart,
   Target,
-  FileBarChart
+  FileBarChart,
+  History
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';

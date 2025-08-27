@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog } from 'lucide-react';
+import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog, History } from 'lucide-react';
 
 const configOptions = [
     {
@@ -40,6 +40,12 @@ const configOptions = [
         description: 'Adicione, edite e defina permissões para os usuários.',
         href: '/dashboard/cadastros/usuarios',
         icon: UserCog,
+    },
+    {
+        title: 'Relatório de Log',
+        description: 'Visualize o histórico de atividades e alterações no sistema.',
+        href: '/dashboard/configuracoes/log',
+        icon: History,
     },
 ]
 
