@@ -1,7 +1,6 @@
 
 'use client';
 
-import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -11,152 +10,157 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import { UploadCloud, FileCheck, FileX } from 'lucide-react';
-import { Checkbox } from '@/components/ui/checkbox';
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { Search, FileCheck2, FileX2, FileQuestion } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const embarques = [
-  { id: 1, referencia: 'SEN2378-25' },
-  { id: 2, referencia: 'SEN2378-26' },
-  { id: 3, referencia: 'SEN2378-27' },
-  { id: 4, referencia: 'SEN2378-28' },
+  {
+    id: 1,
+    referencia: 'SEN2378-25',
+    cliente: 'Agrícola Exemplo LTDA',
+    statusDUE: 'Averbada',
+    statusLPCO: 'Liberado',
+    docs: { bl: true, invoice: true, packing: true },
+  },
+  {
+    id: 2,
+    referencia: 'SEN2378-26',
+    cliente: 'Comércio de Grãos Brasil S.A.',
+    statusDUE: 'Em Análise',
+    statusLPCO: 'Pendente',
+    docs: { bl: true, invoice: false, packing: false },
+  },
+  {
+    id: 3,
+    referencia: 'SEN2378-27',
+    cliente: 'Fazenda Sol Nascente',
+    statusDUE: 'Averbada',
+    statusLPCO: 'Liberado',
+    docs: { bl: true, invoice: true, packing: true },
+  },
+  {
+    id: 4,
+    referencia: 'SEN2378-28',
+    cliente: 'Produtores Associados',
+    statusDUE: 'Não Iniciada',
+    statusLPCO: 'Pendente',
+    docs: { bl: false, invoice: false, packing: false },
+  },
 ];
 
-const checklistItems = [
-    { id: 'due', label: 'DUE Averbada' },
-    { id: 'bl', label: 'BL (Bill of Lading) Anexado' },
-    { id: 'invoice', label: 'Commercial Invoice Anexada' },
-    { id: 'packing', label: 'Packing List Anexado' },
-    { id: 'lpco', label: 'LPCO Liberado' },
-]
+const getStatusVariant = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'averbada':
+    case 'liberado':
+      return 'default'; // Green
+    case 'em análise':
+    case 'pendente':
+      return 'outline'; // Yellow
+    case 'não iniciada':
+      return 'secondary'; // Gray
+    default:
+      return 'secondary';
+  }
+};
 
-export default function GestaoDocumentalPage() {
-    const [selectedEmbarque, setSelectedEmbarque] = useState<string | null>(null);
+const getStatusColor = (status: string) => {
+  switch (status.toLowerCase()) {
+    case 'averbada':
+    case 'liberado':
+      return 'bg-green-100 text-green-800';
+    case 'em análise':
+    case 'pendente':
+      return 'bg-yellow-100 text-yellow-800';
+    default:
+      return 'bg-gray-100 text-gray-800';
+  }
+}
 
+export default function GestaoDocumentalListPage() {
   return (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Gestão Documental</CardTitle>
-          <CardDescription>
-            Controle e anexe todos os documentos dos seus embarques.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="grid md:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="embarque-referencia">
-                Selecione o Embarque
-              </Label>
-              <Select onValueChange={(value) => setSelectedEmbarque(value)}>
-                <SelectTrigger id="embarque-referencia">
-                  <SelectValue placeholder="Selecione uma referência..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {embarques.map((embarque) => (
-                    <SelectItem key={embarque.id} value={String(embarque.id)}>
-                      {embarque.referencia}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Gestão Documental</CardTitle>
+            <CardDescription>
+              Acompanhe o status dos documentos de todos os seus embarques.
+            </CardDescription>
           </div>
-        </CardContent>
-      </Card>
-
-      {selectedEmbarque && (
-        <div className='grid lg:grid-cols-2 gap-6'>
-        <Card>
-            <CardHeader>
-                <CardTitle>Controle de Documentos</CardTitle>
-                 <CardDescription>
-                    Gerencie os status e os números dos documentos obrigatórios.
-                </CardDescription>
-            </CardHeader>
-          <CardContent className="grid gap-6">
-            <div className="grid md:grid-cols-2 gap-4 items-end">
-              <div className="space-y-2">
-                <Label htmlFor="lpco-numero">Número LPCO</Label>
-                <Input id="lpco-numero" placeholder="Insira o número do LPCO" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="lpco-status">Status LPCO</Label>
-                <Select>
-                    <SelectTrigger id="lpco-status">
-                        <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="liberado">Liberado</SelectItem>
-                        <SelectItem value="pendente">Pendente</SelectItem>
-                         <SelectItem value="em_analise">Em Análise</SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-            </div>
-             <div className="grid md:grid-cols-2 gap-4 items-end">
-              <div className="space-y-2">
-                <Label htmlFor="due-numero">Número DUE</Label>
-                <Input id="due-numero" placeholder="Insira o número da DUE" />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="due-status">Status DUE</Label>
-                <Select>
-                    <SelectTrigger id="due-status">
-                        <SelectValue placeholder="Selecione o status" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="averbada">Averbada</SelectItem>
-                        <SelectItem value="em_analise">Em Análise</SelectItem>
-                        <SelectItem value="nao_iniciada">Não Iniciada</SelectItem>
-                    </SelectContent>
-                </Select>
-              </div>
-            </div>
-            <Separator />
-            <div className="grid gap-4">
-                <div className="space-y-2">
-                    <Label>Upload de Documentos</Label>
-                    <div className='grid md:grid-cols-3 gap-4'>
-                        <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> BL / B/L</Button>
-                        <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Invoice</Button>
-                        <Button variant="outline"><UploadCloud className="mr-2 h-4 w-4" /> Packing List</Button>
-                    </div>
-                </div>
-            </div>
-             <div className="flex justify-end pt-4">
-                  <Button>Salvar Alterações</Button>
-             </div>
-          </CardContent>
-        </Card>
-        <Card>
-            <CardHeader>
-                <CardTitle>Checklist do Embarque</CardTitle>
-                <CardDescription>
-                    Verifique os documentos obrigatórios para este embarque.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                 <div className="space-y-4">
-                    {checklistItems.map(item => (
-                        <div key={item.id} className="flex items-center space-x-3">
-                            <Checkbox id={item.id} />
-                            <Label htmlFor={item.id} className="font-normal text-sm">{item.label}</Label>
-                        </div>
-                    ))}
-                 </div>
-            </CardContent>
-        </Card>
         </div>
-      )}
-    </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-center pb-4">
+          <div className="relative w-full max-w-sm">
+            <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Buscar por referência ou cliente..."
+              className="pl-8"
+            />
+          </div>
+        </div>
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead>Referência</TableHead>
+              <TableHead>Cliente</TableHead>
+              <TableHead>Status DUE</TableHead>
+              <TableHead>Status LPCO</TableHead>
+              <TableHead>Documentos</TableHead>
+              <TableHead>Ação</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {embarques.map((embarque) => (
+              <TableRow key={embarque.id}>
+                <TableCell className="font-medium">
+                  {embarque.referencia}
+                </TableCell>
+                <TableCell>{embarque.cliente}</TableCell>
+                <TableCell>
+                  <Badge variant={getStatusVariant(embarque.statusDUE)} className={getStatusColor(embarque.statusDUE)}>
+                    {embarque.statusDUE}
+                  </Badge>
+                </TableCell>
+                <TableCell>
+                  <Badge variant={getStatusVariant(embarque.statusLPCO)} className={getStatusColor(embarque.statusLPCO)}>
+                    {embarque.statusLPCO}
+                  </Badge>
+                </TableCell>
+                 <TableCell>
+                    <div className='flex gap-2'>
+                        <span title="BL" className={embarque.docs.bl ? 'text-green-600' : 'text-gray-400'}>
+                            <FileCheck2 className="h-5 w-5" />
+                        </span>
+                         <span title="Invoice" className={embarque.docs.invoice ? 'text-green-600' : 'text-gray-400'}>
+                            <FileCheck2 className="h-5 w-5" />
+                        </span>
+                         <span title="Packing List" className={embarque.docs.packing ? 'text-green-600' : 'text-gray-400'}>
+                            <FileCheck2 className="h-5 w-5" />
+                        </span>
+                    </div>
+                 </TableCell>
+                <TableCell>
+                  <Link href={`/dashboard/gestao-documental/${embarque.id}`} passHref>
+                    <Button variant="outline" size="sm">
+                      Gerenciar
+                    </Button>
+                  </Link>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </CardContent>
+    </Card>
   );
 }
