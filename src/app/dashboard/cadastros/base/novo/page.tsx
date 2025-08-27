@@ -16,15 +16,39 @@ import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Textarea } from '@/components/ui/textarea';
+import { useState } from 'react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const tiposCadastro = [
+    {id: 'agente', descricao: 'Agente' },
+    {id: 'controlador', descricao: 'Controlador' },
+    {id: 'terminal', descricao: 'Terminal' },
+    {id: 'fornecedor', descricao: 'Fornecedor' },
+    {id: 'transportadora', descricao: 'Transportadora' },
+    {id: 'cliente_nacional', descricao: 'Cliente Nacional' },
+    {id: 'cliente_internacional', descricao: 'Cliente Internacional' },
+]
 
 
 export default function NovoCadastroBasePage() {
   const searchParams = useSearchParams();
   const isEditing = searchParams.has('edit');
+  const [tipoCadastro, setTipoCadastro] = useState(isEditing ? 'agente' : '');
+  
   const pageTitle = isEditing ? 'Editar Cadastro' : 'Novo Cadastro';
   const pageDescription = isEditing
     ? 'Altere as informações do cadastro selecionado.'
     : 'Adicione um novo cadastro base à sua empresa.';
+    
+  const getNomeLabel = () => {
+    const tipo = tiposCadastro.find(t => t.id === tipoCadastro);
+    return tipo ? `Nome do ${tipo.descricao}` : 'Nome';
+  }
+
+  const getNomePlaceholder = () => {
+      const tipo = tiposCadastro.find(t => t.id === tipoCadastro);
+      return tipo ? `Insira o nome do ${tipo.descricao.toLowerCase()}` : 'Selecione um tipo de cadastro';
+  }
 
   return (
     <div className="space-y-6">
@@ -48,9 +72,29 @@ export default function NovoCadastroBasePage() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-6">
+             <div className="space-y-2">
+                <Label htmlFor="tipo-cadastro">Tipo de Cadastro</Label>
+                <Select value={tipoCadastro} onValueChange={setTipoCadastro}>
+                    <SelectTrigger id="tipo-cadastro">
+                        <SelectValue placeholder="Selecione um tipo de cadastro" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {tiposCadastro.map((tipo) => (
+                            <SelectItem key={tipo.id} value={tipo.id}>
+                                {tipo.descricao}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+            </div>
             <div className="space-y-2">
-                <Label htmlFor="nome-cadastro">Nome</Label>
-                <Input id="nome-cadastro" placeholder="Insira o nome" defaultValue={isEditing ? 'MSC' : ''} />
+                <Label htmlFor="nome-cadastro">{getNomeLabel()}</Label>
+                <Input 
+                    id="nome-cadastro" 
+                    placeholder={getNomePlaceholder()} 
+                    defaultValue={isEditing ? 'MSC' : ''}
+                    disabled={!tipoCadastro}
+                />
             </div>
             
             <Separator />
