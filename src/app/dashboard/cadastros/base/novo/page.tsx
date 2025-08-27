@@ -21,7 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 export default function NovoCadastroBasePage() {
   const searchParams = useSearchParams();
   const isEditing = searchParams.has('edit');
-  const pageTitle = isEditing ? 'Editar Cadastro Base' : 'Novo Cadastro Base';
+  const pageTitle = isEditing ? 'Editar Cadastro' : 'Novo Cadastro';
   const pageDescription = isEditing
     ? 'Altere as informações do cadastro selecionado.'
     : 'Adicione um novo cadastro base à sua empresa.';
