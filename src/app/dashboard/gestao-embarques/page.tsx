@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -8,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Pencil, Trash2, Eye } from 'lucide-react';
+import { PlusCircle, Search, Pencil, Trash2, Eye, ClipboardCheck } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -30,6 +32,14 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@/components/ui/dialog';
 
 
 const embarques = [
@@ -42,6 +52,12 @@ const embarques = [
     origemDestino: 'Santos / Xangai',
     analista: 'Ana Silva',
     status: 'Em trânsito',
+     timeline: [
+        {date: '03/07/2024', event: 'Reserva feita no CMA CGM BUZIOS'},
+        {date: '27/07/2024', event: 'Embarque previsto'},
+        {date: '31/07/2024', event: 'Carga embarcada'},
+        {date: '08/09/2024', event: 'Previsão de chegada'},
+    ]
   },
    {
     id: 2,
@@ -52,6 +68,10 @@ const embarques = [
     origemDestino: 'Paranaguá / Roterdã',
     analista: 'Carlos Dias',
     status: 'Aguardando embarque',
+    timeline: [
+        {date: '10/07/2024', event: 'Reserva feita'},
+        {date: '05/08/2024', event: 'Previsão de embarque'},
+    ]
   },
   {
     id: 3,
@@ -62,6 +82,11 @@ const embarques = [
     origemDestino: 'Itajaí / Singapura',
     analista: 'Ana Silva',
     status: 'Concluído',
+    timeline: [
+        {date: '01/06/2024', event: 'Reserva feita'},
+        {date: '20/06/2024', event: 'Carga embarcada'},
+        {date: '25/07/2024', event: 'Carga entregue no destino'},
+    ]
   },
     {
     id: 4,
@@ -72,6 +97,10 @@ const embarques = [
     origemDestino: 'Santos / Dubai',
     analista: 'Daniela Lima',
     status: 'Atrasado',
+    timeline: [
+        {date: '15/07/2024', event: 'Reserva feita'},
+        {date: '25/07/2024', event: 'Atraso na liberação da carga'},
+    ]
   },
 ];
 
@@ -89,6 +118,29 @@ const getStatusVariant = (status: string) => {
             return 'outline';
     }
 }
+
+const Timeline = ({ events }: { events: { date: string; event: string }[] }) => (
+  <div className="space-y-8 mt-4">
+    <ul className="space-y-6">
+      {events.map((item, index) => (
+        <li key={index} className="flex items-start gap-4">
+          <div className="flex flex-col items-center">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
+              <ClipboardCheck className="h-4 w-4" />
+            </div>
+            {index < events.length - 1 && (
+              <div className="h-12 w-px bg-border" />
+            )}
+          </div>
+          <div>
+            <p className="font-semibold">{item.event}</p>
+            <time className="text-sm text-muted-foreground">{item.date}</time>
+          </div>
+        </li>
+      ))}
+    </ul>
+  </div>
+);
 
 
 export default function GestaoEmbarquesPage() {
@@ -151,11 +203,22 @@ export default function GestaoEmbarquesPage() {
                 </TableCell>
                 <TableCell>
                     <div className='flex gap-2'>
-                        <Link href={`/dashboard/gestao-embarques/novo?id=${embarque.id}&edit=true`} passHref>
-                            <Button variant="outline" size="icon" title="Visualizar">
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                        </Link>
+                        <Dialog>
+                            <DialogTrigger asChild>
+                                 <Button variant="outline" size="icon" title="Visualizar Timeline">
+                                    <Eye className="h-4 w-4" />
+                                </Button>
+                            </DialogTrigger>
+                            <DialogContent className="sm:max-w-md">
+                                <DialogHeader>
+                                    <DialogTitle>Timeline do Embarque - {embarque.referencia}</DialogTitle>
+                                    <DialogDescription>
+                                        Acompanhe os eventos do embarque em ordem cronológica.
+                                    </DialogDescription>
+                                </DialogHeader>
+                                <Timeline events={embarque.timeline} />
+                            </DialogContent>
+                        </Dialog>
                         <Link href={`/dashboard/gestao-embarques/novo?id=${embarque.id}&edit=true`} passHref>
                             <Button variant="outline" size="icon" className="text-green-600 hover:text-green-700" title="Editar">
                                 <Pencil className="h-4 w-4" />
