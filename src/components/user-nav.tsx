@@ -18,7 +18,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, User, Settings } from "lucide-react"
+import { LogOut, User, Settings, Bell } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle";
 
 
@@ -32,6 +32,10 @@ export function UserNav() {
   return (
     <div className="flex items-center gap-2">
         <ThemeToggle />
+        <Button variant="ghost" size="icon">
+            <Bell className="h-5 w-5" />
+            <span className="sr-only">Notifications</span>
+        </Button>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
