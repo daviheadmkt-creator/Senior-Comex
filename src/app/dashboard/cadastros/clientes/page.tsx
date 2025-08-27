@@ -83,9 +83,9 @@ export default function ListaClientesPage() {
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Clientes Nacionais</CardTitle>
+            <CardTitle>Clientes</CardTitle>
             <CardDescription>
-              Gerencie os clientes nacionais da sua empresa.
+              Gerencie os clientes da sua empresa.
             </CardDescription>
           </div>
           <Link href="/dashboard/cadastros/clientes/novo" passHref>

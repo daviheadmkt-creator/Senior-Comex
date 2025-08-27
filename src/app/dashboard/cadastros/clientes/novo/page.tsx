@@ -27,10 +27,10 @@ const exportHistory = [
 export default function NovoClientePage() {
   const searchParams = useSearchParams();
   const isEditing = searchParams.has('edit');
-  const pageTitle = isEditing ? 'Editar Cliente Nacional' : 'Novo Cliente Nacional';
+  const pageTitle = isEditing ? 'Editar Cliente' : 'Novo Cliente';
   const pageDescription = isEditing
-    ? 'Altere as informações do cliente nacional selecionado.'
-    : 'Adicione um novo cliente nacional à sua base de dados.';
+    ? 'Altere as informações do cliente selecionado.'
+    : 'Adicione um novo cliente à sua base de dados.';
 
   return (
     <div className="space-y-6">
