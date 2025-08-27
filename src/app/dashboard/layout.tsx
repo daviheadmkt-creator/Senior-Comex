@@ -85,8 +85,8 @@ export default function DashboardLayout({
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                      <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/cadastros/armadores">
-                            Armadores / Agentes
+                        <SidebarMenuSubButton href="/dashboard/cadastros/base">
+                            Cadastro Base
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
