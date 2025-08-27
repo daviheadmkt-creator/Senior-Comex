@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -13,6 +15,8 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+
 
 const exportHistory = [
     {id: 'EXP-001', date: '20/07/2024', product: 'Soja em Grãos', value: '50.000,00', destination: 'China'},
@@ -21,6 +25,13 @@ const exportHistory = [
 ]
 
 export default function NovoClientePage() {
+  const searchParams = useSearchParams();
+  const isEditing = searchParams.has('edit');
+  const pageTitle = isEditing ? 'Editar Cliente' : 'Novo Cliente';
+  const pageDescription = isEditing
+    ? 'Altere as informações do cliente selecionado.'
+    : 'Adicione um novo cliente à sua base de dados.';
+
   return (
     <div className="space-y-6">
       <Card>
@@ -33,9 +44,9 @@ export default function NovoClientePage() {
                     </Button>
                 </Link>
                 <div>
-                <CardTitle>Novo Cliente</CardTitle>
+                <CardTitle>{pageTitle}</CardTitle>
                 <CardDescription>
-                    Adicione um novo cliente à sua base de dados.
+                    {pageDescription}
                 </CardDescription>
                 </div>
             </div>
@@ -46,11 +57,11 @@ export default function NovoClientePage() {
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="razao-social">Razão Social</Label>
-                <Input id="razao-social" placeholder="Insira a razão social" />
+                <Input id="razao-social" placeholder="Insira a razão social" defaultValue={isEditing ? 'Importadora Exemplo LLC' : ''} />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="nome-fantasia">Nome Fantasia</Label>
-                <Input id="nome-fantasia" placeholder="Insira o nome fantasia" />
+                <Input id="nome-fantasia" placeholder="Insira o nome fantasia" defaultValue={isEditing ? 'Importadora Exemplo' : ''}/>
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
@@ -90,7 +101,7 @@ export default function NovoClientePage() {
                     <div className="grid gap-4">
                          <div className="space-y-2">
                             <Label htmlFor="comercial-nome">Comercial - Nome</Label>
-                            <Input id="comercial-nome" placeholder="Nome do contato comercial" />
+                            <Input id="comercial-nome" placeholder="Nome do contato comercial" defaultValue={isEditing ? 'John Doe' : ''} />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="comercial-email">Comercial - E-mail</Label>
@@ -119,43 +130,47 @@ export default function NovoClientePage() {
             </div>
 
              <div className="flex justify-end gap-2 pt-4">
-                  <Button variant="outline">Cancelar</Button>
+                  <Link href="/dashboard/cadastros/clientes" passHref>
+                    <Button variant="outline">Cancelar</Button>
+                  </Link>
                   <Button>Salvar</Button>
              </div>
           </form>
         </CardContent>
       </Card>
 
-      <Card>
-        <CardHeader>
-            <CardTitle>Histórico de Exportações</CardTitle>
-            <CardDescription>Lista das últimas exportações realizadas para este cliente.</CardDescription>
-        </CardHeader>
-        <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>ID</TableHead>
-                        <TableHead>Data</TableHead>
-                        <TableHead>Produto</TableHead>
-                        <TableHead>Valor (USD)</TableHead>
-                        <TableHead>Destino</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {exportHistory.map((exp) => (
-                        <TableRow key={exp.id}>
-                            <TableCell className="font-medium">{exp.id}</TableCell>
-                            <TableCell>{exp.date}</TableCell>
-                            <TableCell>{exp.product}</TableCell>
-                            <TableCell>{exp.value}</TableCell>
-                            <TableCell>{exp.destination}</TableCell>
+      {isEditing && (
+        <Card>
+            <CardHeader>
+                <CardTitle>Histórico de Exportações</CardTitle>
+                <CardDescription>Lista das últimas exportações realizadas para este cliente.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>ID</TableHead>
+                            <TableHead>Data</TableHead>
+                            <TableHead>Produto</TableHead>
+                            <TableHead>Valor (USD)</TableHead>
+                            <TableHead>Destino</TableHead>
                         </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                        {exportHistory.map((exp) => (
+                            <TableRow key={exp.id}>
+                                <TableCell className="font-medium">{exp.id}</TableCell>
+                                <TableCell>{exp.date}</TableCell>
+                                <TableCell>{exp.product}</TableCell>
+                                <TableCell>{exp.value}</TableCell>
+                                <TableCell>{exp.destination}</TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </CardContent>
+        </Card>
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
 
+
 import {
   Card,
   CardContent,
@@ -19,27 +20,43 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from '@/components/ui/alert-dialog';
+
 
 const clients = [
   {
+    id: 1,
     nomeEmpresa: 'Importadora Exemplo LLC',
     pais: 'Estados Unidos',
     contatoPrincipal: 'John Doe',
     status: 'Ativo',
   },
   {
+    id: 2,
     nomeEmpresa: 'Global Trade Corp',
     pais: 'Argentina',
     contatoPrincipal: 'Maria Garcia',
     status: 'Ativo',
   },
   {
+    id: 3,
     nomeEmpresa: 'Euro Importers',
     pais: 'Alemanha',
     contatoPrincipal: 'Hans Müller',
     status: 'Inativo',
   },
   {
+    id: 4,
     nomeEmpresa: 'Asian Buyers Co.',
     pais: 'Japão',
     contatoPrincipal: 'Yuki Tanaka',
@@ -99,7 +116,7 @@ export default function ListaClientesPage() {
           </TableHeader>
           <TableBody>
             {clients.map((client) => (
-              <TableRow key={client.nomeEmpresa}>
+              <TableRow key={client.id}>
                 <TableCell className="font-medium">{client.nomeEmpresa}</TableCell>
                 <TableCell>{client.pais}</TableCell>
                 <TableCell>{client.contatoPrincipal}</TableCell>
@@ -114,15 +131,37 @@ export default function ListaClientesPage() {
                 </TableCell>
                 <TableCell>
                     <div className='flex gap-2'>
-                        <Button variant="outline" size="icon">
-                            <Eye className="h-4 w-4" />
-                        </Button>
-                        <Button variant="outline" size="icon" className="text-green-600 hover:text-green-700">
-                             <Pencil className="h-4 w-4" />
-                        </Button>
-                         <Button variant="outline" size="icon" className="text-red-600 hover:text-red-700">
-                             <Trash2 className="h-4 w-4" />
-                        </Button>
+                        <Link href={`/dashboard/cadastros/clientes/novo?id=${client.id}&edit=true`} passHref>
+                            <Button variant="outline" size="icon">
+                                <Eye className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                         <Link href={`/dashboard/cadastros/clientes/novo?id=${client.id}&edit=true`} passHref>
+                            <Button variant="outline" size="icon" className="text-green-600 hover:text-green-700">
+                                <Pencil className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                             <Button variant="outline" size="icon" className="text-red-600 hover:text-red-700">
+                                 <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o cliente
+                                e removerá seus dados de nossos servidores.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                              <AlertDialogAction>Excluir</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
+
                     </div>
                 </TableCell>
               </TableRow>
