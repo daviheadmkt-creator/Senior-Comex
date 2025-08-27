@@ -55,25 +55,6 @@ export default function NovoClientePage() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-6">
-            <div className="grid grid-cols-1 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="tipo-cadastro">Tipo de Cadastro</Label>
-                    <Select defaultValue={isEditing ? 'cliente-nacional' : undefined}>
-                        <SelectTrigger id="tipo-cadastro">
-                            <SelectValue placeholder="Selecione o tipo de cadastro" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="agente">Agente</SelectItem>
-                            <SelectItem value="controlador">Controlador</SelectItem>
-                            <SelectItem value="terminal">Terminal</SelectItem>
-                            <SelectItem value="fornecedor">Fornecedor</SelectItem>
-                            <SelectItem value="transportadora">Transportadora</SelectItem>
-                            <SelectItem value="cliente-nacional">Cliente Nacional</SelectItem>
-                            <SelectItem value="cliente-internacional">Cliente Internacional</SelectItem>
-                        </SelectContent>
-                    </Select>
-                </div>
-            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="razao-social">Razão Social</Label>
