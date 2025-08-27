@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark, Coins } from 'lucide-react';
+import { ArrowRight, Wallet, Landmark, Coins, Mail } from 'lucide-react';
 
 const configOptions = [
     {
@@ -28,6 +28,12 @@ const configOptions = [
         description: 'Gerencie moedas e taxas de câmbio aplicadas.',
         href: '/dashboard/configuracoes/moedas-e-cambio',
         icon: Coins,
+    },
+    {
+        title: 'Follow Up Automático',
+        description: 'Configure e gerencie os e-mails e alertas automáticos.',
+        href: '/dashboard/comunicacao/follow-up',
+        icon: Mail,
     },
 ]
 
