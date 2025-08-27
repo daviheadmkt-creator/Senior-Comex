@@ -16,6 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 
 const exportHistory = [
@@ -27,10 +28,10 @@ const exportHistory = [
 export default function NovoClientePage() {
   const searchParams = useSearchParams();
   const isEditing = searchParams.has('edit');
-  const pageTitle = isEditing ? 'Editar Cliente' : 'Novo Cliente';
+  const pageTitle = isEditing ? 'Editar Cadastro' : 'Novo Cadastro';
   const pageDescription = isEditing
-    ? 'Altere as informações do cliente selecionado.'
-    : 'Adicione um novo cliente à sua base de dados.';
+    ? 'Altere as informações do cadastro selecionado.'
+    : 'Adicione um novo cliente, fornecedor ou parceiro à sua base de dados.';
 
   return (
     <div className="space-y-6">
@@ -54,6 +55,25 @@ export default function NovoClientePage() {
         </CardHeader>
         <CardContent>
           <form className="grid gap-6">
+            <div className="grid grid-cols-1 gap-4">
+                <div className="space-y-2">
+                    <Label htmlFor="tipo-cadastro">Tipo de Cadastro</Label>
+                    <Select defaultValue={isEditing ? 'cliente-nacional' : undefined}>
+                        <SelectTrigger id="tipo-cadastro">
+                            <SelectValue placeholder="Selecione o tipo de cadastro" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="agente">Agente</SelectItem>
+                            <SelectItem value="controlador">Controlador</SelectItem>
+                            <SelectItem value="terminal">Terminal</SelectItem>
+                            <SelectItem value="fornecedor">Fornecedor</SelectItem>
+                            <SelectItem value="transportadora">Transportadora</SelectItem>
+                            <SelectItem value="cliente-nacional">Cliente Nacional</SelectItem>
+                            <SelectItem value="cliente-internacional">Cliente Internacional</SelectItem>
+                        </SelectContent>
+                    </Select>
+                </div>
+            </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="razao-social">Razão Social</Label>
@@ -66,12 +86,12 @@ export default function NovoClientePage() {
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="cnpj">CNPJ</Label>
+                <Label htmlFor="cnpj">CNPJ / CPF / ID Fiscal</Label>
                 <Input id="cnpj" placeholder="00.000.000/0000-00" defaultValue={isEditing ? '12.345.678/0001-99' : ''} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inscricao-estadual">Inscrição Estadual</Label>
-                <Input id="inscricao-estadual" placeholder="Insira a inscrição estadual" />
+                <Label htmlFor="inscricao-estadual">Inscrição Estadual / Registro</Label>
+                <Input id="inscricao-estadual" placeholder="Insira a inscrição estadual ou registro" />
               </div>
             </div>
             <div className="space-y-2">
