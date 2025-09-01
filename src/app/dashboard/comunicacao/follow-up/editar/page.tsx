@@ -38,7 +38,7 @@ export default function EditarTemplatePage() {
         <CardHeader>
           <CardTitle>Conteúdo do E-mail</CardTitle>
           <CardDescription>
-            Personalize a mensagem que será enviada. Você pode usar variáveis como {'{{cliente_nome}}'} e {'{{ref_embarque}}'}.
+            Personalize a mensagem que será enviada. Você pode usar variáveis como {{cliente_nome}} e {{ref_embarque}}.
           </CardDescription>
         </CardHeader>
         <CardContent>

@@ -13,7 +13,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, ClipboardCheck, FileText, UploadCloud } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Select,
   SelectContent,
@@ -29,33 +29,35 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Checkbox } from '@/components/ui/checkbox';
+import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
 
 
 const clients = [
-  { id: 1, nomeEmpresa: 'Agrícola Exemplo LTDA' },
-  { id: 2, nomeEmpresa: 'Comércio de Grãos Brasil S.A.' },
-  { id: 3, nomeEmpresa: 'Fazenda Sol Nascente' },
-  { id: 4, nomeEmpresa: 'Produtores Associados' },
+  { id: '1', nomeEmpresa: 'Agrícola Exemplo LTDA' },
+  { id: '2', nomeEmpresa: 'Comércio de Grãos Brasil S.A.' },
+  { id: '3', nomeEmpresa: 'Fazenda Sol Nascente' },
+  { id: '4', nomeEmpresa: 'Produtores Associados' },
 ];
 
 const products = [
-  { id: 1, descricao: 'Soja em Grãos' },
-  { id: 2, descricao: 'Milho em Grãos' },
-  { id: 3, descricao: 'Feijão Carioca Tipo 1' },
-  { id: 4, descricao: 'Gergelim Branco' },
+  { id: '1', descricao: 'Soja em Grãos' },
+  { id: '2', descricao: 'Milho em Grãos' },
+  { id: '3', descricao: 'Feijão Carioca Tipo 1' },
+  { id: '4', descricao: 'Gergelim Branco' },
 ];
 
 const analistas = [
-  { id: 1, nome: 'Ana Silva' },
-  { id: 2, nome: 'Carlos Dias' },
-  { id: 3, nome: 'Daniela Lima' },
+  { id: '1', nome: 'Ana Silva' },
+  { id: '2', nome: 'Carlos Dias' },
+  { id: '3', nome: 'Daniela Lima' },
 ];
 
 const parceiros = [
-    {id: 1, nome: 'Terminal TCP'},
-    {id: 2, nome: 'Terminal Granelmar'},
-    {id: 3, nome: 'Sérgio Despachos'},
-    {id: 4, nome: 'ABC Transportes'},
+    {id: '1', nome: 'Terminal TCP'},
+    {id: '2', nome: 'Terminal Granelmar'},
+    {id: '3', nome: 'Sérgio Despachos'},
+    {id: '4', nome: 'ABC Transportes'},
 ]
 
 const timelineEvents = [
@@ -75,12 +77,64 @@ const checklistItems = [
 
 
 export default function NovoProcessoPage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+  
+  const [formData, setFormData] = useState({
+      referencia: '',
+      po_number: '',
+      cliente: '',
+      produto: '',
+      analista: '',
+      booking: '',
+      navio: '',
+      origemDestino: '',
+      terminalEstufagem: '',
+      terminalEmbarque: '',
+      despachante: '',
+      transportadora: '',
+  });
+
   const isEditing = searchParams.has('edit');
   const pageTitle = isEditing ? 'Editar Processo' : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
     ? 'Altere as informações do processo selecionado.'
     : 'Inicie um novo processo de exportação a partir da nomeação.';
+
+    const handleInputChange = (id: string, value: string) => {
+        setFormData(prev => ({...prev, [id]: value}));
+    }
+
+    const handleSubmit = (e: React.FormEvent) => {
+        e.preventDefault();
+        const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+        const newId = storedProcessos.length > 0 ? Math.max(...storedProcessos.map((p: any) => p.id)) + 1 : 1;
+
+        const newProcesso = {
+            id: newId,
+            referencia: formData.referencia,
+            cliente: clients.find(c => c.id === formData.cliente)?.nomeEmpresa,
+            po_number: formData.po_number,
+            produto: products.find(p => p.id === formData.produto)?.descricao,
+            navio: formData.navio,
+            origemDestino: formData.origemDestino,
+            analista: analistas.find(a => a.id === formData.analista)?.nome,
+            status: 'Aguardando embarque',
+            timeline: [{date: new Date().toLocaleDateString('pt-BR'), event: 'Processo criado no sistema'}]
+        };
+
+        const updatedProcessos = [...storedProcessos, newProcesso];
+        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+        
+        toast({
+            title: "Sucesso!",
+            description: "O processo foi salvo e os parceiros foram notificados.",
+            variant: "default",
+        })
+
+        router.push('/dashboard/processos');
+    }
 
   return (
     <div className="space-y-6">
@@ -103,22 +157,22 @@ export default function NovoProcessoPage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6">
+          <form onSubmit={handleSubmit} className="grid gap-6">
              <Accordion type="multiple" defaultValue={['item-1', 'item-2', 'item-3', 'item-4']} className="w-full">
                 <AccordionItem value="item-1">
                     <AccordionTrigger className='text-base font-semibold'>Dados do Processo</AccordionTrigger>
                     <AccordionContent className='grid md:grid-cols-2 gap-6 pt-4'>
                         <div className="space-y-2">
                             <Label htmlFor="referencia-interna">Referência Interna</Label>
-                            <Input id="referencia-interna" placeholder="Ex: SEN2378-25" defaultValue={isEditing ? 'SEN2378-25' : ''} />
+                            <Input id="referencia" value={formData.referencia} onChange={e => handleInputChange('referencia', e.target.value)} placeholder="Ex: SEN2378-25" defaultValue={isEditing ? 'SEN2378-25' : ''} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="po-number">PO Number (Purchase Order)</Label>
-                            <Input id="po-number" placeholder="Insira o número da PO" defaultValue={isEditing ? 'PO-12345' : ''}/>
+                            <Input id="po_number" value={formData.po_number} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Insira o número da PO" defaultValue={isEditing ? 'PO-12345' : ''}/>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="cliente-vinculado">Cliente Vinculado</Label>
-                            <Select defaultValue={isEditing ? '1' : undefined}>
+                            <Select value={formData.cliente} onValueChange={value => handleInputChange('cliente', value)} defaultValue={isEditing ? '1' : undefined}>
                                 <SelectTrigger id="cliente-vinculado">
                                     <SelectValue placeholder="Selecione um cliente" />
                                 </SelectTrigger>
@@ -133,7 +187,7 @@ export default function NovoProcessoPage() {
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="produto-vinculado">Produto Vinculado</Label>
-                            <Select defaultValue={isEditing ? '1' : undefined}>
+                            <Select value={formData.produto} onValueChange={value => handleInputChange('produto', value)} defaultValue={isEditing ? '1' : undefined}>
                                 <SelectTrigger id="produto-vinculado">
                                     <SelectValue placeholder="Selecione um produto" />
                                 </SelectTrigger>
@@ -148,7 +202,7 @@ export default function NovoProcessoPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="analista-responsavel">Analista Responsável</Label>
-                            <Select defaultValue={isEditing ? '1' : undefined}>
+                            <Select value={formData.analista} onValueChange={value => handleInputChange('analista', value)} defaultValue={isEditing ? '1' : undefined}>
                                 <SelectTrigger id="analista-responsavel">
                                     <SelectValue placeholder="Selecione um analista" />
                                 </SelectTrigger>
@@ -168,31 +222,31 @@ export default function NovoProcessoPage() {
                     <AccordionContent className='grid md:grid-cols-2 gap-6 pt-4'>
                         <div className="space-y-2">
                             <Label htmlFor="booking">Contrato / Reserva / Booking</Label>
-                            <Input id="booking" placeholder="Insira o número do booking" defaultValue={isEditing ? 'BK12345678' : ''}/>
+                            <Input id="booking" value={formData.booking} onChange={e => handleInputChange('booking', e.target.value)} placeholder="Insira o número do booking" defaultValue={isEditing ? 'BK12345678' : ''}/>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="navio-viagem">Navio + Viagem</Label>
-                            <Input id="navio-viagem" placeholder="Ex: MSC CARMEN VZ001" defaultValue={isEditing ? 'MSC CARMEN VZ001' : ''} />
+                            <Input id="navio" value={formData.navio} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC CARMEN VZ001" defaultValue={isEditing ? 'MSC CARMEN VZ001' : ''} />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="origem-destino">Origem / Destino</Label>
-                            <Input id="origem-destino" placeholder="Ex: Santos / Xangai" defaultValue={isEditing ? 'Santos / Xangai' : ''}/>
+                            <Input id="origemDestino" value={formData.origemDestino} onChange={e => handleInputChange('origemDestino', e.target.value)} placeholder="Ex: Santos / Xangai" defaultValue={isEditing ? 'Santos / Xangai' : ''}/>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="terminal-estufagem">Terminal de Estufagem</Label>
-                            <Select><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
+                            <Select value={formData.terminalEstufagem} onValueChange={value => handleInputChange('terminalEstufagem', value)}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="terminal-embarque">Terminal de Embarque</Label>
-                            <Select><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
+                            <Select value={formData.terminalEmbarque} onValueChange={value => handleInputChange('terminalEmbarque', value)}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="despachante">Despachante</Label>
-                            <Select><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
+                            <Select value={formData.despachante} onValueChange={value => handleInputChange('despachante', value)}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="transportadora">Transportadora</Label>
-                            <Select><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
+                            <Select value={formData.transportadora} onValueChange={value => handleInputChange('transportadora', value)}><SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger><SelectContent>{parceiros.map(p=><SelectItem key={p.id} value={String(p.id)}>{p.nome}</SelectItem>)}</SelectContent></Select>
                         </div>
                     </AccordionContent>
                 </AccordionItem>
@@ -292,7 +346,7 @@ export default function NovoProcessoPage() {
                   <Link href="/dashboard/processos" passHref>
                     <Button variant="outline">Cancelar</Button>
                   </Link>
-                  <Button>Salvar</Button>
+                  <Button type="submit">Salvar</Button>
              </div>
           </form>
         </CardContent>

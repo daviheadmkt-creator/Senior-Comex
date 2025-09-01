@@ -104,6 +104,19 @@ export default function DashboardLayout({
                     <span>Deadlines</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton>
+                    <Mail />
+                    <span>Comunicação</span>
+                </SidebarMenuButton>
+                <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/comunicacao/follow-up">
+                            Follow Up
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
+            </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton>
                     <DollarSign />

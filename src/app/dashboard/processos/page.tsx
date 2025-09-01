@@ -41,9 +41,10 @@ import {
     DialogTitle,
     DialogTrigger,
 } from '@/components/ui/dialog';
+import { useEffect, useState } from 'react';
 
 
-const processos = [
+const initialProcessos = [
   {
     id: 1,
     referencia: 'SEN2378-25',
@@ -149,6 +150,24 @@ const Timeline = ({ events }: { events: { date: string; event: string }[] }) => 
 
 
 export default function GestaoProcessosPage() {
+    const [processos, setProcessos] = useState(initialProcessos);
+
+    useEffect(() => {
+        const storedProcessos = localStorage.getItem('processos');
+        if (storedProcessos) {
+            setProcessos(JSON.parse(storedProcessos));
+        } else {
+            localStorage.setItem('processos', JSON.stringify(initialProcessos));
+        }
+    }, []);
+
+    const handleDelete = (id: number) => {
+        const updatedProcessos = processos.filter(p => p.id !== id);
+        setProcessos(updatedProcessos);
+        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+    }
+
+
   return (
     <Card>
       <CardHeader>
@@ -245,7 +264,7 @@ export default function GestaoProcessosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Excluir</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(processo.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
