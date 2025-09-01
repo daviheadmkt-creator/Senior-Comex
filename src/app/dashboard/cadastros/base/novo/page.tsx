@@ -25,7 +25,6 @@ const tiposCadastro = [
     {id: 'terminal', descricao: 'Terminal' },
     {id: 'fornecedor', descricao: 'Fornecedor' },
     {id: 'transportadora', descricao: 'Transportadora' },
-    {id: 'cliente_nacional', descricao: 'Cliente Nacional' },
     {id: 'cliente_internacional', descricao: 'Cliente Internacional' },
 ]
 
