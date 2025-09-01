@@ -16,7 +16,7 @@ import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 
 const exportHistory = [
@@ -26,6 +26,7 @@ const exportHistory = [
 ]
 
 export default function NovoClientePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
@@ -99,6 +100,31 @@ export default function NovoClientePage() {
     }
   }
 
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const storedClients = JSON.parse(localStorage.getItem('clients') || '[]');
+    const newId = storedClients.length > 0 ? Math.max(...storedClients.map((c: any) => c.id)) + 1 : 1;
+
+    const newClient = {
+      id: newId,
+      nomeEmpresa: formData.nome_fantasia || formData.razao_social,
+      cnpj: formData.cnpj,
+      contatoPrincipal: formData.comercial_nome,
+      status: 'Ativo',
+    };
+
+    const updatedClients = [...storedClients, newClient];
+    localStorage.setItem('clients', JSON.stringify(updatedClients));
+    
+    toast({
+        title: "Sucesso!",
+        description: "O cliente foi salvo.",
+        variant: "default",
+    });
+
+    router.push('/dashboard/cadastros/clientes');
+  };
+
 
   return (
     <div className="space-y-6">
@@ -121,7 +147,7 @@ export default function NovoClientePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6">
+          <form onSubmit={handleSubmit} className="grid gap-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="razao_social">Razão Social</Label>
@@ -202,7 +228,7 @@ export default function NovoClientePage() {
                   <Link href="/dashboard/cadastros/clientes" passHref>
                     <Button variant="outline">Cancelar</Button>
                   </Link>
-                  <Button>Salvar</Button>
+                  <Button type="submit">Salvar</Button>
              </div>
           </form>
         </CardContent>

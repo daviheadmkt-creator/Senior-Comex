@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -30,9 +32,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useEffect, useState } from 'react';
 
 
-const clients: any[] = [];
+const initialClients: any[] = [];
 
 const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {
@@ -49,6 +52,24 @@ const getStatusVariant = (status: string) => {
 
 
 export default function ListaClientesPage() {
+  const [clients, setClients] = useState(initialClients);
+  
+  useEffect(() => {
+    const storedClients = localStorage.getItem('clients');
+    if (storedClients) {
+        setClients(JSON.parse(storedClients));
+    } else {
+        localStorage.setItem('clients', JSON.stringify(initialClients));
+    }
+  }, []);
+
+  const handleDelete = (id: number) => {
+    const updatedClients = clients.filter(c => c.id !== id);
+    setClients(updatedClients);
+    localStorage.setItem('clients', JSON.stringify(updatedClients));
+  }
+
+
   return (
     <Card>
       <CardHeader>
@@ -91,7 +112,7 @@ export default function ListaClientesPage() {
                 <TableCell>{client.cnpj}</TableCell>
                 <TableCell>{client.contatoPrincipal}</TableCell>
                 <TableCell>
-                    <Badge variant={getStatusVariant(client.status)}>
+                    <Badge variant={getStatusVariant(client.status)} className={client.status === 'Ativo' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}>
                         {client.status}
                     </Badge>
                 </TableCell>
@@ -123,7 +144,7 @@ export default function ListaClientesPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Excluir</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(client.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
