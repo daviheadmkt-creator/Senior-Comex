@@ -20,6 +20,7 @@ import { Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, Cell, ResponsiveCo
 import { RefreshCw, Ship, Plane, Truck, AlertTriangle, CheckCircle, PackageSearch } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { useEffect, useState } from 'react';
 
 const volumeData = [
   { time: '09:00', volume: 12000 },
@@ -31,19 +32,37 @@ const volumeData = [
   { time: '15:00', volume: 23000 },
 ];
 
-const statusData = [
-  { name: 'Em Trânsito', value: 45 },
-  { name: 'Aguardando Desembaraço', value: 15 },
-  { name: 'Em Produção', value: 25 },
-  { name: 'Aguardando Embarque', value: 10 },
-];
-
-const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
+const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
 const recentActivities: any[] = [];
 
 
 export default function DashboardPage() {
+    const [processos, setProcessos] = useState<any[]>([]);
+
+    useEffect(() => {
+        const storedProcessos = localStorage.getItem('processos');
+        if (storedProcessos) {
+            setProcessos(JSON.parse(storedProcessos));
+        }
+    }, []);
+
+    const totalOperacoes = processos.length;
+    const alertasAtuais = processos.filter(p => p.status === 'Atrasado').length;
+    const concluidosMes = processos.filter(p => p.status === 'Concluído').length; // Simplificado, idealmente filtraria por data
+
+    const statusData = processos.reduce((acc, processo) => {
+        const status = processo.status;
+        const existingStatus = acc.find(item => item.name === status);
+        if (existingStatus) {
+            existingStatus.value += 1;
+        } else {
+            acc.push({ name: status, value: 1 });
+        }
+        return acc;
+    }, [] as { name: string; value: number }[]);
+
+
   return (
     <div className="space-y-6">
         <div className="flex justify-between items-center">
@@ -51,7 +70,7 @@ export default function DashboardPage() {
                 <h1 className="text-3xl font-bold tracking-tight">Dashboard em Tempo Real</h1>
                 <p className="text-muted-foreground">Última atualização: agora mesmo</p>
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => window.location.reload()}>
                 <RefreshCw className="mr-2 h-4 w-4" />
                 Atualizar
             </Button>
@@ -64,8 +83,8 @@ export default function DashboardPage() {
                     <PackageSearch className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">85</div>
-                    <p className="text-xs text-muted-foreground">+3 nas últimas 24h</p>
+                    <div className="text-2xl font-bold">{totalOperacoes}</div>
+                    <p className="text-xs text-muted-foreground">Total de processos cadastrados</p>
                 </CardContent>
             </Card>
             <Card>
@@ -75,7 +94,7 @@ export default function DashboardPage() {
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl font-bold">$1,250,340.00</div>
-                    <p className="text-xs text-muted-foreground">45 embarques marítimos</p>
+                    <p className="text-xs text-muted-foreground">Valor estático (exemplo)</p>
                 </CardContent>
             </Card>
              <Card>
@@ -84,8 +103,8 @@ export default function DashboardPage() {
                     <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold text-destructive">3</div>
-                    <p className="text-xs text-muted-foreground">2 atrasos, 1 doc pendente</p>
+                    <div className={`text-2xl font-bold ${alertasAtuais > 0 ? 'text-destructive' : ''}`}>{alertasAtuais}</div>
+                    <p className="text-xs text-muted-foreground">Processos com status 'Atrasado'</p>
                 </CardContent>
             </Card>
             <Card>
@@ -94,8 +113,8 @@ export default function DashboardPage() {
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">124</div>
-                    <p className="text-xs text-muted-foreground">+12% em relação ao mês anterior</p>
+                    <div className="text-2xl font-bold">{concluidosMes}</div>
+                    <p className="text-xs text-muted-foreground">Total de processos concluídos</p>
                 </CardContent>
             </Card>
         </div>
@@ -120,7 +139,7 @@ export default function DashboardPage() {
             </Card>
              <Card className="lg:col-span-2">
                 <CardHeader>
-                    <CardTitle>Status dos Embarques</CardTitle>
+                    <CardTitle>Status dos Processos</CardTitle>
                     <CardDescription>Distribuição de todas as operações ativas.</CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -161,6 +180,11 @@ export default function DashboardPage() {
                             <TableCell className="text-muted-foreground">{activity.time}</TableCell>
                         </TableRow>
                        ))}
+                       {recentActivities.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhuma atividade recente</TableCell>
+                          </TableRow>
+                       )}
                     </TableBody>
                 </Table>
             </CardContent>
@@ -168,3 +192,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
