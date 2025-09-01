@@ -86,7 +86,7 @@ export default function ControleDeadlinesPage() {
           <div>
             <CardTitle>Controle de Deadlines</CardTitle>
             <CardDescription>
-              Gerencie os prazos e deadlines de seus embarques. O sistema envia alertas automáticos antes da expiração.
+              Gerencie os prazos e deadlines de seus processos. O sistema envia alertas automáticos antes da expiração.
             </CardDescription>
           </div>
           <Button variant="outline">
@@ -100,7 +100,7 @@ export default function ControleDeadlinesPage() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Buscar por referência do embarque..."
+              placeholder="Buscar por referência do processo..."
               className="pl-8"
             />
           </div>
@@ -124,7 +124,7 @@ export default function ControleDeadlinesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Referência do Embarque</TableHead>
+              <TableHead>Referência do Processo</TableHead>
               <TableHead>Deadline Draft</TableHead>
               <TableHead>Deadline VGM</TableHead>
               <TableHead>Deadline Carga</TableHead>
@@ -158,9 +158,9 @@ export default function ControleDeadlinesPage() {
                   </Badge>
                 </TableCell>
                 <TableCell>
-                    <Link href={`/dashboard/gestao-embarques/novo?id=${deadline.id}&edit=true`} passHref>
+                    <Link href={`/dashboard/processos/novo?id=${deadline.id}&edit=true`} passHref>
                         <Button variant="outline" size="sm">
-                            Ver Embarque
+                            Ver Processo
                         </Button>
                   </Link>
                 </TableCell>
