@@ -29,12 +29,7 @@ import {
 import { ArrowLeft, Edit, PlusCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
-const categorias = [
-    {id: 1, descricao: 'Receita de Venda de Soja', tipo: 'Receita', origem: 'Venda', natureza: 'Variável' },
-    {id: 2, descricao: 'Despesa com Frete', tipo: 'Despesa', origem: 'Serviço', natureza: 'Variável' },
-    {id: 3, descricao: 'Salários Administrativo', tipo: 'Despesa', origem: 'Outros', natureza: 'Fixa' },
-    {id: 4, descricao: 'Receita de Aluguel de Máquina', tipo: 'Receita', origem: 'Serviço', natureza: 'Extraordinária' },
-]
+const categorias: any[] = []
 
 export default function FinanceiroPage() {
   return (

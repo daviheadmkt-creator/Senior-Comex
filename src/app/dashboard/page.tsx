@@ -40,11 +40,7 @@ const statusData = [
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
-const recentActivities = [
-    { id: 'PED-003', status: 'Embarcado', location: 'Porto de Santos', time: 'Há 5 minutos'},
-    { id: 'PED-004', status: 'Desembaraço Iniciado', location: 'Alfândega de NY', time: 'Há 15 minutos'},
-    { id: 'PED-002', status: 'Chegada ao Destino', location: 'Port of New York', time: 'Há 1 hora'},
-];
+const recentActivities: any[] = [];
 
 
 export default function DashboardPage() {

@@ -30,40 +30,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
 
-const deadlines = [
-  {
-    id: 1,
-    referencia: 'SEN2378-25',
-    deadlineDraft: '25/07/2024',
-    deadlineVGM: '26/07/2024',
-    deadlineCarga: '27/07/2024',
-    status: 'Próximo',
-  },
-  {
-    id: 2,
-    referencia: 'SEN2378-26',
-    deadlineDraft: '20/07/2024',
-    deadlineVGM: '21/07/2024',
-    deadlineCarga: '22/07/2024',
-    status: 'Expirado',
-  },
-  {
-    id: 3,
-    referencia: 'SEN2378-27',
-    deadlineDraft: '10/08/2024',
-    deadlineVGM: '11/08/2024',
-    deadlineCarga: '12/08/2024',
-    status: 'OK',
-  },
-  {
-    id: 4,
-    referencia: 'SEN2378-28',
-    deadlineDraft: '28/07/2024',
-    deadlineVGM: '29/07/2024',
-    deadlineCarga: '30/07/2024',
-    status: 'Próximo',
-  },
-];
+const deadlines: any[] = [];
 
 const getStatusVariant = (status: string) => {
   switch (status.toLowerCase()) {

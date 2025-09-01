@@ -44,71 +44,7 @@ import {
 import { useEffect, useState } from 'react';
 
 
-const initialProcessos = [
-  {
-    id: 1,
-    referencia: 'SEN2378-25',
-    cliente: 'Agrícola Exemplo LTDA',
-    po_number: 'PO-12345',
-    produto: 'Soja em Grãos',
-    navio: 'MSC CARMEN',
-    origemDestino: 'Santos / Xangai',
-    analista: 'Ana Silva',
-    status: 'Em trânsito',
-     timeline: [
-        {date: '03/07/2024', event: 'Reserva feita no CMA CGM BUZIOS'},
-        {date: '27/07/2024', event: 'Processo previsto'},
-        {date: '31/07/2024', event: 'Carga embarcada'},
-        {date: '08/09/2024', event: 'Previsão de chegada'},
-    ]
-  },
-   {
-    id: 2,
-    referencia: 'SEN2378-26',
-    cliente: 'Comércio de Grãos Brasil S.A.',
-    po_number: 'PO-67890',
-    produto: 'Milho em Grãos',
-    navio: 'MAERSK LINE',
-    origemDestino: 'Paranaguá / Roterdã',
-    analista: 'Carlos Dias',
-    status: 'Aguardando embarque',
-    timeline: [
-        {date: '10/07/2024', event: 'Reserva feita'},
-        {date: '05/08/2024', event: 'Previsão de embarque'},
-    ]
-  },
-  {
-    id: 3,
-    referencia: 'SEN2378-27',
-    cliente: 'Fazenda Sol Nascente',
-    po_number: 'PO-13579',
-    produto: 'Feijão Carioca Tipo 1',
-    navio: 'CMA CGM',
-    origemDestino: 'Itajaí / Singapura',
-    analista: 'Ana Silva',
-    status: 'Concluído',
-    timeline: [
-        {date: '01/06/2024', event: 'Reserva feita'},
-        {date: '20/06/2024', event: 'Carga embarcada'},
-        {date: '25/07/2024', event: 'Carga entregue no destino'},
-    ]
-  },
-    {
-    id: 4,
-    referencia: 'SEN2378-28',
-    cliente: 'Produtores Associados',
-    po_number: 'PO-24680',
-    produto: 'Gergelim Branco',
-    navio: 'HAPAG-LLOYD',
-    origemDestino: 'Santos / Dubai',
-    analista: 'Daniela Lima',
-    status: 'Atrasado',
-    timeline: [
-        {date: '15/07/2024', event: 'Reserva feita'},
-        {date: '25/07/2024', event: 'Atraso na liberação da carga'},
-    ]
-  },
-];
+const initialProcessos: any[] = [];
 
 const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {

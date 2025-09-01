@@ -22,15 +22,7 @@ import {
 import { ArrowLeft, Edit, PlusCircle, Trash2, Save } from 'lucide-react';
 import Link from 'next/link';
 
-const tiposCadastro = [
-    {id: 1, descricao: 'Agente', status: 'Ativo' },
-    {id: 2, descricao: 'Controlador', status: 'Ativo' },
-    {id: 3, descricao: 'Terminal', status: 'Ativo' },
-    {id: 4, descricao: 'Fornecedor', status: 'Ativo' },
-    {id: 5, descricao: 'Transportadora', status: 'Inativo' },
-    {id: 6, descricao: 'Cliente Nacional', status: 'Ativo' },
-    {id: 7, descricao: 'Cliente Internacional', status: 'Ativo' },
-]
+const tiposCadastro: any[] = []
 
 export default function TiposCadastroPage() {
   return (

@@ -31,32 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 
-const armadores = [
-  {
-    id: 1,
-    nome: 'MSC',
-    contatoPrincipal: 'João Carlos',
-    terminais: 'Porto de Santos, Porto de Paranaguá',
-  },
-  {
-    id: 2,
-    nome: 'Maersk Line',
-    contatoPrincipal: 'Ana Beatriz',
-    terminais: 'Porto de Itajaí, Porto de Rio Grande',
-  },
-  {
-    id: 3,
-    nome: 'CMA CGM',
-    contatoPrincipal: 'Pedro Almeida',
-    terminais: 'Porto de Suape, Porto de Pecém',
-  },
-  {
-    id: 4,
-    nome: 'Hapag-Lloyd',
-    contatoPrincipal: 'Mariana Costa',
-    terminais: 'Porto do Rio de Janeiro, Porto de Itapoá',
-  },
-];
+const armadores: any[] = [];
 
 
 export default function ListaCadastroBasePage() {

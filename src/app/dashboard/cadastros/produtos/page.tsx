@@ -31,40 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 
-const products = [
-  {
-    id: 1,
-    codigo: 'FEJ-001',
-    descricao: 'Feijão Carioca Tipo 1',
-    ncm: '0713.33.19',
-    unidade: 'SC 60kg',
-    cliente: 'Agrícola Exemplo LTDA',
-  },
-  {
-    id: 2,
-    codigo: 'SOJ-001',
-    descricao: 'Soja em Grãos',
-    ncm: '1201.90.00',
-    unidade: 'TN',
-     cliente: 'Comércio de Grãos Brasil S.A.',
-  },
-  {
-    id: 3,
-    codigo: 'MIL-001',
-    descricao: 'Milho em Grãos',
-    ncm: '1005.90.10',
-    unidade: 'TN',
-     cliente: 'Fazenda Sol Nascente',
-  },
-  {
-    id: 4,
-    codigo: 'GER-001',
-    descricao: 'Gergelim Branco',
-    ncm: '1207.40.90',
-    unidade: 'KG',
-    cliente: 'Produtores Associados',
-  },
-];
+const products: any[] = [];
 
 
 export default function ListaProdutosPage() {

@@ -21,32 +21,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
-const templates = [
-  {
-    id: 1,
-    gatilho: 'Embarque Confirmado',
-    canal: 'E-mail',
-    status: 'Ativo',
-  },
-  {
-    id: 2,
-    gatilho: 'Documentos Enviados',
-    canal: 'E-mail',
-    status: 'Ativo',
-  },
-  {
-    id: 3,
-    gatilho: 'Previsão de Chegada Atualizada',
-    canal: 'E-mail & WhatsApp',
-    status: 'Inativo',
-  },
-  {
-    id: 4,
-    gatilho: 'Atraso na Liberação',
-    canal: 'E-mail',
-    status: 'Ativo',
-  },
-];
+const templates: any[] = [];
 
 const getStatusVariant = (status: string) => {
     return status === 'Ativo' ? 'default' : 'secondary';

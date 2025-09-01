@@ -29,12 +29,7 @@ import {
 import { ArrowLeft, Edit, PlusCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 
-const contas = [
-    {id: 1, banco: 'Banco do Brasil (001)', agencia: '1234-5', conta: '123.456-7', tipo: 'Conta Corrente', responsavel: 'Financeiro' },
-    {id: 2, banco: 'Caixa Interno', agencia: '-', conta: '-', tipo: 'Caixa', responsavel: 'Tesouraria' },
-    {id: 3, banco: 'Itaú (341)', agencia: '5678-9', conta: '987.654-3', tipo: 'Conta Corrente', responsavel: 'Financeiro' },
-    {id: 4, banco: 'Carteira Digital', agencia: '-', conta: 'user@email.com', tipo: 'Carteira Digital', responsavel: 'Diretoria' },
-]
+const contas: any[] = []
 
 export default function ContasBancariasPage() {
   return (

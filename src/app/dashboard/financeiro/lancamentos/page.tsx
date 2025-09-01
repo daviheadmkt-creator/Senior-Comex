@@ -33,48 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu';
 
 
-const lancamentos = [
-  {
-    id: 1,
-    descricao: 'Receita Venda Soja EXP-001',
-    clienteFornecedor: 'Agrícola Exemplo LTDA',
-    valor: 'R$ 50.000,00',
-    vencimento: '30/07/2024',
-    status: 'Recebido',
-  },
-  {
-    id: 2,
-    descricao: 'Despesa Frete Marítimo',
-    clienteFornecedor: 'MSC',
-    valor: 'R$ 5.500,00',
-    vencimento: '25/07/2024',
-    status: 'Pago',
-  },
-  {
-    id: 3,
-    descricao: 'Despesa Despachante Aduaneiro',
-    clienteFornecedor: 'Sérgio Despachos',
-    valor: 'R$ 1.200,00',
-    vencimento: '01/08/2024',
-    status: 'A Pagar',
-  },
-   {
-    id: 4,
-    descricao: 'Receita Venda Milho EXP-002',
-    clienteFornecedor: 'Comércio de Grãos Brasil S.A.',
-    valor: 'R$ 35.000,00',
-    vencimento: '10/08/2024',
-    status: 'A Receber',
-  },
-   {
-    id: 5,
-    descricao: 'Despesa Armazenagem',
-    clienteFornecedor: 'Porto de Santos',
-    valor: 'R$ 2.800,00',
-    vencimento: '20/07/2024',
-    status: 'Atrasado',
-  },
-];
+const lancamentos: any[] = [];
 
 const getStatusVariant = (status: string) => {
     switch (status) {

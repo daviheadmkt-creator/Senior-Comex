@@ -31,36 +31,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
 
-const usuarios = [
-  {
-    id: 1,
-    nome: 'Ana Silva',
-    email: 'ana.silva@empresa.com',
-    perfil: 'Gestor',
-    status: 'Ativo',
-  },
-  {
-    id: 2,
-    nome: 'Bruno Costa',
-    email: 'bruno.costa@cliente.com',
-    perfil: 'Cliente',
-    status: 'Ativo',
-  },
-  {
-    id: 3,
-    nome: 'Carlos Dias',
-    email: 'carlos.dias@empresa.com',
-    perfil: 'Analista',
-    status: 'Inativo',
-  },
-  {
-    id: 4,
-    nome: 'Daniela Lima',
-    email: 'daniela.lima@empresa.com',
-    perfil: 'Analista',
-    status: 'Ativo',
-  },
-];
+const usuarios: any[] = [];
 
 const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {

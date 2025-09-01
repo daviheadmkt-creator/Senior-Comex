@@ -24,50 +24,9 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 
-const logs = [
-  {
-    id: 1,
-    timestamp: '20/07/2024 10:30:15',
-    user: 'Ana Silva',
-    action: 'Criação de Embarque',
-    details: 'Referência SEN2378-28 criada para o cliente Produtores Associados.',
-  },
-  {
-    id: 2,
-    timestamp: '20/07/2024 09:15:45',
-    user: 'Carlos Dias',
-    action: 'Edição de Cliente',
-    details: 'Status do cliente Fazenda Sol Nascente alterado para "Inativo".',
-  },
-  {
-    id: 3,
-    timestamp: '19/07/2024 17:55:02',
-    user: 'Sistema',
-    action: 'Alerta de Deadline',
-    details: 'Alerta enviado para o embarque SEN2378-26 (Deadline Draft).',
-  },
-  {
-    id: 4,
-    timestamp: '19/07/2024 14:20:11',
-    user: 'Daniela Lima',
-    action: 'Upload de Documento',
-    details: 'Documento "BL_SEN2378-25.pdf" anexado ao embarque SEN2378-25.',
-  },
-  {
-    id: 5,
-    timestamp: '18/07/2024 11:05:33',
-    user: 'Ana Silva',
-    action: 'Login no Sistema',
-    details: 'Usuário logado com sucesso.',
-  },
-];
+const logs: any[] = [];
 
-const usuarios = [
-  { id: 1, nome: 'Ana Silva' },
-  { id: 2, nome: 'Carlos Dias' },
-  { id: 3, nome: 'Daniela Lima' },
-  { id: 4, nome: 'Sistema' },
-]
+const usuarios: any[] = []
 
 export default function LogPage() {
   return (

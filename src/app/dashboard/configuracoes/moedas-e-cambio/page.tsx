@@ -30,12 +30,7 @@ import { ArrowLeft, Edit, PlusCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { DatePicker } from '@/components/ui/date-picker';
 
-const moedas = [
-    {id: 1, moeda: 'Dólar Americano (USD)', taxa: '5,25', data: '20/07/2024' },
-    {id: 2, moeda: 'Euro (EUR)', taxa: '5,60', data: '20/07/2024' },
-    {id: 3, moeda: 'Libra Esterlina (GBP)', taxa: '6,30', data: '19/07/2024' },
-    {id: 4, moeda: 'Iene Japonês (JPY)', taxa: '0,035', data: '18/07/2024' },
-]
+const moedas: any[] = []
 
 export default function MoedasCambioPage() {
   return (

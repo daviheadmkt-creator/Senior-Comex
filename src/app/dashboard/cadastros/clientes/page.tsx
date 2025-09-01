@@ -32,36 +32,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 
-const clients = [
-  {
-    id: 1,
-    nomeEmpresa: 'Agrícola Exemplo LTDA',
-    cnpj: '12.345.678/0001-99',
-    contatoPrincipal: 'João da Silva',
-    status: 'Ativo',
-  },
-  {
-    id: 2,
-    nomeEmpresa: 'Comércio de Grãos Brasil S.A.',
-    cnpj: '98.765.432/0001-11',
-    contatoPrincipal: 'Maria Oliveira',
-    status: 'Ativo',
-  },
-  {
-    id: 3,
-    nomeEmpresa: 'Fazenda Sol Nascente',
-    cnpj: '45.678.912/0001-33',
-    contatoPrincipal: 'Carlos Pereira',
-    status: 'Inativo',
-  },
-  {
-    id: 4,
-    nomeEmpresa: 'Produtores Associados',
-    cnpj: '32.198.765/0001-55',
-    contatoPrincipal: 'Ana Souza',
-    status: 'Em prospecção',
-  },
-];
+const clients: any[] = [];
 
 const getStatusVariant = (status: string) => {
     switch (status.toLowerCase()) {
