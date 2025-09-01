@@ -164,15 +164,15 @@ export default function NovoProcessoPage() {
                     <AccordionContent className='grid md:grid-cols-2 gap-6 pt-4'>
                         <div className="space-y-2">
                             <Label htmlFor="referencia-interna">Referência Interna</Label>
-                            <Input id="referencia" value={formData.referencia} onChange={e => handleInputChange('referencia', e.target.value)} placeholder="Ex: SEN2378-25" defaultValue={isEditing ? 'SEN2378-25' : ''} />
+                            <Input id="referencia" value={formData.referencia} onChange={e => handleInputChange('referencia', e.target.value)} placeholder="Ex: SEN2378-25" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="po-number">PO Number (Purchase Order)</Label>
-                            <Input id="po_number" value={formData.po_number} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Insira o número da PO" defaultValue={isEditing ? 'PO-12345' : ''}/>
+                            <Input id="po_number" value={formData.po_number} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Insira o número da PO" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="cliente-vinculado">Cliente Vinculado</Label>
-                            <Select value={formData.cliente} onValueChange={value => handleInputChange('cliente', value)} defaultValue={isEditing ? '1' : undefined}>
+                            <Select value={formData.cliente} onValueChange={value => handleInputChange('cliente', value)}>
                                 <SelectTrigger id="cliente-vinculado">
                                     <SelectValue placeholder="Selecione um cliente" />
                                 </SelectTrigger>
@@ -187,7 +187,7 @@ export default function NovoProcessoPage() {
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="produto-vinculado">Produto Vinculado</Label>
-                            <Select value={formData.produto} onValueChange={value => handleInputChange('produto', value)} defaultValue={isEditing ? '1' : undefined}>
+                            <Select value={formData.produto} onValueChange={value => handleInputChange('produto', value)}>
                                 <SelectTrigger id="produto-vinculado">
                                     <SelectValue placeholder="Selecione um produto" />
                                 </SelectTrigger>
@@ -202,7 +202,7 @@ export default function NovoProcessoPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="analista-responsavel">Analista Responsável</Label>
-                            <Select value={formData.analista} onValueChange={value => handleInputChange('analista', value)} defaultValue={isEditing ? '1' : undefined}>
+                            <Select value={formData.analista} onValueChange={value => handleInputChange('analista', value)}>
                                 <SelectTrigger id="analista-responsavel">
                                     <SelectValue placeholder="Selecione um analista" />
                                 </SelectTrigger>
@@ -222,15 +222,15 @@ export default function NovoProcessoPage() {
                     <AccordionContent className='grid md:grid-cols-2 gap-6 pt-4'>
                         <div className="space-y-2">
                             <Label htmlFor="booking">Contrato / Reserva / Booking</Label>
-                            <Input id="booking" value={formData.booking} onChange={e => handleInputChange('booking', e.target.value)} placeholder="Insira o número do booking" defaultValue={isEditing ? 'BK12345678' : ''}/>
+                            <Input id="booking" value={formData.booking} onChange={e => handleInputChange('booking', e.target.value)} placeholder="Insira o número do booking"/>
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="navio-viagem">Navio + Viagem</Label>
-                            <Input id="navio" value={formData.navio} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC CARMEN VZ001" defaultValue={isEditing ? 'MSC CARMEN VZ001' : ''} />
+                            <Input id="navio" value={formData.navio} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC CARMEN VZ001" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="origem-destino">Origem / Destino</Label>
-                            <Input id="origemDestino" value={formData.origemDestino} onChange={e => handleInputChange('origemDestino', e.target.value)} placeholder="Ex: Santos / Xangai" defaultValue={isEditing ? 'Santos / Xangai' : ''}/>
+                            <Input id="origemDestino" value={formData.origemDestino} onChange={e => handleInputChange('origemDestino', e.target.value)} placeholder="Ex: Santos / Xangai"/>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="terminal-estufagem">Terminal de Estufagem</Label>
