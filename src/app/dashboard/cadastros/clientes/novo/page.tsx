@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState } from 'react';
 import {
   Card,
   CardContent,
@@ -13,11 +14,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-
+import { useToast } from '@/hooks/use-toast';
 
 const exportHistory = [
     {id: 'EXP-001', date: '20/07/2024', product: 'Soja em Grãos', value: '50.000,00', destination: 'China'},
@@ -27,11 +27,78 @@ const exportHistory = [
 
 export default function NovoClientePage() {
   const searchParams = useSearchParams();
+  const { toast } = useToast();
+  
+  const [formData, setFormData] = useState({
+      razao_social: '',
+      nome_fantasia: '',
+      cnpj: '',
+      inscricao_estadual: '',
+      endereco: '',
+      cidade: '',
+      estado: '',
+      cep: '',
+      comercial_nome: '',
+      comercial_email: '',
+      comercial_telefone: '',
+      logistica_nome: '',
+      logistica_email: '',
+      logistica_telefone: '',
+  });
+  const [isLoadingCnpj, setIsLoadingCnpj] = useState(false);
+
   const isEditing = searchParams.has('edit');
   const pageTitle = isEditing ? 'Editar Cadastro' : 'Novo Cadastro';
   const pageDescription = isEditing
     ? 'Altere as informações do cadastro selecionado.'
     : 'Adicione um novo cliente, fornecedor ou parceiro à sua base de dados.';
+    
+  const handleInputChange = (id: string, value: string) => {
+    setFormData(prev => ({...prev, [id]: value}));
+  }
+
+  const handleCnpjBlur = async (e: React.FocusEvent<HTMLInputElement>) => {
+    const cnpj = e.target.value.replace(/\D/g, ''); // Remove non-digit characters
+    if (cnpj.length !== 14) {
+        return;
+    }
+    
+    setIsLoadingCnpj(true);
+    try {
+        const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
+        if (!response.ok) {
+            throw new Error('CNPJ não encontrado ou inválido.');
+        }
+        const data = await response.json();
+
+        setFormData(prev => ({
+            ...prev,
+            razao_social: data.razao_social || '',
+            nome_fantasia: data.nome_fantasia || '',
+            endereco: `${data.logradouro || ''}, ${data.numero || ''} - ${data.bairro || ''}`,
+            cidade: data.municipio || '',
+            estado: data.uf || '',
+            cep: data.cep || '',
+        }));
+
+        toast({
+            title: "Sucesso!",
+            description: "Dados do CNPJ carregados.",
+            variant: "default",
+        })
+
+    } catch (error: any) {
+        console.error("Erro ao buscar CNPJ:", error);
+         toast({
+            title: "Erro",
+            description: error.message || "Não foi possível buscar os dados do CNPJ.",
+            variant: "destructive",
+        })
+    } finally {
+        setIsLoadingCnpj(false);
+    }
+  }
+
 
   return (
     <div className="space-y-6">
@@ -57,40 +124,41 @@ export default function NovoClientePage() {
           <form className="grid gap-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="razao-social">Razão Social</Label>
-                <Input id="razao-social" placeholder="Insira a razão social" defaultValue={isEditing ? 'Agrícola Exemplo LTDA' : ''} />
+                <Label htmlFor="razao_social">Razão Social</Label>
+                <Input id="razao_social" placeholder="Insira a razão social" value={formData.razao_social} onChange={e => handleInputChange('razao_social', e.target.value)} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="nome-fantasia">Nome Fantasia</Label>
-                <Input id="nome-fantasia" placeholder="Insira o nome fantasia" defaultValue={isEditing ? 'Agrícola Exemplo' : ''}/>
+                <Label htmlFor="nome_fantasia">Nome Fantasia</Label>
+                <Input id="nome_fantasia" placeholder="Insira o nome fantasia" value={formData.nome_fantasia} onChange={e => handleInputChange('nome_fantasia', e.target.value)} />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
-              <div className="space-y-2">
+              <div className="space-y-2 relative">
                 <Label htmlFor="cnpj">CNPJ / CPF / ID Fiscal</Label>
-                <Input id="cnpj" placeholder="00.000.000/0000-00" defaultValue={isEditing ? '12.345.678/0001-99' : ''} />
+                <Input id="cnpj" placeholder="00.000.000/0000-00" value={formData.cnpj} onChange={e => handleInputChange('cnpj', e.target.value)} onBlur={handleCnpjBlur} />
+                 {isLoadingCnpj && <Loader2 className="absolute right-3 top-9 h-5 w-5 animate-spin text-muted-foreground" />}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="inscricao-estadual">Inscrição Estadual / Registro</Label>
-                <Input id="inscricao-estadual" placeholder="Insira a inscrição estadual ou registro" />
+                <Label htmlFor="inscricao_estadual">Inscrição Estadual / Registro</Label>
+                <Input id="inscricao_estadual" placeholder="Insira a inscrição estadual ou registro" value={formData.inscricao_estadual} onChange={e => handleInputChange('inscricao_estadual', e.target.value)} />
               </div>
             </div>
             <div className="space-y-2">
                 <Label htmlFor="endereco">Endereço</Label>
-                <Input id="endereco" placeholder="Rua, número, bairro..." />
+                <Input id="endereco" placeholder="Rua, número, bairro..." value={formData.endereco} onChange={e => handleInputChange('endereco', e.target.value)} />
             </div>
              <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2">
                       <Label htmlFor="cidade">Cidade</Label>
-                      <Input id="cidade" placeholder="Insira a cidade" />
+                      <Input id="cidade" placeholder="Insira a cidade" value={formData.cidade} onChange={e => handleInputChange('cidade', e.target.value)} />
                   </div>
                    <div className="space-y-2">
                       <Label htmlFor="estado">Estado</Label>
-                      <Input id="estado" placeholder="Insira o estado" />
+                      <Input id="estado" placeholder="Insira o estado" value={formData.estado} onChange={e => handleInputChange('estado', e.target.value)} />
                   </div>
                    <div className="space-y-2">
                       <Label htmlFor="cep">CEP</Label>
-                      <Input id="cep" placeholder="00000-000" />
+                      <Input id="cep" placeholder="00000-000" value={formData.cep} onChange={e => handleInputChange('cep', e.target.value)} />
                   </div>
              </div>
              
@@ -101,30 +169,30 @@ export default function NovoClientePage() {
                 <div className="grid md:grid-cols-2 gap-6">
                     <div className="grid gap-4">
                          <div className="space-y-2">
-                            <Label htmlFor="comercial-nome">Comercial - Nome</Label>
-                            <Input id="comercial-nome" placeholder="Nome do contato comercial" defaultValue={isEditing ? 'João da Silva' : ''} />
+                            <Label htmlFor="comercial_nome">Comercial - Nome</Label>
+                            <Input id="comercial_nome" placeholder="Nome do contato comercial" value={formData.comercial_nome} onChange={e => handleInputChange('comercial_nome', e.target.value)} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="comercial-email">Comercial - E-mail</Label>
-                            <Input id="comercial-email" type="email" placeholder="email@cliente.com" />
+                            <Label htmlFor="comercial_email">Comercial - E-mail</Label>
+                            <Input id="comercial_email" type="email" placeholder="email@cliente.com" value={formData.comercial_email} onChange={e => handleInputChange('comercial_email', e.target.value)} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="comercial-telefone">Comercial - Telefone</Label>
-                            <Input id="comercial-telefone" placeholder="(00) 00000-0000" />
+                            <Label htmlFor="comercial_telefone">Comercial - Telefone</Label>
+                            <Input id="comercial_telefone" placeholder="(00) 00000-0000" value={formData.comercial_telefone} onChange={e => handleInputChange('comercial_telefone', e.target.value)} />
                         </div>
                     </div>
                      <div className="grid gap-4">
                          <div className="space-y-2">
-                            <Label htmlFor="logistica-nome">Logística - Nome</Label>
-                            <Input id="logistica-nome" placeholder="Nome do contato de logística" />
+                            <Label htmlFor="logistica_nome">Logística - Nome</Label>
+                            <Input id="logistica_nome" placeholder="Nome do contato de logística" value={formData.logistica_nome} onChange={e => handleInputChange('logistica_nome', e.target.value)} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="logistica-email">Logística - E-mail</Label>
-                            <Input id="logistica-email" type="email" placeholder="email@cliente.com" />
+                            <Label htmlFor="logistica_email">Logística - E-mail</Label>
+                            <Input id="logistica_email" type="email" placeholder="email@cliente.com" value={formData.logistica_email} onChange={e => handleInputChange('logistica_email', e.target.value)} />
                         </div>
                          <div className="space-y-2">
-                            <Label htmlFor="logistica-telefone">Logística - Telefone</Label>
-                            <Input id="logistica-telefone" placeholder="(00) 00000-0000" />
+                            <Label htmlFor="logistica_telefone">Logística - Telefone</Label>
+                            <Input id="logistica_telefone" placeholder="(00) 00000-0000" value={formData.logistica_telefone} onChange={e => handleInputChange('logistica_telefone', e.target.value)} />
                         </div>
                     </div>
                 </div>
