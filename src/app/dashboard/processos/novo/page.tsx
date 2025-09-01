@@ -33,19 +33,8 @@ import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
 
 
-const clients = [
-  { id: '1', nomeEmpresa: 'Agrícola Exemplo LTDA' },
-  { id: '2', nomeEmpresa: 'Comércio de Grãos Brasil S.A.' },
-  { id: '3', nomeEmpresa: 'Fazenda Sol Nascente' },
-  { id: '4', nomeEmpresa: 'Produtores Associados' },
-];
-
-const products = [
-  { id: '1', descricao: 'Soja em Grãos' },
-  { id: '2', descricao: 'Milho em Grãos' },
-  { id: '3', descricao: 'Feijão Carioca Tipo 1' },
-  { id: '4', descricao: 'Gergelim Branco' },
-];
+const initialClients: any[] = [];
+const initialProducts: any[] = [];
 
 const analistas = [
   { id: '1', nome: 'Ana Silva' },
@@ -81,6 +70,20 @@ export default function NovoProcessoPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   
+  const [clients, setClients] = useState(initialClients);
+  const [products, setProducts] = useState(initialProducts);
+
+  useEffect(() => {
+    const storedClients = localStorage.getItem('clients');
+    if (storedClients) {
+      setClients(JSON.parse(storedClients));
+    }
+     const storedProducts = localStorage.getItem('products');
+    if (storedProducts) {
+      setProducts(JSON.parse(storedProducts));
+    }
+  }, []);
+
   const [formData, setFormData] = useState({
       referencia: '',
       po_number: '',
@@ -114,9 +117,9 @@ export default function NovoProcessoPage() {
         const newProcesso = {
             id: newId,
             referencia: formData.referencia,
-            cliente: clients.find(c => c.id === formData.cliente)?.nomeEmpresa,
+            cliente: clients.find(c => c.id === Number(formData.cliente))?.nomeEmpresa,
             po_number: formData.po_number,
-            produto: products.find(p => p.id === formData.produto)?.descricao,
+            produto: products.find(p => p.id === Number(formData.produto))?.descricao,
             navio: formData.navio,
             origemDestino: formData.origemDestino,
             analista: analistas.find(a => a.id === formData.analista)?.nome,
