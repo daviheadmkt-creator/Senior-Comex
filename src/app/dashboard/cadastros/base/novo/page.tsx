@@ -14,10 +14,11 @@ import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
 import { ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Textarea } from '@/components/ui/textarea';
 import { useState } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
 
 const tiposCadastro = [
     {id: 'agente', descricao: 'Agente' },
@@ -30,24 +31,66 @@ const tiposCadastro = [
 
 
 export default function NovoCadastroBasePage() {
+  const router = useRouter();
   const searchParams = useSearchParams();
-  const isEditing = searchParams.has('edit');
-  const [tipoCadastro, setTipoCadastro] = useState(isEditing ? 'agente' : '');
+  const { toast } = useToast();
   
+  const [formData, setFormData] = useState({
+    tipo: '',
+    nome: '',
+    contatoNome: '',
+    contatoEmail: '',
+    contatoTelefone: '',
+    terminais: '',
+    condicoes: '',
+  });
+
+  const isEditing = searchParams.has('edit');
   const pageTitle = isEditing ? 'Editar Cadastro' : 'Novo Cadastro';
   const pageDescription = isEditing
     ? 'Altere as informações do cadastro selecionado.'
     : 'Adicione um novo cadastro base à sua empresa.';
     
   const getNomeLabel = () => {
-    const tipo = tiposCadastro.find(t => t.id === tipoCadastro);
+    const tipo = tiposCadastro.find(t => t.id === formData.tipo);
     return tipo ? `Nome do ${tipo.descricao}` : 'Nome';
   }
 
   const getNomePlaceholder = () => {
-      const tipo = tiposCadastro.find(t => t.id === tipoCadastro);
+      const tipo = tiposCadastro.find(t => t.id === formData.tipo);
       return tipo ? `Insira o nome do ${tipo.descricao.toLowerCase()}` : 'Selecione um tipo de cadastro';
   }
+
+  const handleInputChange = (id: string, value: string) => {
+    setFormData(prev => ({...prev, [id]: value}));
+  }
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    const storedBase = JSON.parse(localStorage.getItem('base_cadastros') || '[]');
+    const newId = storedBase.length > 0 ? Math.max(...storedBase.map((c: any) => c.id)) + 1 : 1;
+
+    const tipoDescricao = tiposCadastro.find(t => t.id === formData.tipo)?.descricao || 'N/A';
+
+    const newCadastro = {
+      id: newId,
+      nome: formData.nome,
+      tipo: tipoDescricao,
+      contatoPrincipal: formData.contatoNome,
+      terminais: formData.terminais,
+    };
+
+    const updatedBase = [...storedBase, newCadastro];
+    localStorage.setItem('base_cadastros', JSON.stringify(updatedBase));
+    
+    toast({
+        title: "Sucesso!",
+        description: "O cadastro foi salvo.",
+        variant: "default",
+    });
+
+    router.push('/dashboard/cadastros/base');
+  };
 
   return (
     <div className="space-y-6">
@@ -70,10 +113,10 @@ export default function NovoCadastroBasePage() {
           </div>
         </CardHeader>
         <CardContent>
-          <form className="grid gap-6">
+          <form onSubmit={handleSubmit} className="grid gap-6">
              <div className="space-y-2">
                 <Label htmlFor="tipo-cadastro">Tipo de Cadastro</Label>
-                <Select value={tipoCadastro} onValueChange={setTipoCadastro}>
+                <Select value={formData.tipo} onValueChange={(value) => handleInputChange('tipo', value)}>
                     <SelectTrigger id="tipo-cadastro">
                         <SelectValue placeholder="Selecione um tipo de cadastro" />
                     </SelectTrigger>
@@ -89,10 +132,11 @@ export default function NovoCadastroBasePage() {
             <div className="space-y-2">
                 <Label htmlFor="nome-cadastro">{getNomeLabel()}</Label>
                 <Input 
-                    id="nome-cadastro" 
+                    id="nome" 
+                    value={formData.nome}
+                    onChange={e => handleInputChange('nome', e.target.value)}
                     placeholder={getNomePlaceholder()} 
-                    defaultValue={isEditing ? 'MSC' : ''}
-                    disabled={!tipoCadastro}
+                    disabled={!formData.tipo}
                 />
             </div>
             
@@ -103,15 +147,15 @@ export default function NovoCadastroBasePage() {
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="comercial-nome">Nome</Label>
-                        <Input id="comercial-nome" placeholder="Nome do contato comercial" defaultValue={isEditing ? 'João Carlos' : ''} />
+                        <Input id="contatoNome" value={formData.contatoNome} onChange={e => handleInputChange('contatoNome', e.target.value)} placeholder="Nome do contato comercial" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="comercial-email">E-mail</Label>
-                        <Input id="comercial-email" type="email" placeholder="email@exemplo.com" />
+                        <Input id="contatoEmail" value={formData.contatoEmail} onChange={e => handleInputChange('contatoEmail', e.target.value)} type="email" placeholder="email@exemplo.com" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="comercial-telefone">Telefone</Label>
-                        <Input id="comercial-telefone" placeholder="(00) 00000-0000" />
+                        <Input id="contatoTelefone" value={formData.contatoTelefone} onChange={e => handleInputChange('contatoTelefone', e.target.value)} placeholder="(00) 00000-0000" />
                     </div>
                 </div>
             </div>
@@ -120,18 +164,18 @@ export default function NovoCadastroBasePage() {
 
             <div className="space-y-2">
                 <Label htmlFor="terminais">Terminais de Atuação</Label>
-                <Input id="terminais" placeholder="Ex: Porto de Santos, Porto de Paranaguá" defaultValue={isEditing ? 'Porto de Santos, Porto de Paranaguá' : ''}/>
+                <Input id="terminais" value={formData.terminais} onChange={e => handleInputChange('terminais', e.target.value)} placeholder="Ex: Porto de Santos, Porto de Paranaguá" />
             </div>
              <div className="space-y-2">
                 <Label htmlFor="condicoes-frete">Condições de Frete</Label>
-                <Textarea id="condicoes-frete" placeholder="Descreva as condições de frete negociadas, taxas, etc." />
+                <Textarea id="condicoes" value={formData.condicoes} onChange={e => handleInputChange('condicoes', e.target.value)} placeholder="Descreva as condições de frete negociadas, taxas, etc." />
             </div>
 
              <div className="flex justify-end gap-2 pt-4">
                   <Link href="/dashboard/cadastros/base" passHref>
                     <Button variant="outline">Cancelar</Button>
                   </Link>
-                  <Button>Salvar</Button>
+                  <Button type="submit">Salvar</Button>
              </div>
           </form>
         </CardContent>

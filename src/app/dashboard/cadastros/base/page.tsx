@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -29,12 +31,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useEffect, useState } from 'react';
 
 
-const armadores: any[] = [];
+const initialCadastros: any[] = [];
 
 
 export default function ListaCadastroBasePage() {
+  const [cadastros, setCadastros] = useState(initialCadastros);
+  
+  useEffect(() => {
+    const storedCadastros = localStorage.getItem('base_cadastros');
+    if (storedCadastros) {
+        setCadastros(JSON.parse(storedCadastros));
+    } else {
+        localStorage.setItem('base_cadastros', JSON.stringify(initialCadastros));
+    }
+  }, []);
+
+  const handleDelete = (id: number) => {
+    const updatedCadastros = cadastros.filter(c => c.id !== id);
+    setCadastros(updatedCadastros);
+    localStorage.setItem('base_cadastros', JSON.stringify(updatedCadastros));
+  }
+
+
   return (
     <Card>
       <CardHeader>
@@ -64,20 +85,22 @@ export default function ListaCadastroBasePage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nome</TableHead>
+              <TableHead>Tipo</TableHead>
               <TableHead>Contato Principal</TableHead>
               <TableHead>Terminais de Atuação</TableHead>
               <TableHead>Ação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {armadores.map((armador) => (
-              <TableRow key={armador.id}>
-                <TableCell className="font-medium">{armador.nome}</TableCell>
-                <TableCell>{armador.contatoPrincipal}</TableCell>
-                <TableCell>{armador.terminais}</TableCell>
+            {cadastros.map((cadastro) => (
+              <TableRow key={cadastro.id}>
+                <TableCell className="font-medium">{cadastro.nome}</TableCell>
+                <TableCell>{cadastro.tipo}</TableCell>
+                <TableCell>{cadastro.contatoPrincipal}</TableCell>
+                <TableCell>{cadastro.terminais}</TableCell>
                 <TableCell>
                     <div className='flex gap-2'>
-                        <Link href={`/dashboard/cadastros/base/novo?id=${armador.id}&edit=true`} passHref>
+                        <Link href={`/dashboard/cadastros/base/novo?id=${cadastro.id}&edit=true`} passHref>
                             <Button variant="outline" size="icon" className="text-green-600 hover:text-green-700">
                                 <Pencil className="h-4 w-4" />
                             </Button>
@@ -98,7 +121,7 @@ export default function ListaCadastroBasePage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Excluir</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(cadastro.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
