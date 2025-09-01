@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -29,12 +31,31 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useEffect, useState } from 'react';
 
 
-const products: any[] = [];
+const initialProducts: any[] = [];
 
 
 export default function ListaProdutosPage() {
+  const [products, setProducts] = useState(initialProducts);
+
+  useEffect(() => {
+    const storedProducts = localStorage.getItem('products');
+    if (storedProducts) {
+      setProducts(JSON.parse(storedProducts));
+    } else {
+      localStorage.setItem('products', JSON.stringify(initialProducts));
+    }
+  }, []);
+
+  const handleDelete = (id: number) => {
+    const updatedProducts = products.filter(p => p.id !== id);
+    setProducts(updatedProducts);
+    localStorage.setItem('products', JSON.stringify(updatedProducts));
+  };
+
+
   return (
     <Card>
       <CardHeader>
@@ -102,7 +123,7 @@ export default function ListaProdutosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Excluir</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(product.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
