@@ -104,6 +104,7 @@ export default function NovoProcessoPage() {
         const existingProcess = storedProcessos.find((p: any) => p.id === Number(processId));
         if (existingProcess) {
             setFormData({
+                ...formData, // Start with default values
                 ...existingProcess,
                 documentos: existingProcess.documentos || initialDocuments,
                 containers: existingProcess.containers || initialContainers,
@@ -243,7 +244,7 @@ export default function NovoProcessoPage() {
             <CardContent className="grid gap-6">
                  <div className="space-y-2">
                     <Label htmlFor="status">Status Geral do Processo</Label>
-                    <Select value={formData.status} onValueChange={value => handleInputChange('status', value)}>
+                    <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
                         <SelectTrigger id="status">
                             <SelectValue placeholder="Selecione o status" />
                         </SelectTrigger>
@@ -255,11 +256,11 @@ export default function NovoProcessoPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="po_number">Nº do Contrato/PO</Label>
-                        <Input id="po_number" value={formData.po_number} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Ex: 3426B" />
+                        <Input id="po_number" value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Ex: 3426B" />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="produtoId">Produto</Label>
-                        <Select value={String(formData.produtoId)} onValueChange={value => handleInputChange('produtoId', value)}>
+                        <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
                         <SelectTrigger id="produtoId">
                             <SelectValue placeholder="Selecione o produto" />
                         </SelectTrigger>
@@ -272,11 +273,11 @@ export default function NovoProcessoPage() {
                 <div className="grid md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="quantidade">Quantidade</Label>
-                    <Input id="quantidade" value={formData.quantidade} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
+                    <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                    <Select value={String(formData.exportadorId)} onValueChange={value => handleInputChange('exportadorId', value)}>
+                    <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
                     <SelectTrigger id="exportadorId">
                         <SelectValue placeholder="Selecione o exportador" />
                     </SelectTrigger>
@@ -289,7 +290,7 @@ export default function NovoProcessoPage() {
                 <div className="grid md:grid-cols-3 gap-4">
                 <div className="space-y-2">
                     <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
-                    <Select value={String(formData.terminalEstufagemId)} onValueChange={value => handleInputChange('terminalEstufagemId', value)}>
+                    <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)}>
                     <SelectTrigger id="terminalEstufagemId">
                         <SelectValue placeholder="Selecione o terminal" />
                     </SelectTrigger>
@@ -300,7 +301,7 @@ export default function NovoProcessoPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                    <Select value={String(formData.portoEmbarqueId)} onValueChange={value => handleInputChange('portoEmbarqueId', value)}>
+                    <Select value={String(formData.portoEmbarqueId || '')} onValueChange={value => handleInputChange('portoEmbarqueId', value)}>
                     <SelectTrigger id="portoEmbarqueId">
                         <SelectValue placeholder="Selecione o porto" />
                     </SelectTrigger>
@@ -311,7 +312,7 @@ export default function NovoProcessoPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
-                    <Select value={String(formData.portoDescargaId)} onValueChange={value => handleInputChange('portoDescargaId', value)}>
+                    <Select value={String(formData.portoDescargaId || '')} onValueChange={value => handleInputChange('portoDescargaId', value)}>
                     <SelectTrigger id="portoDescargaId">
                         <SelectValue placeholder="Selecione o porto" />
                     </SelectTrigger>
@@ -335,11 +336,11 @@ export default function NovoProcessoPage() {
                      <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="booking_number">Nº do Booking</Label>
-                            <Input id="booking_number" value={formData.booking_number} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
+                            <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="armadorId">Armador</Label>
-                            <Select value={String(formData.armadorId)} onValueChange={value => handleInputChange('armadorId', value)}>
+                            <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
                                 <SelectTrigger id="armadorId">
                                     <SelectValue placeholder="Selecione o armador" />
                                 </SelectTrigger>
@@ -352,11 +353,11 @@ export default function NovoProcessoPage() {
                      <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="navio">Navio</Label>
-                            <Input id="navio" value={formData.navio} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC EUGENIA" />
+                            <Input id="navio" value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC EUGENIA" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="viagem">Viagem</Label>
-                            <Input id="viagem" value={formData.viagem} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: NAS21R" />
+                            <Input id="viagem" value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: NAS21R" />
                         </div>
                      </div>
                       <div className="grid md:grid-cols-2 gap-4">
@@ -434,15 +435,15 @@ export default function NovoProcessoPage() {
                     <div className='grid md:grid-cols-3 gap-4'>
                         <div className="space-y-2">
                             <Label htmlFor="nf_remessa">NFs de Remessa</Label>
-                            <Input id="nf_remessa" value={formData.nf_remessa} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Ex: 14575, 14579" />
+                            <Input id="nf_remessa" value={formData.nf_remessa || ''} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Ex: 14575, 14579" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="nf_retorno">NF de Retorno (Estufagem)</Label>
-                            <Input id="nf_retorno" value={formData.nf_retorno} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Ex: 16109" />
+                            <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Ex: 16109" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="nf_exportacao">NF de Exportação (NF-e)</Label>
-                            <Input id="nf_exportacao" value={formData.nf_exportacao} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira o nº da NF-e" />
+                            <Input id="nf_exportacao" value={formData.nf_exportacao || ''} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira o nº da NF-e" />
                         </div>
                     </div>
                     <div>
@@ -481,11 +482,11 @@ export default function NovoProcessoPage() {
                     <div className='grid md:grid-cols-2 gap-4'>
                         <div className="space-y-2">
                             <Label htmlFor="due_numero">Nº da DUE</Label>
-                            <Input id="due_numero" value={formData.due_numero} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
+                            <Input id="due_numero" value={formData.due_numero || ''} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
                         </div>
                          <div className="space-y-2">
                             <Label htmlFor="due_status">Status da DUE</Label>
-                            <Select value={formData.due_status} onValueChange={value => handleInputChange('due_status', value)}>
+                            <Select value={formData.due_status || ''} onValueChange={value => handleInputChange('due_status', value)}>
                                 <SelectTrigger id="due_status">
                                     <SelectValue placeholder="Selecione o status" />
                                 </SelectTrigger>
