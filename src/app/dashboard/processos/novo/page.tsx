@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const processStatusOptions = [
@@ -37,6 +38,10 @@ const processStatusOptions = [
     "CARGA_EM_TRANSITO_PARA_ESTUFAGEM",
     "AGUARDANDO_EMISSAO_NF_EXPORTACAO",
     "DUE_DESEMBARACADA",
+    "DOSSIÊ_SUBMETIDO / AGUARDANDO_ANÁLISE_FISCAL",
+    "INSPECAO_MAPA_AGENDADA",
+    "INSPECAO_MAPA_REALIZADA / AGUARDANDO_RELACRE",
+    "PRONTO_PARA_EMBARQUE",
     "Em trânsito",
     "Concluído",
     "Atrasado",
@@ -51,7 +56,7 @@ const initialDocuments = [
 ]
 
 const initialContainers = [
-    { id: 1, numero: 'MSCU1234567', lacre: 'SEAL123', vgm: '25000' }
+    { id: 1, numero: 'MSCU1234567', lacre: 'SEAL123', vgm: '25000', inspecionado: false, novo_lacre: '' }
 ]
 
 export default function NovoProcessoPage() {
@@ -79,7 +84,9 @@ export default function NovoProcessoPage() {
     nf_retorno: '16109',
     nf_exportacao: '',
     due_numero: '',
-    due_status: 'Não registrada'
+    due_status: 'Não registrada',
+    lpco_protocolo: '',
+    mapa_status: 'Aguardando Análise',
   });
 
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -123,16 +130,16 @@ export default function NovoProcessoPage() {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
   
-  const handleContainerChange = (index: number, field: string, value: string) => {
+  const handleContainerChange = (index: number, field: string, value: string | boolean) => {
     const updatedContainers = [...formData.containers];
-    updatedContainers[index] = {...updatedContainers[index], [field]: value};
+    (updatedContainers[index] as any)[field] = value;
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
 
   const addContainer = () => {
     setFormData(prev => ({
         ...prev,
-        containers: [...prev.containers, { id: Date.now(), numero: '', lacre: '', vgm: '' }]
+        containers: [...prev.containers, { id: Date.now(), numero: '', lacre: '', vgm: '', inspecionado: false, novo_lacre: '' }]
     }));
   };
 
@@ -496,6 +503,61 @@ export default function NovoProcessoPage() {
                                     <SelectItem value="Desembaraçada">Desembaraçada</SelectItem>
                                 </SelectContent>
                             </Select>
+                        </div>
+                    </div>
+                </CardContent>
+             </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Etapa 5: Gestão da Inspeção Final (MAPA)</CardTitle>
+                    <CardDescription>Gerencie a inspeção do MAPA e a liberação final para embarque.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="lpco_protocolo">Protocolo LPCO</Label>
+                            <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="mapa_status">Status da Inspeção MAPA</Label>
+                            <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
+                                <SelectTrigger id="mapa_status">
+                                    <SelectValue placeholder="Selecione o status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Aguardando Análise">Aguardando Análise</SelectItem>
+                                    <SelectItem value="Inspeção Agendada">Inspeção Agendada</SelectItem>
+                                    <SelectItem value="Inspeção Realizada">Inspeção Realizada</SelectItem>
+                                    <SelectItem value="Deferido">Deferido (Liberado)</SelectItem>
+                                    <SelectItem value="Indeferido">Indeferido (Rejeitado)</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                    <div>
+                        <h3 className="text-md font-medium mb-2">Contêineres para Inspeção</h3>
+                        <div className="space-y-2 rounded-md border p-4">
+                        {formData.containers.map((container, index) => (
+                             <div key={container.id} className="flex items-center gap-4">
+                                <Checkbox 
+                                    id={`inspecionado-${container.id}`} 
+                                    checked={container.inspecionado} 
+                                    onCheckedChange={(checked) => handleContainerChange(index, 'inspecionado', !!checked)}
+                                />
+                                <Label htmlFor={`inspecionado-${container.id}`} className="flex-1 font-normal">{container.numero || `Contêiner ${index + 1}`}</Label>
+                                {container.inspecionado && (
+                                     <Input 
+                                        value={container.novo_lacre} 
+                                        onChange={e => handleContainerChange(index, 'novo_lacre', e.target.value)} 
+                                        placeholder="Novo Lacre" 
+                                        className="h-8 max-w-xs"
+                                    />
+                                )}
+                             </div>
+                        ))}
+                        {formData.containers.length === 0 && (
+                            <p className="text-sm text-muted-foreground">Nenhum contêiner adicionado.</p>
+                        )}
                         </div>
                     </div>
                 </CardContent>
