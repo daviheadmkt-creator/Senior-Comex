@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -43,6 +43,7 @@ const processStatusOptions = [
     "INSPECAO_MAPA_REALIZADA / AGUARDANDO_RELACRE",
     "PRONTO_PARA_EMBARQUE",
     "Em trânsito",
+    "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO",
     "Concluído",
     "Atrasado",
     "Cancelado",
@@ -55,9 +56,13 @@ const initialDocuments = [
     { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
 ]
 
-const initialContainers = [
-    { id: 1, numero: 'MSCU1234567', lacre: 'SEAL123', vgm: '25000', inspecionado: false, novo_lacre: '' }
+const initialOriginalDocs = [
+    { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false },
+    { id: 'coo_original', name: 'Emitir Certificado de Origem (COO) Original', done: false },
+    { id: 'fito_original', name: 'Emitir Certificado Fitossanitário (FITO) Original', done: false },
+    { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true },
 ]
+
 
 export default function NovoProcessoPage() {
   const router = useRouter();
@@ -90,6 +95,8 @@ export default function NovoProcessoPage() {
     bl_master: '',
     navio_final: '',
     viagem_final: '',
+    documentos_originais: initialOriginalDocs,
+    awb_courier: '',
   });
 
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -100,14 +107,14 @@ export default function NovoProcessoPage() {
   const processId = searchParams.get('id');
 
   useEffect(() => {
-    const storedProducts = localStorage.getItem('products');
-    if (storedProducts) setProdutos(JSON.parse(storedProducts));
+    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+    setProdutos(storedProducts);
 
-    const storedPartners = localStorage.getItem('partners');
-    if (storedPartners) setParceiros(JSON.parse(storedPartners));
+    const storedPartners = JSON.parse(localStorage.getItem('partners') || '[]');
+    setParceiros(storedPartners);
     
-    const storedPorts = localStorage.getItem('ports');
-    if (storedPorts) setPortos(JSON.parse(storedPorts));
+    const storedPorts = JSON.parse(localStorage.getItem('ports') || '[]');
+    setPortos(storedPorts);
 
     if (isEditing && processId) {
         const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
@@ -118,6 +125,7 @@ export default function NovoProcessoPage() {
                 ...existingProcess,
                 documentos: existingProcess.documentos || initialDocuments,
                 containers: existingProcess.containers || [],
+                documentos_originais: existingProcess.documentos_originais || initialOriginalDocs,
             });
         }
     }
@@ -137,6 +145,13 @@ export default function NovoProcessoPage() {
     const updatedContainers = [...formData.containers];
     (updatedContainers[index] as any)[field] = value;
     setFormData(prev => ({...prev, containers: updatedContainers}));
+  };
+  
+  const handleOriginalDocChange = (docId: string, checked: boolean) => {
+    const updatedDocs = formData.documentos_originais.map(doc => 
+        doc.id === docId ? {...doc, done: checked} : doc
+    );
+     setFormData(prev => ({...prev, documentos_originais: updatedDocs}));
   };
 
   const addContainer = () => {
@@ -186,6 +201,7 @@ export default function NovoProcessoPage() {
                 const selectedExporter = parceiros.find(part => String(part.id) === String(formData.exportadorId));
                 const selectedPortoDescarga = portos.find(port => String(port.id) === String(formData.portoDescargaId));
                 return { 
+                    ...p, // keep old values if not present in formData
                     ...formData,
                     produtoNome: selectedProduct?.descricao || p.produtoNome,
                     exportadorNome: selectedExporter?.nome_fantasia || p.exportadorNome,
@@ -210,13 +226,14 @@ export default function NovoProcessoPage() {
         const selectedPortoDescarga = portos.find(p => String(p.id) === formData.portoDescargaId);
 
         const newProcesso = {
-          id: newId,
           ...formData,
+          id: newId,
           produtoNome: selectedProduct?.descricao || 'N/A',
           exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
           destino: selectedPortoDescarga?.name || 'N/A',
           documentos: initialDocuments,
           containers: [],
+          documentos_originais: initialOriginalDocs,
         };
 
         const updatedProcessos = [...storedProcessos, newProcesso];
@@ -550,7 +567,7 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor={`inspecionado-${container.id}`} className="flex-1 font-normal">{container.numero || `Contêiner ${index + 1}`}</Label>
                                 {container.inspecionado && (
                                      <Input 
-                                        value={container.novo_lacre} 
+                                        value={container.novo_lacre || ''} 
                                         onChange={e => handleContainerChange(index, 'novo_lacre', e.target.value)} 
                                         placeholder="Novo Lacre" 
                                         className="h-8 max-w-xs"
@@ -574,7 +591,7 @@ export default function NovoProcessoPage() {
                     <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="bl_master">Nº do B/L Master</Label>
-                            <Input id="bl_master" value={formData.bl_master} onChange={e => handleInputChange('bl_master', e.target.value)} placeholder="Ex: MEDUHI295369" />
+                            <Input id="bl_master" value={formData.bl_master || ''} onChange={e => handleInputChange('bl_master', e.target.value)} placeholder="Ex: MEDUHI295369" />
                         </div>
                         <div className="space-y-2">
                             <Label>Data de Embarque (Shipped on Board)</Label>
@@ -584,12 +601,45 @@ export default function NovoProcessoPage() {
                      <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="navio_final">Navio Final (se aplicável)</Label>
-                            <Input id="navio_final" value={formData.navio_final} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Confirme ou corrija o navio" />
+                            <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Confirme ou corrija o navio" />
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="viagem_final">Viagem Final (se aplicável)</Label>
-                            <Input id="viagem_final" value={formData.viagem_final} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Confirme ou corrija a viagem" />
+                            <Input id="viagem_final" value={formData.viagem_final || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Confirme ou corrija a viagem" />
                         </div>
+                    </div>
+                </CardContent>
+             </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Etapa 7: Obtenção dos Documentos Originais</CardTitle>
+                    <CardDescription>Gerencie a coleta dos documentos de pós-embarque.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div>
+                        <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
+                        <div className="space-y-3">
+                            {formData.documentos_originais.map((doc) => (
+                                <div key={doc.id} className={`flex items-center gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
+                                    <Checkbox
+                                        id={doc.id}
+                                        checked={doc.done}
+                                        onCheckedChange={(checked) => handleOriginalDocChange(doc.id, !!checked)}
+                                    />
+                                    <Label htmlFor={doc.id} className="font-normal text-sm">{doc.name}</Label>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                    <div className='flex items-end gap-4'>
+                        <div className="space-y-2 flex-1">
+                            <Label htmlFor="awb_courier">AWB do Courier (Envio)</Label>
+                            <Input id="awb_courier" value={formData.awb_courier} onChange={e => handleInputChange('awb_courier', e.target.value)} placeholder="Insira o código de rastreio" />
+                        </div>
+                        <Button type="button" variant="outline">
+                            <FileDown className="mr-2 h-4 w-4" />
+                            Gerar Pacote PDF
+                        </Button>
                     </div>
                 </CardContent>
              </Card>

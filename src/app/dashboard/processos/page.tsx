@@ -58,20 +58,36 @@ const initialProcessos = [
             { id: 'packing', name: 'Packing List', status: 'Aguardando Envio' },
             { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
         ],
-        containers: [],
-        nf_remessa: '',
-        nf_retorno: '',
-        nf_exportacao: '',
-        due_numero: '',
-        due_status: 'Não registrada'
+        containers: [
+            { id: 1, numero: 'MSCU1234567', lacre: 'SEAL123', vgm: '25000', inspecionado: true, novo_lacre: 'FJ22391479' },
+            { id: 2, numero: 'MSNU5520181', lacre: 'SEAL124', vgm: '25100', inspecionado: true, novo_lacre: 'FJ22391480' },
+            { id: 3, numero: 'MSAU2468135', lacre: 'SEAL125', vgm: '24950', inspecionado: false, novo_lacre: '' },
+        ],
+        nf_remessa: '14575, 14579, 14582',
+        nf_retorno: '16109',
+        nf_exportacao: '55670',
+        due_numero: '24BR0001234567',
+        due_status: 'Desembaraçada',
+        lpco_protocolo: 'E2500273876',
+        mapa_status: 'Deferido',
+        bl_master: 'MEDUHI295369',
+        navio_final: 'MSC AMALFI',
+        viagem_final: 'NA522R',
+        documentos_originais: [
+            { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: true },
+            { id: 'coo_original', name: 'Emitir Certificado de Origem (COO) Original', done: true },
+            { id: 'fito_original', name: 'Emitir Certificado Fitossanitário (FITO) Original', done: false },
+            { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: true, isSubtask: true },
+        ],
+        awb_courier: '',
     }
 ];
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    if (status.includes('Aguardando') || status.includes('EM_APROVAÇÃO')) return 'secondary';
-    if (status.includes('Confirmado') || status.includes('APROVADOS') || status.includes('Desembaraçada')) return 'default';
-    if (status.includes('Atrasado') || status.includes('Cancelado') || status.includes('CORRECAO')) return 'destructive';
-    if (status.includes('Concluído')) return 'outline';
+    if (status.includes('Aguardando') || status.includes('EM_APROVAÇÃO') || status.includes('Iniciado')) return 'secondary';
+    if (status.includes('Confirmado') || status.includes('APROVADOS') || status.includes('Desembaraçada') || status.includes('Deferido') || status.includes('Realizada') || status.includes('trânsito')) return 'default';
+    if (status.includes('Atrasado') || status.includes('Cancelado') || status.includes('CORRECAO') || status.includes('Indeferido')) return 'destructive';
+    if (status.includes('Concluído') || status.includes('PRONTO')) return 'outline';
     return 'default';
 }
 
@@ -190,5 +206,3 @@ export default function GestaoProcessosPage() {
     </Card>
   );
 }
-
-    
