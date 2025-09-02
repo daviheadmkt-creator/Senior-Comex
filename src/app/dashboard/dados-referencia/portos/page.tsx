@@ -20,8 +20,15 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+
+
+const initialPorts = [
+    { id: 1, name: 'Paranaguá', un_locode: 'BRPNG', country: 'Brasil' },
+    { id: 2, name: 'Damietta', un_locode: 'EGDAM', country: 'Egito' },
+    { id: 3, name: 'Santos', un_locode: 'BRSSZ', country: 'Brasil' },
+];
 
 export default function PortosPage() {
     const { toast } = useToast();
@@ -29,13 +36,15 @@ export default function PortosPage() {
     const [formData, setFormData] = useState({ name: '', un_locode: '', country: '' });
     const [editingId, setEditingId] = useState<number | null>(null);
 
-    // Efeito para carregar do localStorage
-    useState(() => {
+    useEffect(() => {
         const storedPorts = localStorage.getItem('ports');
-        if (storedPorts) {
+        if (storedPorts && JSON.parse(storedPorts).length > 0) {
             setPorts(JSON.parse(storedPorts));
+        } else {
+            localStorage.setItem('ports', JSON.stringify(initialPorts));
+            setPorts(initialPorts);
         }
-    });
+    }, []);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({...prev, [field]: value}));

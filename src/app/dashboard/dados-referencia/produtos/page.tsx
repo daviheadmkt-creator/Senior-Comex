@@ -34,18 +34,38 @@ import {
 import { useEffect, useState } from 'react';
 
 
-const initialProducts: any[] = [];
+const initialProducts: any[] = [
+    {
+        id: 1,
+        descricao: 'Gergelim',
+        descricao_en: 'SESAME SEEDS',
+        ncm: '12074090',
+        unidade: 'KG',
+        peso_padrao: '50',
+        embalagem_padrao: 'Sacos de polipropileno branco',
+    },
+    {
+        id: 2,
+        descricao: 'Soja em Grãos',
+        descricao_en: 'SOYBEANS',
+        ncm: '12019000',
+        unidade: 'KG',
+        peso_padrao: '60',
+        embalagem_padrao: 'Sacos de polipropileno',
+    }
+];
 
 
 export default function ListaProdutosPage() {
-  const [products, setProducts] = useState(initialProducts);
+  const [products, setProducts] = useState<any[]>([]);
 
   useEffect(() => {
     const storedProducts = localStorage.getItem('products');
-    if (storedProducts) {
+    if (storedProducts && JSON.parse(storedProducts).length > 0) {
       setProducts(JSON.parse(storedProducts));
     } else {
       localStorage.setItem('products', JSON.stringify(initialProducts));
+      setProducts(initialProducts);
     }
   }, []);
 

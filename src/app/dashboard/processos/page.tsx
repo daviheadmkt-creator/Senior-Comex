@@ -34,6 +34,27 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useEffect, useState } from 'react';
 
+const initialProcessos = [
+    {
+        id: 1,
+        po_number: '3426B',
+        produtoId: '1',
+        produtoNome: 'Gergelim',
+        quantidade: '270,00000 TON',
+        exportadorId: '1',
+        exportadorNome: 'AGRICOLA FERRARI',
+        terminalEstufagemId: '5',
+        portoEmbarqueId: '1',
+        portoDescargaId: '2',
+        destino: 'Damietta',
+        status: 'Booking Confirmado / Aguardando Draft',
+        booking_number: 'EBKG12749239',
+        armadorId: '3',
+        navio: 'MSC EUGENIA',
+        viagem: 'NAS21R',
+    }
+];
+
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case 'Iniciado / Aguardando Booking':
@@ -59,8 +80,11 @@ export default function GestaoProcessosPage() {
 
   useEffect(() => {
     const storedProcessos = localStorage.getItem('processos');
-    if (storedProcessos) {
+    if (storedProcessos && JSON.parse(storedProcessos).length > 0) {
       setProcessos(JSON.parse(storedProcessos));
+    } else {
+        localStorage.setItem('processos', JSON.stringify(initialProcessos));
+        setProcessos(initialProcessos);
     }
   }, []);
 

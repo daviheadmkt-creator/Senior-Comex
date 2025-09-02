@@ -34,13 +34,22 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { useEffect, useState } from 'react';
 
+const initialUsers = [
+    { id: 1, nome: 'Vitória Eduarda', email: 'vitoria@agricolaferrari.com.br', cargo: 'COMÉRCIO EXTERIOR', permissao: 'Administrador' },
+    { id: 2, nome: 'Ricardo Rossi', email: 'ricardo@agricolaferrari.com.br', cargo: 'Contador', permissao: 'Operador' },
+];
+
+
 export default function ListaUsuariosPage() {
   const [users, setUsers] = useState<any[]>([]);
 
   useEffect(() => {
     const storedUsers = localStorage.getItem('users');
-    if (storedUsers) {
+    if (storedUsers && JSON.parse(storedUsers).length > 0) {
       setUsers(JSON.parse(storedUsers));
+    } else {
+        localStorage.setItem('users', JSON.stringify(initialUsers));
+        setUsers(initialUsers);
     }
   }, []);
 
