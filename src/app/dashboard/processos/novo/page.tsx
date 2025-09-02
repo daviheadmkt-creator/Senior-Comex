@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -24,16 +24,27 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/ui/date-picker';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
+
 
 const processStatusOptions = [
     "Iniciado / Aguardando Booking",
     "Booking Confirmado / Aguardando Draft",
-    "Draft Enviado / Aguardando Aprovação",
-    "Documentos Aprovados / Aguardando Embarque",
+    "DRAFTS_EM_APROVAÇÃO",
+    "DRAFTS_APROVADOS",
+    "CORRECAO_DE_DRAFT_SOLICITADA",
     "Em trânsito",
     "Concluído",
     "Atrasado",
     "Cancelado",
+]
+
+const initialDocuments = [
+    { id: 'bl', name: 'Bill of Lading (B/L)', status: 'Aguardando Envio' },
+    { id: 'invoice', name: 'Commercial Invoice', status: 'Aguardando Envio' },
+    { id: 'packing', name: 'Packing List', status: 'Aguardando Envio' },
+    { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
 ]
 
 export default function NovoProcessoPage() {
@@ -56,6 +67,7 @@ export default function NovoProcessoPage() {
     armadorId: '',
     navio: '',
     viagem: '',
+    documentos: initialDocuments,
   });
 
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -79,7 +91,10 @@ export default function NovoProcessoPage() {
         const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
         const existingProcess = storedProcessos.find((p: any) => p.id === Number(processId));
         if (existingProcess) {
-            setFormData(existingProcess);
+            setFormData({
+                ...existingProcess,
+                documentos: existingProcess.documentos || initialDocuments,
+            });
         }
     }
   }, [isEditing, processId]);
@@ -93,6 +108,28 @@ export default function NovoProcessoPage() {
   const handleInputChange = (id: string, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
+
+  const handleDocumentStatusChange = (docId: string, newStatus: string) => {
+    setFormData(prev => ({
+        ...prev,
+        documentos: prev.documentos.map(doc => doc.id === docId ? {...doc, status: newStatus} : doc)
+    }));
+    toast({ title: `Status do documento "${docId.toUpperCase()}" atualizado para ${newStatus}!` });
+  }
+
+  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    switch (status) {
+        case 'Aprovado':
+            return 'default';
+        case 'Em Análise':
+            return 'secondary';
+        case 'Rejeitado':
+            return 'destructive';
+        default:
+            return 'outline';
+    }
+  }
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -135,6 +172,7 @@ export default function NovoProcessoPage() {
           produtoNome: selectedProduct?.descricao || 'N/A',
           exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
           destino: selectedPortoDescarga?.name || 'N/A',
+          documentos: initialDocuments,
         };
 
         const updatedProcessos = [...storedProcessos, newProcesso];
@@ -170,6 +208,17 @@ export default function NovoProcessoPage() {
             </div>
             </CardHeader>
             <CardContent className="grid gap-6">
+                 <div className="space-y-2">
+                    <Label htmlFor="status">Status Geral do Processo</Label>
+                    <Select value={formData.status} onValueChange={value => handleInputChange('status', value)}>
+                        <SelectTrigger id="status">
+                            <SelectValue placeholder="Selecione o status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                        </SelectContent>
+                    </Select>
+                </div>
                 <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                         <Label htmlFor="po_number">Nº do Contrato/PO</Label>
@@ -243,6 +292,7 @@ export default function NovoProcessoPage() {
         </Card>
 
         {isEditing && (
+            <>
              <Card>
                 <CardHeader>
                     <CardTitle>Etapa 2: Confirmação de Booking</CardTitle>
@@ -300,19 +350,49 @@ export default function NovoProcessoPage() {
                             <DatePicker />
                         </div>
                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="status">Status do Processo</Label>
-                        <Select value={formData.status} onValueChange={value => handleInputChange('status', value)}>
-                            <SelectTrigger id="status">
-                                <SelectValue placeholder="Selecione o status" />
-                            </SelectTrigger>
-                            <SelectContent>
-                               {processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                            </SelectContent>
-                        </Select>
-                    </div>
                 </CardContent>
              </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Etapa 3: Gestão de Documentos (Drafts)</CardTitle>
+                    <CardDescription>Faça o upload e controle a aprovação dos documentos de embarque.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <Table>
+                        <TableHeader>
+                            <TableRow>
+                                <TableHead>Documento</TableHead>
+                                <TableHead>Status</TableHead>
+                                <TableHead className="text-right">Ações</TableHead>
+                            </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                            {formData.documentos.map(doc => (
+                                <TableRow key={doc.id}>
+                                    <TableCell className="font-medium">{doc.name}</TableCell>
+                                    <TableCell>
+                                        <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
+                                    </TableCell>
+                                    <TableCell className="text-right">
+                                        <div className='flex gap-2 justify-end'>
+                                            <Button size="sm" variant="outline" type="button" onClick={() => handleDocumentStatusChange(doc.id, 'Em Análise')}>
+                                                <Upload className="mr-2 h-4 w-4" /> Upload
+                                            </Button>
+                                            <Button size="sm" variant="outline" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(doc.id, 'Rejeitado')}>
+                                                <XCircle className="mr-2 h-4 w-4" /> Reprovar
+                                            </Button>
+                                            <Button size="sm" variant="outline" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(doc.id, 'Aprovado')}>
+                                                <CheckCircle className="mr-2 h-4 w-4" /> Aprovar
+                                            </Button>
+                                        </div>
+                                    </TableCell>
+                                </TableRow>
+                            ))}
+                        </TableBody>
+                    </Table>
+                </CardContent>
+             </Card>
+            </>
         )}
 
         <div className="flex justify-end gap-2 pt-4">
@@ -325,3 +405,4 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+

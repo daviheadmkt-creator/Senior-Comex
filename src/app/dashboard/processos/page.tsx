@@ -56,22 +56,11 @@ const initialProcessos = [
 ];
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
-        case 'Iniciado / Aguardando Booking':
-            return 'secondary';
-        case 'Booking Confirmado / Aguardando Draft':
-            return 'default';
-        case 'Em andamento':
-            return 'default';
-        case 'Em trânsito':
-            return 'default';
-        case 'Atrasado':
-            return 'destructive';
-        case 'Concluído':
-            return 'outline';
-        default:
-            return 'secondary';
-    }
+    if (status.includes('Aguardando')) return 'secondary';
+    if (status.includes('Confirmado') || status.includes('Aprovado')) return 'default';
+    if (status.includes('Atrasado') || status.includes('Cancelado')) return 'destructive';
+    if (status.includes('Concluído')) return 'outline';
+    return 'default';
 }
 
 export default function GestaoProcessosPage() {
