@@ -493,9 +493,9 @@ export default function NovoProcessoPage() {
                             <TableBody>
                                 {formData.containers.map((container, index) => (
                                     <TableRow key={index}>
-                                        <TableCell><Input value={container.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
-                                        <TableCell><Input value={container.lacre} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
-                                        <TableCell><Input value={container.vgm} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
+                                        <TableCell><Input value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
+                                        <TableCell><Input value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
+                                        <TableCell><Input value={container.vgm || ''} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
                                         <TableCell>
                                             <Button type="button" variant="ghost" size="icon" onClick={() => removeContainer(index)}>
                                                 <Trash2 className="h-4 w-4 text-destructive" />
@@ -634,7 +634,7 @@ export default function NovoProcessoPage() {
                     <div className='flex items-end gap-4'>
                         <div className="space-y-2 flex-1">
                             <Label htmlFor="awb_courier">AWB do Courier (Envio)</Label>
-                            <Input id="awb_courier" value={formData.awb_courier} onChange={e => handleInputChange('awb_courier', e.target.value)} placeholder="Insira o código de rastreio" />
+                            <Input id="awb_courier" value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} placeholder="Insira o código de rastreio" />
                         </div>
                         <Button type="button" variant="outline">
                             <FileDown className="mr-2 h-4 w-4" />
