@@ -49,7 +49,7 @@ export default function DashboardPage() {
 
     const totalOperacoes = processos.length;
     const alertasAtuais = processos.filter(p => p.status === 'Atrasado').length;
-    const concluidosMes = processos.filter(p => p.status === 'Concluído').length; // Simplificado, idealmente filtraria por data
+    const concluidosMes = processos.filter(p => p.status === 'Concluído').length; 
 
     const statusData = processos.reduce((acc, processo) => {
         const status = processo.status;
