@@ -32,7 +32,8 @@ import {
   Building,
   Sailboat,
   Contact,
-  HardHat
+  HardHat,
+  PackageCheck
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -63,7 +64,13 @@ export default function DashboardLayout({
             <SidebarMenuItem>
                 <SidebarMenuButton href="/dashboard" isActive>
                     <LayoutDashboard />
-                    <span>Dashboard</span>
+                    <span>Visão Geral</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+                <SidebarMenuButton href="/dashboard/processos">
+                    <PackageCheck />
+                    <span>Gestão de Processos</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
@@ -94,40 +101,6 @@ export default function DashboardLayout({
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton>
-                    <DollarSign />
-                    <span>Financeiro</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/lancamentos">
-                            Lançamentos
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/projecao-caixa">
-                            Projeção de Caixa
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/kpis">
-                            KPIs Financeiro
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/relatorios">
-                            Relatórios
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                </SidebarMenuSub>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/portal/login">
-                    <Ship />
-                    <span>Portal do Cliente</span>
-                </SidebarMenuButton>
             </SidebarMenuItem>
             <SidebarMenuItem>
                 <SidebarMenuButton href="/dashboard/configuracoes">
