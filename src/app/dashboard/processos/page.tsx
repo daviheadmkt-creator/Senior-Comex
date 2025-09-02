@@ -34,11 +34,15 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useEffect, useState } from 'react';
 
-const getStatusVariant = (status: string) => {
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case 'Iniciado / Aguardando Booking':
             return 'secondary';
+        case 'Booking Confirmado / Aguardando Draft':
+            return 'default';
         case 'Em andamento':
+            return 'default';
+        case 'Em trânsito':
             return 'default';
         case 'Atrasado':
             return 'destructive';
@@ -67,8 +71,8 @@ export default function GestaoProcessosPage() {
   };
   
   const filteredProcessos = processos.filter(processo => 
-      processo.po_number.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase())
+      (processo.po_number && processo.po_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
   return (
