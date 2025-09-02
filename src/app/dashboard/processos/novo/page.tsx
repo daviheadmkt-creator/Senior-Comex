@@ -79,14 +79,17 @@ export default function NovoProcessoPage() {
     navio: '',
     viagem: '',
     documentos: initialDocuments,
-    containers: initialContainers,
-    nf_remessa: '14575, 14579',
-    nf_retorno: '16109',
+    containers: [] as any[],
+    nf_remessa: '',
+    nf_retorno: '',
     nf_exportacao: '',
     due_numero: '',
     due_status: 'Não registrada',
     lpco_protocolo: '',
     mapa_status: 'Aguardando Análise',
+    bl_master: '',
+    navio_final: '',
+    viagem_final: '',
   });
 
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -114,7 +117,7 @@ export default function NovoProcessoPage() {
                 ...formData, // Start with default values
                 ...existingProcess,
                 documentos: existingProcess.documentos || initialDocuments,
-                containers: existingProcess.containers || initialContainers,
+                containers: existingProcess.containers || [],
             });
         }
     }
@@ -562,6 +565,34 @@ export default function NovoProcessoPage() {
                     </div>
                 </CardContent>
              </Card>
+              <Card>
+                <CardHeader>
+                    <CardTitle>Etapa 6: Confirmação de Embarque e Transição</CardTitle>
+                    <CardDescription>Registre os dados finais do embarque para iniciar a fase de pós-embarque.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="bl_master">Nº do B/L Master</Label>
+                            <Input id="bl_master" value={formData.bl_master} onChange={e => handleInputChange('bl_master', e.target.value)} placeholder="Ex: MEDUHI295369" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label>Data de Embarque (Shipped on Board)</Label>
+                            <DatePicker />
+                        </div>
+                    </div>
+                     <div className="grid md:grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="navio_final">Navio Final (se aplicável)</Label>
+                            <Input id="navio_final" value={formData.navio_final} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Confirme ou corrija o navio" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="viagem_final">Viagem Final (se aplicável)</Label>
+                            <Input id="viagem_final" value={formData.viagem_final} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Confirme ou corrija a viagem" />
+                        </div>
+                    </div>
+                </CardContent>
+             </Card>
             </>
         )}
 
@@ -575,5 +606,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
