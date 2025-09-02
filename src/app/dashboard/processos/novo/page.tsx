@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -34,6 +34,9 @@ const processStatusOptions = [
     "DRAFTS_EM_APROVAÇÃO",
     "DRAFTS_APROVADOS",
     "CORRECAO_DE_DRAFT_SOLICITADA",
+    "CARGA_EM_TRANSITO_PARA_ESTUFAGEM",
+    "AGUARDANDO_EMISSAO_NF_EXPORTACAO",
+    "DUE_DESEMBARACADA",
     "Em trânsito",
     "Concluído",
     "Atrasado",
@@ -45,6 +48,10 @@ const initialDocuments = [
     { id: 'invoice', name: 'Commercial Invoice', status: 'Aguardando Envio' },
     { id: 'packing', name: 'Packing List', status: 'Aguardando Envio' },
     { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
+]
+
+const initialContainers = [
+    { id: 1, numero: 'MSCU1234567', lacre: 'SEAL123', vgm: '25000' }
 ]
 
 export default function NovoProcessoPage() {
@@ -62,12 +69,17 @@ export default function NovoProcessoPage() {
     portoEmbarqueId: '',
     portoDescargaId: '',
     status: 'Iniciado / Aguardando Booking',
-    // Booking fields
     booking_number: '',
     armadorId: '',
     navio: '',
     viagem: '',
     documentos: initialDocuments,
+    containers: initialContainers,
+    nf_remessa: '14575, 14579',
+    nf_retorno: '16109',
+    nf_exportacao: '',
+    due_numero: '',
+    due_status: 'Não registrada'
   });
 
   const [produtos, setProdutos] = useState<any[]>([]);
@@ -94,6 +106,7 @@ export default function NovoProcessoPage() {
             setFormData({
                 ...existingProcess,
                 documentos: existingProcess.documentos || initialDocuments,
+                containers: existingProcess.containers || initialContainers,
             });
         }
     }
@@ -108,6 +121,25 @@ export default function NovoProcessoPage() {
   const handleInputChange = (id: string, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
+  
+  const handleContainerChange = (index: number, field: string, value: string) => {
+    const updatedContainers = [...formData.containers];
+    updatedContainers[index] = {...updatedContainers[index], [field]: value};
+    setFormData(prev => ({...prev, containers: updatedContainers}));
+  };
+
+  const addContainer = () => {
+    setFormData(prev => ({
+        ...prev,
+        containers: [...prev.containers, { id: Date.now(), numero: '', lacre: '', vgm: '' }]
+    }));
+  };
+
+  const removeContainer = (index: number) => {
+    const updatedContainers = formData.containers.filter((_, i) => i !== index);
+    setFormData(prev => ({...prev, containers: updatedContainers}));
+  };
+
 
   const handleDocumentStatusChange = (docId: string, newStatus: string) => {
     setFormData(prev => ({
@@ -173,6 +205,7 @@ export default function NovoProcessoPage() {
           exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
           destino: selectedPortoDescarga?.name || 'N/A',
           documentos: initialDocuments,
+          containers: [],
         };
 
         const updatedProcessos = [...storedProcessos, newProcesso];
@@ -392,6 +425,80 @@ export default function NovoProcessoPage() {
                     </Table>
                 </CardContent>
              </Card>
+             <Card>
+                <CardHeader>
+                    <CardTitle>Etapa 4: Liberação Física e Fiscal na Origem</CardTitle>
+                    <CardDescription>Gerencie as notas fiscais, contêineres e o desembaraço aduaneiro.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <div className='grid md:grid-cols-3 gap-4'>
+                        <div className="space-y-2">
+                            <Label htmlFor="nf_remessa">NFs de Remessa</Label>
+                            <Input id="nf_remessa" value={formData.nf_remessa} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Ex: 14575, 14579" />
+                        </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="nf_retorno">NF de Retorno (Estufagem)</Label>
+                            <Input id="nf_retorno" value={formData.nf_retorno} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Ex: 16109" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="nf_exportacao">NF de Exportação (NF-e)</Label>
+                            <Input id="nf_exportacao" value={formData.nf_exportacao} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira o nº da NF-e" />
+                        </div>
+                    </div>
+                    <div>
+                        <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-md font-medium">Dados dos Contêineres</h3>
+                            <Button type="button" variant="outline" size="sm" onClick={addContainer}>
+                                <PlusCircle className="mr-2 h-4 w-4" />
+                                Adicionar Contêiner
+                            </Button>
+                        </div>
+                        <Table>
+                            <TableHeader>
+                                <TableRow>
+                                    <TableHead>Nº do Contêiner</TableHead>
+                                    <TableHead>Nº do Lacre</TableHead>
+                                    <TableHead>VGM (kg)</TableHead>
+                                    <TableHead>Ação</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {formData.containers.map((container, index) => (
+                                    <TableRow key={index}>
+                                        <TableCell><Input value={container.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
+                                        <TableCell><Input value={container.lacre} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
+                                        <TableCell><Input value={container.vgm} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
+                                        <TableCell>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeContainer(index)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </TableCell>
+                                    </TableRow>
+                                ))}
+                            </TableBody>
+                        </Table>
+                    </div>
+                    <div className='grid md:grid-cols-2 gap-4'>
+                        <div className="space-y-2">
+                            <Label htmlFor="due_numero">Nº da DUE</Label>
+                            <Input id="due_numero" value={formData.due_numero} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="due_status">Status da DUE</Label>
+                            <Select value={formData.due_status} onValueChange={value => handleInputChange('due_status', value)}>
+                                <SelectTrigger id="due_status">
+                                    <SelectValue placeholder="Selecione o status" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    <SelectItem value="Não registrada">Não registrada</SelectItem>
+                                    <SelectItem value="Em análise">Em análise</SelectItem>
+                                    <SelectItem value="Desembaraçada">Desembaraçada</SelectItem>
+                                </SelectContent>
+                            </Select>
+                        </div>
+                    </div>
+                </CardContent>
+             </Card>
             </>
         )}
 
@@ -406,3 +513,4 @@ export default function NovoProcessoPage() {
   );
 }
 
+    

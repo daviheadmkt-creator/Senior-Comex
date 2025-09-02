@@ -52,13 +52,25 @@ const initialProcessos = [
         armadorId: '3',
         navio: 'MSC EUGENIA',
         viagem: 'NAS21R',
+        documentos: [
+            { id: 'bl', name: 'Bill of Lading (B/L)', status: 'Aguardando Envio' },
+            { id: 'invoice', name: 'Commercial Invoice', status: 'Aguardando Envio' },
+            { id: 'packing', name: 'Packing List', status: 'Aguardando Envio' },
+            { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
+        ],
+        containers: [],
+        nf_remessa: '',
+        nf_retorno: '',
+        nf_exportacao: '',
+        due_numero: '',
+        due_status: 'Não registrada'
     }
 ];
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    if (status.includes('Aguardando')) return 'secondary';
-    if (status.includes('Confirmado') || status.includes('Aprovado')) return 'default';
-    if (status.includes('Atrasado') || status.includes('Cancelado')) return 'destructive';
+    if (status.includes('Aguardando') || status.includes('EM_APROVAÇÃO')) return 'secondary';
+    if (status.includes('Confirmado') || status.includes('APROVADOS') || status.includes('Desembaraçada')) return 'default';
+    if (status.includes('Atrasado') || status.includes('Cancelado') || status.includes('CORRECAO')) return 'destructive';
     if (status.includes('Concluído')) return 'outline';
     return 'default';
 }
@@ -178,3 +190,5 @@ export default function GestaoProcessosPage() {
     </Card>
   );
 }
+
+    
