@@ -27,6 +27,7 @@ import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 
 const processStatusOptions = [
@@ -45,7 +46,6 @@ const processStatusOptions = [
     "Em trânsito",
     "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO",
     "Concluído",
-    "Atrasado",
     "Cancelado",
 ]
 
@@ -132,9 +132,9 @@ export default function NovoProcessoPage() {
   }, [isEditing, processId]);
 
 
-  const pageTitle = isEditing ? 'Editar Processo' : 'Novo Processo (Nomeação)';
+  const pageTitle = isEditing ? `Editar Processo ${formData.po_number || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
-    ? 'Altere as informações do processo selecionado.'
+    ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
   const handleInputChange = (id: string, value: string | number | null) => {
@@ -246,412 +246,469 @@ export default function NovoProcessoPage() {
         });
     }
 
-    router.push('/dashboard/processos');
+    if (!isEditing) {
+        router.push('/dashboard/processos');
+    }
   };
 
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Card>
-            <CardHeader>
-            <div className="flex justify-between items-center">
-                <div className='flex items-center gap-4'>
-                <Link href="/dashboard/processos" passHref>
-                    <Button variant="outline" size="icon" type="button">
-                    <ArrowLeft className="h-4 w-4" />
-                    </Button>
-                </Link>
-                <div>
-                    <CardTitle>{pageTitle}</CardTitle>
-                    <CardDescription>{pageDescription}</CardDescription>
-                </div>
-                </div>
+        <div className="flex justify-between items-center">
+            <div className='flex items-center gap-4'>
+            <Link href="/dashboard/processos" passHref>
+                <Button variant="outline" size="icon" type="button">
+                <ArrowLeft className="h-4 w-4" />
+                </Button>
+            </Link>
+            <div>
+                <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
+                <p className="text-muted-foreground">{pageDescription}</p>
             </div>
-            </CardHeader>
-            <CardContent className="grid gap-6">
-                 <div className="space-y-2">
-                    <Label htmlFor="status">Status Geral do Processo</Label>
-                    <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
-                        <SelectTrigger id="status">
-                            <SelectValue placeholder="Selecione o status" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                        <Label htmlFor="po_number">Nº do Contrato/PO</Label>
-                        <Input id="po_number" value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Ex: 3426B" />
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="produtoId">Produto</Label>
-                        <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
-                        <SelectTrigger id="produtoId">
-                            <SelectValue placeholder="Selecione o produto" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            {produtos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
-                        </SelectContent>
-                        </Select>
-                    </div>
-                </div>
-                <div className="grid md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="quantidade">Quantidade</Label>
-                    <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                    <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
-                    <SelectTrigger id="exportadorId">
-                        <SelectValue placeholder="Selecione o exportador" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
-                </div>
-                </div>
-                <div className="grid md:grid-cols-3 gap-4">
-                <div className="space-y-2">
-                    <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
-                    <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)}>
-                    <SelectTrigger id="terminalEstufagemId">
-                        <SelectValue placeholder="Selecione o terminal" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {parceiros.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                    <Select value={String(formData.portoEmbarqueId || '')} onValueChange={value => handleInputChange('portoEmbarqueId', value)}>
-                    <SelectTrigger id="portoEmbarqueId">
-                        <SelectValue placeholder="Selecione o porto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
-                </div>
-                <div className="space-y-2">
-                    <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
-                    <Select value={String(formData.portoDescargaId || '')} onValueChange={value => handleInputChange('portoDescargaId', value)}>
-                    <SelectTrigger id="portoDescargaId">
-                        <SelectValue placeholder="Selecione o porto" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                    </SelectContent>
-                    </Select>
-                </div>
-                </div>
-            </CardContent>
-        </Card>
+            </div>
+             <div className="flex justify-end gap-2">
+                <Link href="/dashboard/processos" passHref>
+                    <Button variant="outline" type="button">Cancelar</Button>
+                </Link>
+                <Button type="submit">Salvar Alterações</Button>
+            </div>
+        </div>
 
-        {isEditing && (
-            <>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Etapa 2: Confirmação de Booking</CardTitle>
-                    <CardDescription>Insira os dados da reserva de praça confirmada pelo armador.</CardDescription>
-                </CardHeader>
-                <CardContent className="grid gap-6">
-                     <div className="grid md:grid-cols-2 gap-4">
+        <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
+          {/* Etapa 1 */}
+          <AccordionItem value="item-1">
+            <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 1: Nomeação do Processo</h3>
+                    <p className='text-sm text-muted-foreground'>Dados iniciais recebidos para começar o processo de exportação.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="grid gap-6 pt-6">
                         <div className="space-y-2">
-                            <Label htmlFor="booking_number">Nº do Booking</Label>
-                            <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="armadorId">Armador</Label>
-                            <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
-                                <SelectTrigger id="armadorId">
-                                    <SelectValue placeholder="Selecione o armador" />
+                            <Label htmlFor="status">Status Geral do Processo</Label>
+                            <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
+                                <SelectTrigger id="status">
+                                    <SelectValue placeholder="Selecione o status" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {parceiros.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                    {processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
-                     </div>
-                     <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="navio">Navio</Label>
-                            <Input id="navio" value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC EUGENIA" />
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="po_number">Nº do Contrato/PO</Label>
+                                <Input id="po_number" value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Ex: 3426B" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="produtoId">Produto</Label>
+                                <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
+                                <SelectTrigger id="produtoId">
+                                    <SelectValue placeholder="Selecione o produto" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {produtos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
+                                </SelectContent>
+                                </Select>
+                            </div>
                         </div>
+                        <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="viagem">Viagem</Label>
-                            <Input id="viagem" value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: NAS21R" />
-                        </div>
-                     </div>
-                      <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label>Previsão de Embarque (ETD)</Label>
-                            <DatePicker />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Previsão de Chegada (ETA)</Label>
-                            <DatePicker />
-                        </div>
-                     </div>
-                     <div className="grid md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                            <Label>Deadline Draft</Label>
-                            <DatePicker />
+                            <Label htmlFor="quantidade">Quantidade</Label>
+                            <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
                         </div>
                         <div className="space-y-2">
-                            <Label>Deadline VGM</Label>
-                            <DatePicker />
+                            <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
+                            <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
+                            <SelectTrigger id="exportadorId">
+                                <SelectValue placeholder="Selecione o exportador" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                            </SelectContent>
+                            </Select>
+                        </div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
+                        <div className="space-y-2">
+                            <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
+                            <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)}>
+                            <SelectTrigger id="terminalEstufagemId">
+                                <SelectValue placeholder="Selecione o terminal" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {parceiros.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                            </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label>Deadline Carga</Label>
-                            <DatePicker />
-                        </div>
-                     </div>
-                </CardContent>
-             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Etapa 3: Gestão de Documentos (Drafts)</CardTitle>
-                    <CardDescription>Faça o upload e controle a aprovação dos documentos de embarque.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Table>
-                        <TableHeader>
-                            <TableRow>
-                                <TableHead>Documento</TableHead>
-                                <TableHead>Status</TableHead>
-                                <TableHead className="text-right">Ações</TableHead>
-                            </TableRow>
-                        </TableHeader>
-                        <TableBody>
-                            {formData.documentos.map(doc => (
-                                <TableRow key={doc.id}>
-                                    <TableCell className="font-medium">{doc.name}</TableCell>
-                                    <TableCell>
-                                        <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
-                                    </TableCell>
-                                    <TableCell className="text-right">
-                                        <div className='flex gap-2 justify-end'>
-                                            <Button size="sm" variant="outline" type="button" onClick={() => handleDocumentStatusChange(doc.id, 'Em Análise')}>
-                                                <Upload className="mr-2 h-4 w-4" /> Upload
-                                            </Button>
-                                            <Button size="sm" variant="outline" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(doc.id, 'Rejeitado')}>
-                                                <XCircle className="mr-2 h-4 w-4" /> Reprovar
-                                            </Button>
-                                            <Button size="sm" variant="outline" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(doc.id, 'Aprovado')}>
-                                                <CheckCircle className="mr-2 h-4 w-4" /> Aprovar
-                                            </Button>
-                                        </div>
-                                    </TableCell>
-                                </TableRow>
-                            ))}
-                        </TableBody>
-                    </Table>
-                </CardContent>
-             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Etapa 4: Liberação Física e Fiscal na Origem</CardTitle>
-                    <CardDescription>Gerencie as notas fiscais, contêineres e o desembaraço aduaneiro.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className='grid md:grid-cols-3 gap-4'>
-                        <div className="space-y-2">
-                            <Label htmlFor="nf_remessa">NFs de Remessa</Label>
-                            <Input id="nf_remessa" value={formData.nf_remessa || ''} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Ex: 14575, 14579" />
+                            <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
+                            <Select value={String(formData.portoEmbarqueId || '')} onValueChange={value => handleInputChange('portoEmbarqueId', value)}>
+                            <SelectTrigger id="portoEmbarqueId">
+                                <SelectValue placeholder="Selecione o porto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                            </SelectContent>
+                            </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="nf_retorno">NF de Retorno (Estufagem)</Label>
-                            <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Ex: 16109" />
+                            <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
+                            <Select value={String(formData.portoDescargaId || '')} onValueChange={value => handleInputChange('portoDescargaId', value)}>
+                            <SelectTrigger id="portoDescargaId">
+                                <SelectValue placeholder="Selecione o porto" />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                            </SelectContent>
+                            </Select>
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="nf_exportacao">NF de Exportação (NF-e)</Label>
-                            <Input id="nf_exportacao" value={formData.nf_exportacao || ''} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira o nº da NF-e" />
                         </div>
-                    </div>
-                    <div>
-                        <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-md font-medium">Dados dos Contêineres</h3>
-                            <Button type="button" variant="outline" size="sm" onClick={addContainer}>
-                                <PlusCircle className="mr-2 h-4 w-4" />
-                                Adicionar Contêiner
-                            </Button>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Etapa 2 */}
+          <AccordionItem value="item-2" disabled={!isEditing}>
+             <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 2: Confirmação de Booking</h3>
+                    <p className='text-sm text-muted-foreground'>Dados da reserva de praça confirmada pelo armador.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="grid gap-6 pt-6">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="booking_number">Nº do Booking</Label>
+                                <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="armadorId">Armador</Label>
+                                <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
+                                    <SelectTrigger id="armadorId">
+                                        <SelectValue placeholder="Selecione o armador" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {parceiros.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="navio">Navio</Label>
+                                <Input id="navio" value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC EUGENIA" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="viagem">Viagem</Label>
+                                <Input id="viagem" value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: NAS21R" />
+                            </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label>Previsão de Embarque (ETD)</Label>
+                                <DatePicker />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Previsão de Chegada (ETA)</Label>
+                                <DatePicker />
+                            </div>
+                        </div>
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <div className="space-y-2">
+                                <Label>Deadline Draft</Label>
+                                <DatePicker />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Deadline VGM</Label>
+                                <DatePicker />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Deadline Carga</Label>
+                                <DatePicker />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
+          
+           {/* Etapa 3 */}
+          <AccordionItem value="item-3" disabled={!isEditing}>
+             <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 3: Gestão de Documentos (Drafts)</h3>
+                    <p className='text-sm text-muted-foreground'>Upload e controle da aprovação dos documentos de embarque.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="pt-6">
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Nº do Contêiner</TableHead>
-                                    <TableHead>Nº do Lacre</TableHead>
-                                    <TableHead>VGM (kg)</TableHead>
-                                    <TableHead>Ação</TableHead>
+                                    <TableHead>Documento</TableHead>
+                                    <TableHead>Status</TableHead>
+                                    <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {formData.containers.map((container, index) => (
-                                    <TableRow key={index}>
-                                        <TableCell><Input value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
-                                        <TableCell><Input value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
-                                        <TableCell><Input value={container.vgm || ''} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
+                                {formData.documentos.map(doc => (
+                                    <TableRow key={doc.id}>
+                                        <TableCell className="font-medium">{doc.name}</TableCell>
                                         <TableCell>
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeContainer(index)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
+                                            <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-right">
+                                            <div className='flex gap-2 justify-end'>
+                                                <Button size="sm" variant="outline" type="button" onClick={() => handleDocumentStatusChange(doc.id, 'Em Análise')}>
+                                                    <Upload className="mr-2 h-4 w-4" /> Upload
+                                                </Button>
+                                                <Button size="sm" variant="outline" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(doc.id, 'Rejeitado')}>
+                                                    <XCircle className="mr-2 h-4 w-4" /> Reprovar
+                                                </Button>
+                                                <Button size="sm" variant="outline" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(doc.id, 'Aprovado')}>
+                                                    <CheckCircle className="mr-2 h-4 w-4" /> Aprovar
+                                                </Button>
+                                            </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>
                         </Table>
-                    </div>
-                    <div className='grid md:grid-cols-2 gap-4'>
-                        <div className="space-y-2">
-                            <Label htmlFor="due_numero">Nº da DUE</Label>
-                            <Input id="due_numero" value={formData.due_numero || ''} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+           {/* Etapa 4 */}
+          <AccordionItem value="item-4" disabled={!isEditing}>
+             <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 4: Liberação Física e Fiscal na Origem</h3>
+                    <p className='text-sm text-muted-foreground'>Gerencie as notas fiscais, contêineres e o desembaraço aduaneiro.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="space-y-6 pt-6">
+                        <div className='grid md:grid-cols-3 gap-4'>
+                            <div className="space-y-2">
+                                <Label htmlFor="nf_remessa">NFs de Remessa</Label>
+                                <Input id="nf_remessa" value={formData.nf_remessa || ''} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Ex: 14575, 14579" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="nf_retorno">NF de Retorno (Estufagem)</Label>
+                                <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Ex: 16109" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="nf_exportacao">NF de Exportação (NF-e)</Label>
+                                <Input id="nf_exportacao" value={formData.nf_exportacao || ''} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira o nº da NF-e" />
+                            </div>
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="due_status">Status da DUE</Label>
-                            <Select value={formData.due_status || ''} onValueChange={value => handleInputChange('due_status', value)}>
-                                <SelectTrigger id="due_status">
-                                    <SelectValue placeholder="Selecione o status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Não registrada">Não registrada</SelectItem>
-                                    <SelectItem value="Em análise">Em análise</SelectItem>
-                                    <SelectItem value="Desembaraçada">Desembaraçada</SelectItem>
-                                </SelectContent>
-                            </Select>
+                        <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-md font-medium">Dados dos Contêineres</h3>
+                                <Button type="button" variant="outline" size="sm" onClick={addContainer}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adicionar Contêiner
+                                </Button>
+                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Nº do Contêiner</TableHead>
+                                        <TableHead>Nº do Lacre</TableHead>
+                                        <TableHead>VGM (kg)</TableHead>
+                                        <TableHead>Ação</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {formData.containers.map((container, index) => (
+                                        <TableRow key={index}>
+                                            <TableCell><Input value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
+                                            <TableCell><Input value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
+                                            <TableCell><Input value={container.vgm || ''} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
+                                            <TableCell>
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeContainer(index)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
                         </div>
-                    </div>
-                </CardContent>
-             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Etapa 5: Gestão da Inspeção Final (MAPA)</CardTitle>
-                    <CardDescription>Gerencie a inspeção do MAPA e a liberação final para embarque.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="lpco_protocolo">Protocolo LPCO</Label>
-                            <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
+                        <div className='grid md:grid-cols-2 gap-4'>
+                            <div className="space-y-2">
+                                <Label htmlFor="due_numero">Nº da DUE</Label>
+                                <Input id="due_numero" value={formData.due_numero || ''} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="due_status">Status da DUE</Label>
+                                <Select value={formData.due_status || ''} onValueChange={value => handleInputChange('due_status', value)}>
+                                    <SelectTrigger id="due_status">
+                                        <SelectValue placeholder="Selecione o status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Não registrada">Não registrada</SelectItem>
+                                        <SelectItem value="Em análise">Em análise</SelectItem>
+                                        <SelectItem value="Desembaraçada">Desembaraçada</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="mapa_status">Status da Inspeção MAPA</Label>
-                            <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
-                                <SelectTrigger id="mapa_status">
-                                    <SelectValue placeholder="Selecione o status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="Aguardando Análise">Aguardando Análise</SelectItem>
-                                    <SelectItem value="Inspeção Agendada">Inspeção Agendada</SelectItem>
-                                    <SelectItem value="Inspeção Realizada">Inspeção Realizada</SelectItem>
-                                    <SelectItem value="Deferido">Deferido (Liberado)</SelectItem>
-                                    <SelectItem value="Indeferido">Indeferido (Rejeitado)</SelectItem>
-                                </SelectContent>
-                            </Select>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
+          
+           {/* Etapa 5 */}
+          <AccordionItem value="item-5" disabled={!isEditing}>
+             <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 5: Gestão da Inspeção Final (MAPA)</h3>
+                    <p className='text-sm text-muted-foreground'>Gerencie a inspeção do MAPA e a liberação final para embarque.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="space-y-6 pt-6">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="lpco_protocolo">Protocolo LPCO</Label>
+                                <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="mapa_status">Status da Inspeção MAPA</Label>
+                                <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
+                                    <SelectTrigger id="mapa_status">
+                                        <SelectValue placeholder="Selecione o status" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        <SelectItem value="Aguardando Análise">Aguardando Análise</SelectItem>
+                                        <SelectItem value="Inspeção Agendada">Inspeção Agendada</SelectItem>
+                                        <SelectItem value="Inspeção Realizada">Inspeção Realizada</SelectItem>
+                                        <SelectItem value="Deferido">Deferido (Liberado)</SelectItem>
+                                        <SelectItem value="Indeferido">Indeferido (Rejeitado)</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                            </div>
                         </div>
-                    </div>
-                    <div>
-                        <h3 className="text-md font-medium mb-2">Contêineres para Inspeção</h3>
-                        <div className="space-y-2 rounded-md border p-4">
-                        {formData.containers.map((container, index) => (
-                             <div key={container.id} className="flex items-center gap-4">
-                                <Checkbox 
-                                    id={`inspecionado-${container.id}`} 
-                                    checked={container.inspecionado} 
-                                    onCheckedChange={(checked) => handleContainerChange(index, 'inspecionado', !!checked)}
-                                />
-                                <Label htmlFor={`inspecionado-${container.id}`} className="flex-1 font-normal">{container.numero || `Contêiner ${index + 1}`}</Label>
-                                {container.inspecionado && (
-                                     <Input 
-                                        value={container.novo_lacre || ''} 
-                                        onChange={e => handleContainerChange(index, 'novo_lacre', e.target.value)} 
-                                        placeholder="Novo Lacre" 
-                                        className="h-8 max-w-xs"
+                        <div>
+                            <h3 className="text-md font-medium mb-2">Contêineres para Inspeção</h3>
+                            <div className="space-y-2 rounded-md border p-4">
+                            {formData.containers.map((container, index) => (
+                                <div key={container.id} className="flex items-center gap-4">
+                                    <Checkbox 
+                                        id={`inspecionado-${container.id}`} 
+                                        checked={container.inspecionado} 
+                                        onCheckedChange={(checked) => handleContainerChange(index, 'inspecionado', !!checked)}
                                     />
-                                )}
-                             </div>
-                        ))}
-                        {formData.containers.length === 0 && (
-                            <p className="text-sm text-muted-foreground">Nenhum contêiner adicionado.</p>
-                        )}
-                        </div>
-                    </div>
-                </CardContent>
-             </Card>
-              <Card>
-                <CardHeader>
-                    <CardTitle>Etapa 6: Confirmação de Embarque e Transição</CardTitle>
-                    <CardDescription>Registre os dados finais do embarque para iniciar a fase de pós-embarque.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="bl_master">Nº do B/L Master</Label>
-                            <Input id="bl_master" value={formData.bl_master || ''} onChange={e => handleInputChange('bl_master', e.target.value)} placeholder="Ex: MEDUHI295369" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label>Data de Embarque (Shipped on Board)</Label>
-                            <DatePicker />
-                        </div>
-                    </div>
-                     <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="navio_final">Navio Final (se aplicável)</Label>
-                            <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Confirme ou corrija o navio" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="viagem_final">Viagem Final (se aplicável)</Label>
-                            <Input id="viagem_final" value={formData.viagem_final || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Confirme ou corrija a viagem" />
-                        </div>
-                    </div>
-                </CardContent>
-             </Card>
-             <Card>
-                <CardHeader>
-                    <CardTitle>Etapa 7: Obtenção dos Documentos Originais</CardTitle>
-                    <CardDescription>Gerencie a coleta dos documentos de pós-embarque.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <div>
-                        <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
-                        <div className="space-y-3">
-                            {formData.documentos_originais.map((doc) => (
-                                <div key={doc.id} className={`flex items-center gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
-                                    <Checkbox
-                                        id={doc.id}
-                                        checked={doc.done}
-                                        onCheckedChange={(checked) => handleOriginalDocChange(doc.id, !!checked)}
-                                    />
-                                    <Label htmlFor={doc.id} className="font-normal text-sm">{doc.name}</Label>
+                                    <Label htmlFor={`inspecionado-${container.id}`} className="flex-1 font-normal">{container.numero || `Contêiner ${index + 1}`}</Label>
+                                    {container.inspecionado && (
+                                        <Input 
+                                            value={container.novo_lacre || ''} 
+                                            onChange={e => handleContainerChange(index, 'novo_lacre', e.target.value)} 
+                                            placeholder="Novo Lacre" 
+                                            className="h-8 max-w-xs"
+                                        />
+                                    )}
                                 </div>
                             ))}
+                            {formData.containers.length === 0 && (
+                                <p className="text-sm text-muted-foreground">Nenhum contêiner adicionado.</p>
+                            )}
+                            </div>
                         </div>
-                    </div>
-                    <div className='flex items-end gap-4'>
-                        <div className="space-y-2 flex-1">
-                            <Label htmlFor="awb_courier">AWB do Courier (Envio)</Label>
-                            <Input id="awb_courier" value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} placeholder="Insira o código de rastreio" />
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
+          
+           {/* Etapa 6 */}
+          <AccordionItem value="item-6" disabled={!isEditing}>
+             <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 6: Confirmação de Embarque e Transição</h3>
+                    <p className='text-sm text-muted-foreground'>Registre os dados finais para iniciar a fase de pós-embarque.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="space-y-6 pt-6">
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="bl_master">Nº do B/L Master</Label>
+                                <Input id="bl_master" value={formData.bl_master || ''} onChange={e => handleInputChange('bl_master', e.target.value)} placeholder="Ex: MEDUHI295369" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label>Data de Embarque (Shipped on Board)</Label>
+                                <DatePicker />
+                            </div>
                         </div>
-                        <Button type="button" variant="outline">
-                            <FileDown className="mr-2 h-4 w-4" />
-                            Gerar Pacote PDF
-                        </Button>
-                    </div>
-                </CardContent>
-             </Card>
-            </>
-        )}
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="navio_final">Navio Final (se aplicável)</Label>
+                                <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Confirme ou corrija o navio" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="viagem_final">Viagem Final (se aplicável)</Label>
+                                <Input id="viagem_final" value={formData.viagem_final || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Confirme ou corrija a viagem" />
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
 
-        <div className="flex justify-end gap-2 pt-4">
-            <Link href="/dashboard/processos" passHref>
-            <Button variant="outline" type="button">Cancelar</Button>
-            </Link>
-            <Button type="submit">Salvar</Button>
-        </div>
+           {/* Etapa 7 */}
+          <AccordionItem value="item-7" disabled={!isEditing}>
+             <AccordionTrigger>
+                <div className='text-left'>
+                    <h3 className="text-lg font-semibold">Etapa 7: Obtenção dos Documentos Originais</h3>
+                    <p className='text-sm text-muted-foreground'>Gerencie a coleta e o envio dos documentos de pós-embarque.</p>
+                </div>
+            </AccordionTrigger>
+            <AccordionContent>
+                <Card>
+                    <CardContent className="space-y-6 pt-6">
+                        <div>
+                            <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
+                            <div className="space-y-3">
+                                {formData.documentos_originais.map((doc) => (
+                                    <div key={doc.id} className={`flex items-center gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
+                                        <Checkbox
+                                            id={doc.id}
+                                            checked={doc.done}
+                                            onCheckedChange={(checked) => handleOriginalDocChange(doc.id, !!checked)}
+                                        />
+                                        <Label htmlFor={doc.id} className="font-normal text-sm">{doc.name}</Label>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                        <div className='flex items-end gap-4'>
+                            <div className="space-y-2 flex-1">
+                                <Label htmlFor="awb_courier">AWB do Courier (Envio)</Label>
+                                <Input id="awb_courier" value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} placeholder="Insira o código de rastreio" />
+                            </div>
+                            <Button type="button" variant="outline">
+                                <FileDown className="mr-2 h-4 w-4" />
+                                Gerar Pacote PDF
+                            </Button>
+                        </div>
+                    </CardContent>
+                </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+        </Accordion>
       </form>
     </div>
   );
