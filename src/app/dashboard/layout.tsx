@@ -35,7 +35,8 @@ import {
   HardHat,
   PackageCheck,
   TrendingUp,
-  CreditCard
+  CreditCard,
+  Globe
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -136,6 +137,12 @@ export default function DashboardLayout({
                 <SidebarMenuButton href="/dashboard/configuracoes">
                     <Settings />
                     <span>Configurações</span>
+                </SidebarMenuButton>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <SidebarMenuButton href="/portal/embarques">
+                    <Globe />
+                    <span>Portal do Cliente</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
