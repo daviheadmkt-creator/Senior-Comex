@@ -17,10 +17,11 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Bar, BarChart, CartesianGrid, Legend, Pie, PieChart, Cell, ResponsiveContainer, Tooltip, XAxis, YAxis, LineChart, Line } from 'recharts';
-import { RefreshCw, Ship, Plane, Truck, AlertTriangle, CheckCircle, PackageSearch } from 'lucide-react';
+import { RefreshCw, Ship, Plane, Truck, AlertTriangle, CheckCircle, PackageSearch, FileWarning, CalendarClock } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 
 const volumeData = [
   { time: '09:00', volume: 12000 },
@@ -34,7 +35,11 @@ const volumeData = [
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
 
-const recentActivities: any[] = [];
+const alerts = [
+    { id: 1, icon: <CalendarClock className="h-5 w-5 text-yellow-600" />, message: "Deadline de Draft para o processo SEN2378-26 se aproxima (2 dias).", link: "/dashboard/processos" },
+    { id: 2, icon: <FileWarning className="h-5 w-5 text-orange-500" />, message: "Faltando Packing List para o processo SEN2378-26.", link: "/dashboard/processos" },
+    { id: 3, icon: <AlertTriangle className="h-5 w-5 text-red-600" />, message: "Processo SEN2378-28 com status 'Atrasado'.", link: "/dashboard/processos" },
+]
 
 
 export default function DashboardPage() {
@@ -159,34 +164,30 @@ export default function DashboardPage() {
         </div>
          <Card>
             <CardHeader>
-                <CardTitle>Atividades Recentes</CardTitle>
+                <CardTitle>Alertas e Pendências</CardTitle>
+                 <CardDescription>Ações e prazos que requerem sua atenção imediata.</CardDescription>
             </CardHeader>
             <CardContent>
-                 <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>Processo</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>Localização</TableHead>
-                            <TableHead>Horário</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                       {recentActivities.map((activity) => (
-                         <TableRow key={activity.id}>
-                            <TableCell className="font-medium">{activity.id}</TableCell>
-                            <TableCell><Badge variant="outline">{activity.status}</Badge></TableCell>
-                            <TableCell>{activity.location}</TableCell>
-                            <TableCell className="text-muted-foreground">{activity.time}</TableCell>
-                        </TableRow>
-                       ))}
-                       {recentActivities.length === 0 && (
-                          <TableRow>
-                            <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhuma atividade recente</TableCell>
-                          </TableRow>
-                       )}
-                    </TableBody>
-                </Table>
+                 <div className="space-y-4">
+                    {alerts.map(alert => (
+                        <Link href={alert.link} key={alert.id} passHref>
+                             <div className="flex items-center p-3 rounded-lg border hover:bg-accent cursor-pointer">
+                                <div className="mr-4">
+                                    {alert.icon}
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm font-medium">{alert.message}</p>
+                                </div>
+                                <Button variant="secondary" size="sm">Ver Processo</Button>
+                            </div>
+                        </Link>
+                    ))}
+                    {alerts.length === 0 && (
+                        <div className="text-center text-muted-foreground py-4">
+                            Nenhum alerta no momento.
+                        </div>
+                    )}
+                 </div>
             </CardContent>
         </Card>
     </div>
