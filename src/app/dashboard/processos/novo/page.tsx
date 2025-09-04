@@ -71,6 +71,8 @@ export default function NovoProcessoPage() {
 
   const [formData, setFormData] = useState({
     id: null,
+    processo_interno: '',
+    data_nomeacao: '',
     po_number: '',
     produtoId: '',
     quantidade: '',
@@ -344,11 +346,22 @@ export default function NovoProcessoPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                        <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid md:grid-cols-3 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="processo_interno">Número do Processo Interno</Label>
+                                <Input id="processo_interno" value={formData.processo_interno || ''} onChange={e => handleInputChange('processo_interno', e.target.value)} placeholder="Ex: SEN-2024-001" />
+                            </div>
                             <div className="space-y-2">
                                 <Label htmlFor="po_number">Nº do Contrato/PO</Label>
                                 <Input id="po_number" value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Ex: 3426B" />
                             </div>
+                             <div className="space-y-2">
+                                <Label>Data da Nomeação</Label>
+                                <DatePicker />
+                            </div>
+                        </div>
+                        <div className="grid md:grid-cols-2 gap-4">
+                           
                             <div className="space-y-2">
                                 <Label htmlFor="produtoId">Produto</Label>
                                 <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
@@ -360,11 +373,10 @@ export default function NovoProcessoPage() {
                                 </SelectContent>
                                 </Select>
                             </div>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="quantidade">Quantidade</Label>
-                            <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
+                             <div className="space-y-2">
+                                <Label htmlFor="quantidade">Quantidade</Label>
+                                <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
+                            </div>
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
@@ -376,7 +388,6 @@ export default function NovoProcessoPage() {
                                 {parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                             </SelectContent>
                             </Select>
-                        </div>
                         </div>
                         <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
@@ -805,5 +816,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
