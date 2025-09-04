@@ -100,6 +100,9 @@ export default function NovoProcessoPage() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [parceiros, setParceiros] = useState<any[]>([]);
   const [portos, setPortos] = useState<any[]>([]);
+  const [terminais, setTerminais] = useState<any[]>([]);
+  const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
+
 
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
@@ -114,6 +117,9 @@ export default function NovoProcessoPage() {
     const storedPorts = JSON.parse(localStorage.getItem('ports') || '[]');
     setPortos(storedPorts);
 
+    const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
+    setTerminais(storedTerminais);
+
     if (isEditing && processId) {
         const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
         const existingProcess = storedProcessos.find((p: any) => p.id === Number(processId));
@@ -125,6 +131,10 @@ export default function NovoProcessoPage() {
                 containers: existingProcess.containers || [],
                 documentos_originais: existingProcess.documentos_originais || initialOriginalDocs,
             });
+             if (existingProcess.portoEmbarqueId) {
+                const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(existingProcess.portoEmbarqueId));
+                setFilteredTerminais(filtered);
+            }
         }
     }
   }, [isEditing, processId]);
@@ -138,6 +148,13 @@ export default function NovoProcessoPage() {
   const handleInputChange = (id: string, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
+
+  const handlePortChange = (value: string) => {
+    handleInputChange('portoEmbarqueId', value);
+    const filtered = terminais.filter(t => String(t.portoId) === value);
+    setFilteredTerminais(filtered);
+    handleInputChange('terminalEstufagemId', null); // Reset terminal selection
+  }
   
   const handleContainerChange = (index: number, field: string, value: string | boolean) => {
     const updatedContainers = [...formData.containers];
@@ -404,25 +421,25 @@ export default function NovoProcessoPage() {
                         </div>
                         <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
-                            <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)}>
-                            <SelectTrigger id="terminalEstufagemId">
-                                <SelectValue placeholder="Selecione o terminal" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {parceiros.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                            </SelectContent>
+                            <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
+                            <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
+                                <SelectTrigger id="portoEmbarqueId">
+                                    <SelectValue placeholder="Selecione o porto" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                            <Select value={String(formData.portoEmbarqueId || '')} onValueChange={value => handleInputChange('portoEmbarqueId', value)}>
-                            <SelectTrigger id="portoEmbarqueId">
-                                <SelectValue placeholder="Selecione o porto" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                            </SelectContent>
+                            <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
+                             <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)} disabled={!formData.portoEmbarqueId}>
+                                <SelectTrigger id="terminalEstufagemId">
+                                    <SelectValue placeholder="Selecione o terminal" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {filteredTerminais.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="space-y-2">

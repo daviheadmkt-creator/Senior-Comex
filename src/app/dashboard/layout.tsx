@@ -36,7 +36,8 @@ import {
   PackageCheck,
   TrendingUp,
   CreditCard,
-  Globe
+  Globe,
+  Warehouse
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -124,6 +125,11 @@ export default function DashboardLayout({
                      <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/dashboard/dados-referencia/portos">
                             Portos
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                     <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/dados-referencia/terminais">
+                            Terminais
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                     <SidebarMenuSubItem>
