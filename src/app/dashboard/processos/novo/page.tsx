@@ -130,7 +130,7 @@ export default function NovoProcessoPage() {
   }, [isEditing, processId]);
 
 
-  const pageTitle = isEditing ? `Editar Processo ${formData.po_number || ''}` : 'Novo Processo (Nomeação)';
+  const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
@@ -546,7 +546,7 @@ export default function NovoProcessoPage() {
                             <TableBody>
                                 {formData.documentos.map((doc, index) => (
                                     <TableRow key={doc.id}>
-                                        <TableCell><Input value={doc.name} onChange={e => handleDocumentChange(index, 'name', e.target.value)} placeholder="Ex: Bill of Lading" /></TableCell>
+                                        <TableCell><Input value={doc.name || ''} onChange={e => handleDocumentChange(index, 'name', e.target.value)} placeholder="Ex: Bill of Lading" /></TableCell>
                                         <TableCell><DatePicker /></TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>

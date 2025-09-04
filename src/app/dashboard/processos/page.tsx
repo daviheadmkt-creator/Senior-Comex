@@ -37,6 +37,7 @@ import { useEffect, useState } from 'react';
 const initialProcessos = [
     {
         id: 1,
+        processo_interno: 'SEN-2024-001',
         po_number: '3426B',
         produtoId: '1',
         produtoNome: 'Gergelim',
@@ -112,7 +113,7 @@ export default function GestaoProcessosPage() {
   };
   
   const filteredProcessos = processos.filter(processo => 
-      (processo.po_number && processo.po_number.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
@@ -139,7 +140,7 @@ export default function GestaoProcessosPage() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
-                placeholder="Buscar por Referência (PO) ou Cliente..." 
+                placeholder="Buscar por Processo ou Cliente..." 
                 className="pl-8" 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -149,7 +150,7 @@ export default function GestaoProcessosPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Referência (PO)</TableHead>
+              <TableHead>Processo Interno</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Destino</TableHead>
@@ -160,7 +161,7 @@ export default function GestaoProcessosPage() {
           <TableBody>
             {filteredProcessos.map((processo) => (
               <TableRow key={processo.id}>
-                <TableCell className="font-medium">{processo.po_number}</TableCell>
+                <TableCell className="font-medium">{processo.processo_interno}</TableCell>
                 <TableCell>{processo.exportadorNome}</TableCell>
                 <TableCell>{processo.produtoNome}</TableCell>
                 <TableCell>{processo.destino}</TableCell>
