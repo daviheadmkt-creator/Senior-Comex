@@ -49,12 +49,8 @@ const processStatusOptions = [
     "Cancelado",
 ]
 
-const initialDocuments = [
-    { id: 'bl', name: 'Bill of Lading (B/L)', status: 'Aguardando Envio' },
-    { id: 'invoice', name: 'Commercial Invoice', status: 'Aguardando Envio' },
-    { id: 'packing', name: 'Packing List', status: 'Aguardando Envio' },
-    { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
-]
+const initialDocuments: any[] = [];
+
 
 const initialOriginalDocs = [
     { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false },
@@ -148,6 +144,24 @@ export default function NovoProcessoPage() {
     (updatedContainers[index] as any)[field] = value;
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
+
+  const handleDocumentChange = (index: number, field: string, value: string) => {
+    const updatedDocuments = [...formData.documentos];
+    (updatedDocuments[index] as any)[field] = value;
+    setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
+  };
+
+  const addDocument = () => {
+    setFormData(prev => ({
+        ...prev,
+        documentos: [...prev.documentos, { id: Date.now(), name: '', status: 'Aguardando Envio', date: '' }]
+    }));
+  };
+
+  const removeDocument = (index: number) => {
+    const updatedDocuments = formData.documentos.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
+  };
   
   const handleOriginalDocChange = (docId: string, checked: boolean) => {
     const updatedDocs = formData.documentos_originais.map(doc => 
@@ -169,12 +183,11 @@ export default function NovoProcessoPage() {
   };
 
 
-  const handleDocumentStatusChange = (docId: string, newStatus: string) => {
-    setFormData(prev => ({
-        ...prev,
-        documentos: prev.documentos.map(doc => doc.id === docId ? {...doc, status: newStatus} : doc)
-    }));
-    toast({ title: `Status do documento "${docId.toUpperCase()}" atualizado para ${newStatus}!` });
+  const handleDocumentStatusChange = (index: number, newStatus: string) => {
+      const updatedDocuments = [...formData.documentos];
+      updatedDocuments[index].status = newStatus;
+      setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
+      toast({ title: `Status do documento "${updatedDocuments[index].name}" atualizado para ${newStatus}!` });
   }
 
   const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -192,7 +205,7 @@ export default function NovoProcessoPage() {
 
   const getStepStatusIcon = (step: number) => {
         const { status, booking_number, documentos, due_status, mapa_status, bl_master, documentos_originais, awb_courier } = formData;
-        const allDocsApproved = documentos.every(d => d.status === 'Aprovado');
+        const allDocsApproved = documentos.length > 0 && documentos.every(d => d.status === 'Aprovado');
         const allOriginalDocsDone = documentos_originais.every(d => d.done);
 
         switch (step) {
@@ -512,37 +525,55 @@ export default function NovoProcessoPage() {
             </AccordionTrigger>
             <AccordionContent>
                 <Card>
-                    <CardContent className="pt-6">
+                    <CardHeader>
+                        <div className='flex justify-between items-center'>
+                            <CardTitle className='text-base'>Lista de Documentos</CardTitle>
+                            <Button size="sm" variant="outline" type="button" onClick={addDocument}>
+                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Documento
+                            </Button>
+                        </div>
+                    </CardHeader>
+                    <CardContent>
                         <Table>
                             <TableHeader>
                                 <TableRow>
-                                    <TableHead>Documento</TableHead>
+                                    <TableHead className='w-[30%]'>Nome do Documento</TableHead>
+                                    <TableHead>Data</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {formData.documentos.map(doc => (
+                                {formData.documentos.map((doc, index) => (
                                     <TableRow key={doc.id}>
-                                        <TableCell className="font-medium">{doc.name}</TableCell>
+                                        <TableCell><Input value={doc.name} onChange={e => handleDocumentChange(index, 'name', e.target.value)} placeholder="Ex: Bill of Lading" /></TableCell>
+                                        <TableCell><DatePicker /></TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
                                         </TableCell>
                                         <TableCell className="text-right">
-                                            <div className='flex gap-2 justify-end'>
-                                                <Button size="sm" variant="outline" type="button" onClick={() => handleDocumentStatusChange(doc.id, 'Em Análise')}>
-                                                    <Upload className="mr-2 h-4 w-4" /> Upload
+                                            <div className='flex gap-1 justify-end'>
+                                                <Button size="icon" variant="ghost" type="button" onClick={() => handleDocumentStatusChange(index, 'Em Análise')}>
+                                                    <Upload className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="sm" variant="outline" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(doc.id, 'Rejeitado')}>
-                                                    <XCircle className="mr-2 h-4 w-4" /> Reprovar
+                                                <Button size="icon" variant="ghost" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(index, 'Rejeitado')}>
+                                                    <XCircle className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="sm" variant="outline" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(doc.id, 'Aprovado')}>
-                                                    <CheckCircle className="mr-2 h-4 w-4" /> Aprovar
+                                                <Button size="icon" variant="ghost" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(index, 'Aprovado')}>
+                                                    <CheckCircle className="h-4 w-4" />
+                                                </Button>
+                                                <Button size="icon" variant="ghost" type="button" onClick={() => removeDocument(index)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </div>
                                         </TableCell>
                                     </TableRow>
                                 ))}
+                                {formData.documentos.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum documento adicionado.</TableCell>
+                                    </TableRow>
+                                )}
                             </TableBody>
                         </Table>
                     </CardContent>
