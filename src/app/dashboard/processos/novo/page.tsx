@@ -83,6 +83,7 @@ export default function NovoProcessoPage() {
     viagem: '',
     documentos: initialDocuments,
     containers: [] as any[],
+    bls: [] as any[],
     nf_remessa: '',
     nf_retorno: '',
     nf_exportacao: '',
@@ -129,6 +130,7 @@ export default function NovoProcessoPage() {
                 ...existingProcess,
                 documentos: existingProcess.documentos || initialDocuments,
                 containers: existingProcess.containers || [],
+                bls: existingProcess.bls || [],
                 documentos_originais: existingProcess.documentos_originais || initialOriginalDocs,
             });
              if (existingProcess.portoEmbarqueId) {
@@ -161,6 +163,12 @@ export default function NovoProcessoPage() {
     (updatedContainers[index] as any)[field] = value;
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
+  
+  const handleBlChange = (index: number, field: string, value: string) => {
+    const updatedBls = [...formData.bls];
+    (updatedBls[index] as any)[field] = value;
+    setFormData(prev => ({...prev, bls: updatedBls}));
+  };
 
   const handleDocumentChange = (index: number, field: string, value: string) => {
     const updatedDocuments = [...formData.documentos];
@@ -171,7 +179,7 @@ export default function NovoProcessoPage() {
   const addDocument = () => {
     setFormData(prev => ({
         ...prev,
-        documentos: [...prev.documentos, { id: Date.now(), name: '', status: 'Aguardando Envio', date: '' }]
+        documentos: [...prev.documentos, { id: Date.now(), name: '', status: 'Aguardando Envio', date: '', file: null }]
     }));
   };
 
@@ -198,6 +206,18 @@ export default function NovoProcessoPage() {
     const updatedContainers = formData.containers.filter((_, i) => i !== index);
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
+  
+  const addBl = () => {
+    setFormData(prev => ({
+        ...prev,
+        bls: [...prev.bls, { id: Date.now(), numero: '', data: '', data_liberacao: '', data_retirada: '', quantidade: '' }]
+    }));
+  };
+
+  const removeBl = (index: number) => {
+    const updatedBls = formData.bls.filter((_, i) => i !== index);
+    setFormData(prev => ({...prev, bls: updatedBls}));
+  };
 
 
   const handleDocumentStatusChange = (index: number, newStatus: string) => {
@@ -216,6 +236,8 @@ export default function NovoProcessoPage() {
             return 'secondary';
         case 'Rejeitado':
             return 'destructive';
+        case 'Aguardando Envio':
+            return 'outline';
         default:
             return 'outline';
     }
@@ -249,12 +271,12 @@ export default function NovoProcessoPage() {
                 if (due_status === 'Desembaraçada') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                  return <XCircle className="h-5 w-5 text-gray-400" />;
             case 6: // Embarque
-                if (bl_master) return <CheckCircle className="h-5 w-5 text-green-500" />;
+                if (formData.bls.length > 0 && formData.bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
             case 7: // Docs Originais
                 if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (bl_master) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+                if (formData.bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                  return <XCircle className="h-5 w-5 text-gray-400" />;
             case 8: // Encerramento
                 if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -310,6 +332,7 @@ export default function NovoProcessoPage() {
           destino: selectedPortoDescarga?.name || 'N/A',
           documentos: initialDocuments,
           containers: [],
+          bls: [],
           documentos_originais: initialOriginalDocs,
         };
 
@@ -573,6 +596,7 @@ export default function NovoProcessoPage() {
                                     <TableHead className='w-[30%]'>Nome do Documento</TableHead>
                                     <TableHead>Data do Status</TableHead>
                                     <TableHead>Status</TableHead>
+                                    <TableHead>Anexo</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -584,11 +608,13 @@ export default function NovoProcessoPage() {
                                         <TableCell>
                                             <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
                                         </TableCell>
+                                        <TableCell>
+                                             <Button size="sm" variant="outline" type="button">
+                                                <Upload className="mr-2 h-4 w-4" /> Anexar
+                                            </Button>
+                                        </TableCell>
                                         <TableCell className="text-right">
                                             <div className='flex gap-1 justify-end'>
-                                                <Button size="sm" variant="outline" type="button" onClick={() => handleDocumentStatusChange(index, 'Em Análise')}>
-                                                    <Upload className="mr-2 h-4 w-4" /> Enviar
-                                                </Button>
                                                 <Button size="icon" variant="ghost" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(index, 'Rejeitado')} title="Rejeitar">
                                                     <XCircle className="h-4 w-4" />
                                                 </Button>
@@ -604,7 +630,7 @@ export default function NovoProcessoPage() {
                                 ))}
                                 {formData.documentos.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum documento adicionado.</TableCell>
+                                        <TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum documento adicionado.</TableCell>
                                     </TableRow>
                                 )}
                             </TableBody>
@@ -766,43 +792,69 @@ export default function NovoProcessoPage() {
           </AccordionItem>
           
            {/* Etapa 6 */}
-          <AccordionItem value="item-6" disabled={!isEditing}>
-             <AccordionTrigger>
-                 <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(6)}
-                    <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 6: Confirmação de Embarque e Transição</h3>
-                        <p className='text-sm text-muted-foreground'>Registre os dados finais para iniciar a fase de pós-embarque.</p>
+            <AccordionItem value="item-6" disabled={!isEditing}>
+                <AccordionTrigger>
+                    <div className='flex items-center gap-3'>
+                        {getStepStatusIcon(6)}
+                        <div className='text-left'>
+                            <h3 className="text-lg font-semibold">Etapa 6: Confirmação de Embarque (BLs)</h3>
+                            <p className='text-sm text-muted-foreground'>Gerencie os detalhes dos Conhecimentos de Embarque (Bills of Lading).</p>
+                        </div>
                     </div>
-                </div>
-            </AccordionTrigger>
-            <AccordionContent>
-                <Card>
-                    <CardContent className="space-y-6 pt-6">
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="bl_master">Nº do B/L Master</Label>
-                                <Input id="bl_master" value={formData.bl_master || ''} onChange={e => handleInputChange('bl_master', e.target.value)} placeholder="Ex: MEDUHI295369" />
+                </AccordionTrigger>
+                <AccordionContent>
+                    <Card>
+                        <CardHeader>
+                            <div className="flex justify-between items-center">
+                                <CardTitle className="text-base">Dados do B/L</CardTitle>
+                                <Button type="button" variant="outline" size="sm" onClick={addBl}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adicionar BL
+                                </Button>
                             </div>
-                            <div className="space-y-2">
-                                <Label>Data de Embarque (Shipped on Board)</Label>
-                                <DatePicker showTime />
-                            </div>
-                        </div>
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="navio_final">Navio Final (se aplicável)</Label>
-                                <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Confirme ou corrija o navio" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="viagem_final">Viagem Final (se aplicável)</Label>
-                                <Input id="viagem_final" value={formData.viagem_final || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Confirme ou corrija a viagem" />
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            </AccordionContent>
-          </AccordionItem>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                            {formData.bls.map((bl, index) => (
+                                <Card key={bl.id} className="bg-muted/40">
+                                    <CardHeader>
+                                        <div className="flex justify-between items-center">
+                                            <CardDescription>BL #{index + 1}</CardDescription>
+                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeBl(index)}>
+                                                <Trash2 className="h-4 w-4 text-destructive" />
+                                            </Button>
+                                        </div>
+                                    </CardHeader>
+                                    <CardContent className="grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`bl_numero_${bl.id}`}>Número do BL</Label>
+                                            <Input id={`bl_numero_${bl.id}`} value={bl.numero || ''} onChange={e => handleBlChange(index, 'numero', e.target.value)} placeholder="Ex: MEDUHI295369" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor={`bl_quantidade_${bl.id}`}>Quantidade no BL</Label>
+                                            <Input id={`bl_quantidade_${bl.id}`} value={bl.quantidade || ''} onChange={e => handleBlChange(index, 'quantidade', e.target.value)} placeholder="Ex: 135,00000 TON" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Data do BL</Label>
+                                            <DatePicker />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label>Data de Liberação do BL</Label>
+                                            <DatePicker />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label>Data de Retirada do BL da Agência</Label>
+                                            <DatePicker />
+                                        </div>
+                                    </CardContent>
+                                </Card>
+                            ))}
+                            {formData.bls.length === 0 && (
+                                <div className="text-center text-muted-foreground py-4">Nenhum BL adicionado.</div>
+                            )}
+                        </CardContent>
+                    </Card>
+                </AccordionContent>
+            </AccordionItem>
 
            {/* Etapa 7 */}
           <AccordionItem value="item-7" disabled={!isEditing}>
@@ -880,7 +932,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
 
     
