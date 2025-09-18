@@ -160,15 +160,15 @@ export default function NovoEmbarquePage() {
                 <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                         <Label htmlFor="deadline-draft">Deadline Draft</Label>
-                        <DatePicker />
+                        <DatePicker showTime />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="deadline-vgm">Deadline VGM</Label>
-                        <DatePicker />
+                        <DatePicker showTime />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="deadline-carga">Deadline Carga</Label>
-                       <DatePicker />
+                       <DatePicker showTime />
                     </div>
                 </div>
             </div>
