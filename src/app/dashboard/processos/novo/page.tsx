@@ -503,25 +503,25 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Previsão de Embarque (ETD)</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                             <div className="space-y-2">
                                 <Label>Previsão de Chegada (ETA)</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                         </div>
                         <div className="grid md:grid-cols-3 gap-4">
                             <div className="space-y-2">
                                 <Label>Deadline Draft</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                             <div className="space-y-2">
                                 <Label>Deadline VGM</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                             <div className="space-y-2">
                                 <Label>Deadline Carga</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                         </div>
                     </CardContent>
@@ -770,7 +770,7 @@ export default function NovoProcessoPage() {
                             </div>
                             <div className="space-y-2">
                                 <Label>Data de Embarque (Shipped on Board)</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
