@@ -203,6 +203,7 @@ export default function NovoProcessoPage() {
   const handleDocumentStatusChange = (index: number, newStatus: string) => {
       const updatedDocuments = [...formData.documentos];
       updatedDocuments[index].status = newStatus;
+      updatedDocuments[index].date = new Date().toLocaleDateString('pt-BR');
       setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
       toast({ title: `Status do documento "${updatedDocuments[index].name}" atualizado para ${newStatus}!` });
   }
@@ -570,7 +571,7 @@ export default function NovoProcessoPage() {
                             <TableHeader>
                                 <TableRow>
                                     <TableHead className='w-[30%]'>Nome do Documento</TableHead>
-                                    <TableHead>Data</TableHead>
+                                    <TableHead>Data do Status</TableHead>
                                     <TableHead>Status</TableHead>
                                     <TableHead className="text-right">Ações</TableHead>
                                 </TableRow>
@@ -579,7 +580,7 @@ export default function NovoProcessoPage() {
                                 {formData.documentos.map((doc, index) => (
                                     <TableRow key={doc.id}>
                                         <TableCell><Input value={doc.name || ''} onChange={e => handleDocumentChange(index, 'name', e.target.value)} placeholder="Ex: Bill of Lading" /></TableCell>
-                                        <TableCell><DatePicker showTime/></TableCell>
+                                        <TableCell>{doc.date || 'N/A'}</TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
                                         </TableCell>
@@ -879,7 +880,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
 
     
