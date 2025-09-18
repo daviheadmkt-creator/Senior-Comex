@@ -190,7 +190,7 @@ export default function NovoProcessoPage() {
   
   const handleOriginalDocChange = (docId: string, checked: boolean) => {
     const updatedDocs = formData.documentos_originais.map(doc => 
-        doc.id === docId ? {...doc, done: checked, completionDate: checked ? new Date().toLocaleDateString('pt-BR') : null } : doc
+        doc.id === docId ? {...doc, done: checked, completionDate: checked ? new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null } : doc
     );
      setFormData(prev => ({...prev, documentos_originais: updatedDocs}));
   };
@@ -937,5 +937,7 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
 
     
