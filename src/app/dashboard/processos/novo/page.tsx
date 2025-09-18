@@ -53,10 +53,10 @@ const initialDocuments: any[] = [];
 
 
 const initialOriginalDocs = [
-    { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false },
-    { id: 'coo_original', name: 'Emitir Certificado de Origem (COO) Original', done: false },
-    { id: 'fito_original', name: 'Emitir Certificado Fitossanitário (FITO) Original', done: false },
-    { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true },
+    { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false, isSubtask: false, completionDate: null },
+    { id: 'coo_original', name: 'Emitir Certificado de Origem (COO) Original', done: false, isSubtask: false, completionDate: null },
+    { id: 'fito_original', name: 'Emitir Certificado Fitossanitário (FITO) Original', done: false, isSubtask: false, completionDate: null },
+    { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true, completionDate: null },
 ]
 
 
@@ -190,7 +190,7 @@ export default function NovoProcessoPage() {
   
   const handleOriginalDocChange = (docId: string, checked: boolean) => {
     const updatedDocs = formData.documentos_originais.map(doc => 
-        doc.id === docId ? {...doc, done: checked} : doc
+        doc.id === docId ? {...doc, done: checked, completionDate: checked ? new Date().toLocaleDateString('pt-BR') : null } : doc
     );
      setFormData(prev => ({...prev, documentos_originais: updatedDocs}));
   };
@@ -874,13 +874,18 @@ export default function NovoProcessoPage() {
                             <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
                             <div className="space-y-3">
                                 {formData.documentos_originais.map((doc) => (
-                                    <div key={doc.id} className={`flex items-center gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
-                                        <Checkbox
-                                            id={doc.id}
-                                            checked={doc.done}
-                                            onCheckedChange={(checked) => handleOriginalDocChange(doc.id, !!checked)}
-                                        />
-                                        <Label htmlFor={doc.id} className="font-normal text-sm">{doc.name}</Label>
+                                    <div key={doc.id} className={`flex items-center justify-between gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
+                                        <div className="flex items-center gap-4">
+                                            <Checkbox
+                                                id={doc.id}
+                                                checked={doc.done}
+                                                onCheckedChange={(checked) => handleOriginalDocChange(doc.id, !!checked)}
+                                            />
+                                            <Label htmlFor={doc.id} className="font-normal text-sm">{doc.name}</Label>
+                                        </div>
+                                        {doc.done && doc.completionDate && (
+                                            <span className="text-xs text-muted-foreground">{doc.completionDate}</span>
+                                        )}
                                     </div>
                                 ))}
                             </div>
