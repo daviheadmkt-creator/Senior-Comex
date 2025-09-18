@@ -586,16 +586,16 @@ export default function NovoProcessoPage() {
                                         </TableCell>
                                         <TableCell className="text-right">
                                             <div className='flex gap-1 justify-end'>
-                                                <Button size="icon" variant="ghost" type="button" onClick={() => handleDocumentStatusChange(index, 'Em Análise')}>
-                                                    <Upload className="h-4 w-4" />
+                                                <Button size="sm" variant="outline" type="button" onClick={() => handleDocumentStatusChange(index, 'Em Análise')}>
+                                                    <Upload className="mr-2 h-4 w-4" /> Enviar
                                                 </Button>
-                                                <Button size="icon" variant="ghost" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(index, 'Rejeitado')}>
+                                                <Button size="icon" variant="ghost" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(index, 'Rejeitado')} title="Rejeitar">
                                                     <XCircle className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="icon" variant="ghost" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(index, 'Aprovado')}>
+                                                <Button size="icon" variant="ghost" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(index, 'Aprovado')} title="Aprovar">
                                                     <CheckCircle className="h-4 w-4" />
                                                 </Button>
-                                                <Button size="icon" variant="ghost" type="button" onClick={() => removeDocument(index)}>
+                                                <Button size="icon" variant="ghost" type="button" onClick={() => removeDocument(index)} title="Remover">
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </div>
@@ -880,5 +880,7 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
 
     
