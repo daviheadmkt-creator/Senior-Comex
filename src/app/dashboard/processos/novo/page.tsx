@@ -387,7 +387,7 @@ export default function NovoProcessoPage() {
                             </div>
                              <div className="space-y-2">
                                 <Label>Data da Nomeação</Label>
-                                <DatePicker />
+                                <DatePicker showTime />
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
@@ -510,18 +510,33 @@ export default function NovoProcessoPage() {
                                 <DatePicker showTime />
                             </div>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-4">
+                        <div className="grid md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label>Deadline Draft</Label>
+                                <div className="flex items-center gap-2">
                                 <DatePicker showTime />
+                                <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
+                                    <Upload className="h-4 w-4" />
+                                </Button>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Deadline VGM</Label>
+                                <div className="flex items-center gap-2">
                                 <DatePicker showTime />
+                                <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
+                                    <Upload className="h-4 w-4" />
+                                </Button>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Deadline Carga</Label>
+                                <div className="flex items-center gap-2">
                                 <DatePicker showTime />
+                                <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
+                                    <Upload className="h-4 w-4" />
+                                </Button>
+                                </div>
                             </div>
                         </div>
                     </CardContent>
@@ -564,7 +579,7 @@ export default function NovoProcessoPage() {
                                 {formData.documentos.map((doc, index) => (
                                     <TableRow key={doc.id}>
                                         <TableCell><Input value={doc.name || ''} onChange={e => handleDocumentChange(index, 'name', e.target.value)} placeholder="Ex: Bill of Lading" /></TableCell>
-                                        <TableCell><DatePicker /></TableCell>
+                                        <TableCell><DatePicker showTime/></TableCell>
                                         <TableCell>
                                             <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
                                         </TableCell>
@@ -835,7 +850,7 @@ export default function NovoProcessoPage() {
            {/* Etapa 8 */}
           <AccordionItem value="item-8" disabled={!isEditing}>
              <AccordionTrigger>
-                <div className='flex items-center gap-3'>
+                 <div className='flex items-center gap-3'>
                     {getStepStatusIcon(8)}
                     <div className='text-left'>
                         <h3 className="text-lg font-semibold">Etapa 8: Envio dos Documentos e Encerramento</h3>
@@ -864,5 +879,7 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
 
     
