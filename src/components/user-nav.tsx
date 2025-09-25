@@ -145,7 +145,7 @@ export function UserNav() {
           </DropdownMenuLabel>
           <DropdownMenuSeparator />
           <DropdownMenuGroup>
-            <Link href="/dashboard/configuracoes" passHref>
+            <Link href="/dashboard/perfil" passHref>
               <DropdownMenuItem>
                 <User className="mr-2 h-4 w-4" />
                 <span>Perfil</span>
