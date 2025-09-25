@@ -1,5 +1,6 @@
 
 'use client';
+import { useEffect } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -42,6 +43,7 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
 
 
 export default function DashboardLayout({
@@ -49,6 +51,15 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const auth = useAuth();
+  const { user, isUserLoading } = useUser();
+
+  useEffect(() => {
+    if (!isUserLoading && !user) {
+      initiateAnonymousSignIn(auth);
+    }
+  }, [auth, user, isUserLoading]);
+
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon">
