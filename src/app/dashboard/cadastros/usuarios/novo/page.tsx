@@ -27,10 +27,10 @@ import {
   useFirestore,
   useDoc,
   useMemoFirebase,
-  setDocumentNonBlocking,
   useUser,
+  setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, getCountFromServer, setDoc } from 'firebase/firestore';
+import { collection, doc, getCountFromServer } from 'firebase/firestore';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
 const userStatus = ['Ativo', 'Inativo'];
@@ -89,12 +89,9 @@ export default function NovoUsuarioPage() {
         const snapshot = await getCountFromServer(usersCollectionRef);
         if (snapshot.data().count === 0) {
             isFirstUser = true;
-            // The currently logged-in user (anonymous or otherwise) will become the first Admin document.
-            // This ensures the isAdmin() security rule check can pass for subsequent operations.
             docId = currentUser.uid;
             userRole = 'Administrador'; 
         } else {
-            // For subsequent users, generate a new random ID.
             docId = doc(usersCollectionRef).id;
         }
     }
@@ -109,26 +106,17 @@ export default function NovoUsuarioPage() {
     const dataToSave = { 
       ...formData,
       id: docId,
-      funcao: userRole || 'Operador', // Default to 'Operador' if no role is set
+      funcao: userRole || 'Operador',
     };
     
-    // Using setDoc directly because setDocumentNonBlocking was causing issues with security rule propagation
-    try {
-        await setDoc(userRef, dataToSave, { merge: true });
-        toast({
-          title: 'Sucesso!',
-          description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}. ${isFirstUser ? 'Este usuário foi definido como Administrador.' : ''}`,
-        });
-        router.push('/dashboard/cadastros/usuarios');
+    setDocumentNonBlocking(userRef, dataToSave, { merge: true });
 
-    } catch (error: any) {
-         const permissionError = new FirestorePermissionError({
-            path: userRef.path,
-            operation: 'write',
-            requestResourceData: dataToSave,
-        });
-        errorEmitter.emit('permission-error', permissionError);
-    }
+    toast({
+        title: 'Sucesso!',
+        description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}. ${isFirstUser ? 'Este usuário foi definido como Administrador.' : ''}`,
+    });
+
+    router.push('/dashboard/cadastros/usuarios');
   };
 
   return (
