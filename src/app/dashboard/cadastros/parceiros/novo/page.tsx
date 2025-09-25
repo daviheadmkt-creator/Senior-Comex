@@ -19,6 +19,9 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useDoc, useFirestore } from '@/firebase';
+import { doc, setDoc } from 'firebase/firestore';
+import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const partnerTypes = [
     "Cliente (Importador)",
@@ -38,6 +41,7 @@ export default function NovoParceiroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
   
   const [formData, setFormData] = useState({
       razao_social: '',
@@ -54,6 +58,22 @@ export default function NovoParceiroPage() {
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false);
 
   const isEditing = searchParams.has('edit');
+  const partnerId = searchParams.get('id');
+
+  const partnerDocRef = useMemo(() => {
+    if (!firestore || !partnerId) return null;
+    return doc(firestore, 'partners', partnerId);
+  }, [firestore, partnerId]);
+
+  const { data: partnerData, isLoading: isPartnerLoading } = useDoc(partnerDocRef);
+
+  useEffect(() => {
+    if (partnerData) {
+      setFormData(partnerData as any);
+    }
+  }, [partnerData]);
+
+
   const pageTitle = isEditing ? 'Editar Parceiro' : 'Novo Parceiro';
   const pageDescription = isEditing
     ? 'Altere as informações do parceiro selecionado.'
@@ -126,20 +146,16 @@ export default function NovoParceiroPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const storedPartners = JSON.parse(localStorage.getItem('partners') || '[]');
-    const newId = storedPartners.length > 0 ? Math.max(...storedPartners.map((c: any) => c.id)) + 1 : 1;
+    if (!firestore) return;
 
-    const newPartner = {
-      id: newId,
-      ...formData
-    };
+    const docId = partnerId || doc(collection(firestore, 'partners')).id;
+    const partnerRef = doc(firestore, 'partners', docId);
 
-    const updatedPartners = [...storedPartners, newPartner];
-    localStorage.setItem('partners', JSON.stringify(updatedPartners));
+    setDocumentNonBlocking(partnerRef, formData, { merge: true });
     
     toast({
         title: "Sucesso!",
-        description: "O parceiro foi salvo.",
+        description: `O parceiro foi ${isEditing ? 'atualizado' : 'salvo'}.`,
         variant: "default",
     });
 

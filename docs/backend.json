@@ -122,6 +122,34 @@
         "generatedByUserId",
         "reportData"
       ]
+    },
+    "Partner": {
+      "title": "Partner",
+      "type": "object",
+      "description": "Represents a partner, which can be a client, supplier, etc.",
+      "properties": {
+        "razao_social": { "type": "string" },
+        "nome_fantasia": { "type": "string" },
+        "cnpj": { "type": "string" },
+        "tipo_parceiro": { "type": "string" },
+        "endereco": { "type": "string" },
+        "cidade": { "type": "string" },
+        "estado": { "type": "string" },
+        "cep": { "type": "string" },
+        "pais": { "type": "string" },
+        "contatos": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "nome": { "type": "string" },
+              "email": { "type": "string", "format": "email" },
+              "telefone": { "type": "string" },
+              "cargo": { "type": "string" }
+            }
+          }
+        }
+      }
     }
   },
   "auth": {
@@ -184,6 +212,22 @@
             {
               "name": "reportId",
               "description": "The unique identifier for the report."
+            }
+          ]
+        }
+      },
+       {
+        "path": "/partners/{partnerId}",
+        "definition": {
+          "entityName": "Partner",
+          "schema": {
+            "$ref": "#/backend/entities/Partner"
+          },
+          "description": "Stores partner information.",
+          "params": [
+            {
+              "name": "partnerId",
+              "description": "The unique identifier for the partner."
             }
           ]
         }
