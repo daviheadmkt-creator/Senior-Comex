@@ -128,14 +128,14 @@ export default function DashboardPage() {
             <Card className="lg:col-span-3">
                 <CardHeader>
                     <CardTitle>Volume de Exportação (Hoje)</CardTitle>
-                    <CardDescription>Valor total (USD) dos produtos embarcados por hora.</CardDescription>
+                    <CardDescription>Valor total (BRL) dos produtos embarcados por hora.</CardDescription>
                 </CardHeader>
                 <CardContent>
                     <ResponsiveContainer width="100%" height={300}>
                         <LineChart data={volumeData}>
                             <CartesianGrid strokeDasharray="3 3" vertical={false}/>
                             <XAxis dataKey="time" fontSize={12} tickLine={false} axisLine={false} />
-                            <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `$${Number(value) / 1000}k`} />
+                            <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(value) => `R$${Number(value) / 1000}k`} />
                             <Tooltip contentStyle={{ backgroundColor: "hsl(var(--background))", border: "1px solid hsl(var(--border))" }} />
                             <Line type="monotone" dataKey="volume" stroke="hsl(var(--primary))" strokeWidth={2} dot={{r: 4}} />
                         </LineChart>
