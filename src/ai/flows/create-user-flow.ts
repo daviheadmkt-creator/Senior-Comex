@@ -18,17 +18,16 @@ const createUserFlow = ai.defineFlow(
     name: 'createUserFlow',
     inputSchema: CreateUserInputSchema,
     outputSchema: CreateUserOutputSchema,
-    tools: [createUserTool]
   },
   async (input) => {
 
-    const { user, error } = await ai.tool(createUserTool).run(input);
+    const { user, error } = await createUserTool.run(input);
 
     if (error) {
         throw new Error(`Failed to create user: ${error.message}`);
     }
 
-    if (!user) {
+    if (!user || !user.uid) {
         throw new Error('Tool did not return a user.');
     }
     
