@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -19,8 +19,8 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useDoc, useFirestore } from '@/firebase';
-import { doc, setDoc } from 'firebase/firestore';
+import { useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 import { setDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 const partnerTypes = [
@@ -60,7 +60,7 @@ export default function NovoParceiroPage() {
   const isEditing = searchParams.has('edit');
   const partnerId = searchParams.get('id');
 
-  const partnerDocRef = useMemo(() => {
+  const partnerDocRef = useMemoFirebase(() => {
     if (!firestore || !partnerId) return null;
     return doc(firestore, 'partners', partnerId);
   }, [firestore, partnerId]);
