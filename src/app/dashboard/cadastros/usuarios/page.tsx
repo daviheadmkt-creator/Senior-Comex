@@ -1,4 +1,6 @@
 
+'use client';
+
 import {
   Card,
   CardContent,
@@ -30,21 +32,26 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
-const usuarios: any[] = [];
-
-const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-        case 'ativo':
-            return 'default';
-        case 'inativo':
-            return 'secondary';
-        default:
-            return 'secondary';
-    }
-}
 
 export default function ListaUsuariosPage() {
+  const firestore = useFirestore();
+  const usersCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
+    [firestore]
+  );
+  const { data: users, isLoading } = useCollection(usersCollection);
+
+
+  const handleDelete = (id: string) => {
+    if (!firestore) return;
+    const userDoc = doc(firestore, 'users', id);
+    deleteDoc(userDoc);
+  };
+
+
   return (
     <Card>
       <CardHeader>
@@ -75,24 +82,20 @@ export default function ListaUsuariosPage() {
             <TableRow>
               <TableHead>Nome</TableHead>
               <TableHead>E-mail</TableHead>
-              <TableHead>Perfil</TableHead>
-              <TableHead>Status</TableHead>
+              <TableHead>Cargo</TableHead>
+              <TableHead>Nível de Permissão</TableHead>
               <TableHead>Ação</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {usuarios.map((usuario) => (
+            {isLoading && <TableRow><TableCell colSpan={5} className="text-center">Carregando...</TableCell></TableRow>}
+            {users?.map((usuario) => (
               <TableRow key={usuario.id}>
                 <TableCell className="font-medium">{usuario.nome}</TableCell>
                 <TableCell>{usuario.email}</TableCell>
-                <TableCell>{usuario.perfil}</TableCell>
+                <TableCell>{usuario.cargo}</TableCell>
                 <TableCell>
-                    <Badge variant={getStatusVariant(usuario.status)} className={
-                        usuario.status === 'Ativo' ? 'bg-green-100 text-green-800' :
-                        'bg-gray-100 text-gray-800'
-                    }>
-                        {usuario.status}
-                    </Badge>
+                    <Badge variant="secondary">{usuario.permissao}</Badge>
                 </TableCell>
                 <TableCell>
                     <div className='flex gap-2'>
@@ -117,7 +120,7 @@ export default function ListaUsuariosPage() {
                             </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction>Excluir</AlertDialogAction>
+                              <AlertDialogAction onClick={() => handleDelete(usuario.id)}>Excluir</AlertDialogAction>
                             </AlertDialogFooter>
                           </AlertDialogContent>
                         </AlertDialog>
