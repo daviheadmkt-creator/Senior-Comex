@@ -30,7 +30,7 @@ import {
   setDocumentNonBlocking,
   useUser,
 } from '@/firebase';
-import { collection, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, setDoc } from 'firebase/firestore';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
 const userStatus = ['Ativo', 'Inativo'];
@@ -82,25 +82,25 @@ export default function NovoUsuarioPage() {
     let isFirstUser = false;
     let userRole = formData.funcao;
 
+    const usersCollectionRef = collection(firestore, 'users');
+
     // If creating a new user, check if it's the first one to make it an admin
     if (!isEditing) {
-      const usersCollectionRef = collection(firestore, 'users');
-      const snapshot = await getCountFromServer(usersCollectionRef);
-      if (snapshot.data().count === 0) {
-        isFirstUser = true;
-        docId = currentUser.uid; // Make the current logged-in user the first user
-        userRole = 'Administrador';
-      } else {
-        docId = doc(usersCollectionRef).id;
-      }
-    } else if (!docId) {
-      // Should not happen if editing, but as a fallback
-      toast({ title: 'Erro', description: 'ID do usuário não encontrado para edição.', variant: 'destructive'});
-      return;
+        const snapshot = await getCountFromServer(usersCollectionRef);
+        if (snapshot.data().count === 0) {
+            isFirstUser = true;
+            // The currently logged-in user (anonymous or otherwise) will become the first Admin document.
+            // This ensures the isAdmin() security rule check can pass for subsequent operations.
+            docId = currentUser.uid;
+            userRole = 'Administrador'; 
+        } else {
+            // For subsequent users, generate a new random ID.
+            docId = doc(usersCollectionRef).id;
+        }
     }
     
-    if(!docId){
-        toast({ title: 'Erro', description: 'Falha ao gerar ID para o novo usuário.', variant: 'destructive'});
+    if (!docId) {
+        toast({ title: 'Erro', description: 'Falha ao obter ID para o usuário.', variant: 'destructive'});
         return;
     }
 
@@ -111,15 +111,24 @@ export default function NovoUsuarioPage() {
       id: docId,
       funcao: userRole || 'Operador', // Default to 'Operador' if no role is set
     };
+    
+    // Using setDoc directly because setDocumentNonBlocking was causing issues with security rule propagation
+    try {
+        await setDoc(userRef, dataToSave, { merge: true });
+        toast({
+          title: 'Sucesso!',
+          description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}. ${isFirstUser ? 'Este usuário foi definido como Administrador.' : ''}`,
+        });
+        router.push('/dashboard/cadastros/usuarios');
 
-    setDocumentNonBlocking(userRef, dataToSave, { merge: true });
-
-    toast({
-      title: 'Sucesso!',
-      description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}. ${isFirstUser ? 'Você foi definido como Administrador.' : ''}`,
-    });
-
-    router.push('/dashboard/cadastros/usuarios');
+    } catch (error: any) {
+         const permissionError = new FirestorePermissionError({
+            path: userRef.path,
+            operation: 'write',
+            requestResourceData: dataToSave,
+        });
+        errorEmitter.emit('permission-error', permissionError);
+    }
   };
 
   return (
