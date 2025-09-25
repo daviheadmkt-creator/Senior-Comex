@@ -1,3 +1,4 @@
+
 'use client';
 import { useEffect } from 'react';
 import {
@@ -88,10 +89,22 @@ export default function DashboardLayout({
                 </SidebarMenuButton>
             </SidebarMenuItem>
              <SidebarMenuItem>
-                <SidebarMenuButton href="/dashboard/cadastros/parceiros">
-                    <Contact />
-                    <span>Parceiros</span>
+                <SidebarMenuButton>
+                    <ClipboardList />
+                    <span>Cadastros</span>
                 </SidebarMenuButton>
+                 <SidebarMenuSub>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/cadastros/parceiros">
+                            Parceiros
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                    <SidebarMenuSubItem>
+                        <SidebarMenuSubButton href="/dashboard/cadastros/usuarios">
+                            Usuários
+                        </SidebarMenuSubButton>
+                    </SidebarMenuSubItem>
+                </SidebarMenuSub>
             </SidebarMenuItem>
              <SidebarMenuItem>
                 <SidebarMenuButton>
@@ -180,3 +193,5 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
+
+    
