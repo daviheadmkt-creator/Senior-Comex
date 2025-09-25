@@ -1,7 +1,7 @@
 
 'use server';
 import { ai } from '@/ai/genkit';
-import { CreateUserInputSchema } from '../flows/create-user-flow';
+import { CreateUserInputSchema } from '../schemas/user-schemas';
 import { z } from 'zod';
 import { getAuth } from 'firebase-admin/auth';
 import { getFirestore } from 'firebase-admin/firestore';
