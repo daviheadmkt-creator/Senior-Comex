@@ -76,12 +76,11 @@ export default function NovoUsuarioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore || !currentUser) return;
+    if (!firestore) return;
 
     let docId = userId;
     let isFirstUser = false;
-    let userRole = formData.funcao;
-
+    
     const usersCollectionRef = collection(firestore, 'users');
 
     // If creating a new user, check if it's the first one to make it an admin
@@ -89,8 +88,13 @@ export default function NovoUsuarioPage() {
         const snapshot = await getCountFromServer(usersCollectionRef);
         if (snapshot.data().count === 0) {
             isFirstUser = true;
-            docId = currentUser.uid;
-            userRole = 'Administrador'; 
+            // The first user created becomes an admin. Use their auth UID if available.
+            if (currentUser) {
+              docId = currentUser.uid;
+            } else {
+              // Fallback to creating a new ID if for some reason currentUser isn't available
+              docId = doc(usersCollectionRef).id;
+            }
         } else {
             docId = doc(usersCollectionRef).id;
         }
@@ -106,7 +110,7 @@ export default function NovoUsuarioPage() {
     const dataToSave = { 
       ...formData,
       id: docId,
-      funcao: userRole || 'Operador',
+      funcao: isFirstUser ? 'Administrador' : (formData.funcao || 'Operador'),
     };
     
     setDocumentNonBlocking(userRef, dataToSave, { merge: true });
