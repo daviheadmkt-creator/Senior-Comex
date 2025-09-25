@@ -28,8 +28,9 @@ import {
   useDoc,
   useMemoFirebase,
   setDocumentNonBlocking,
+  useUser,
 } from '@/firebase';
-import { collection, doc } from 'firebase/firestore';
+import { collection, doc, getCountFromServer } from 'firebase/firestore';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
 const userStatus = ['Ativo', 'Inativo'];
@@ -39,6 +40,7 @@ export default function NovoUsuarioPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: currentUser } = useUser();
 
   const [formData, setFormData] = useState({
     nome: '',
@@ -72,18 +74,49 @@ export default function NovoUsuarioPage() {
     setFormData((prev) => ({ ...prev, [id]: value }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
+    if (!firestore || !currentUser) return;
 
-    const docId = userId || doc(collection(firestore, 'users')).id;
+    let docId = userId;
+    let isFirstUser = false;
+    let userRole = formData.funcao;
+
+    // If creating a new user, check if it's the first one to make it an admin
+    if (!isEditing) {
+      const usersCollectionRef = collection(firestore, 'users');
+      const snapshot = await getCountFromServer(usersCollectionRef);
+      if (snapshot.data().count === 0) {
+        isFirstUser = true;
+        docId = currentUser.uid; // Make the current logged-in user the first user
+        userRole = 'Administrador';
+      } else {
+        docId = doc(usersCollectionRef).id;
+      }
+    } else if (!docId) {
+      // Should not happen if editing, but as a fallback
+      toast({ title: 'Erro', description: 'ID do usuário não encontrado para edição.', variant: 'destructive'});
+      return;
+    }
+    
+    if(!docId){
+        toast({ title: 'Erro', description: 'Falha ao gerar ID para o novo usuário.', variant: 'destructive'});
+        return;
+    }
+
     const userRef = doc(firestore, 'users', docId);
 
-    setDocumentNonBlocking(userRef, { ...formData, id: docId }, { merge: true });
+    const dataToSave = { 
+      ...formData,
+      id: docId,
+      funcao: userRole || 'Operador', // Default to 'Operador' if no role is set
+    };
+
+    setDocumentNonBlocking(userRef, dataToSave, { merge: true });
 
     toast({
       title: 'Sucesso!',
-      description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}.`,
+      description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}. ${isFirstUser ? 'Você foi definido como Administrador.' : ''}`,
     });
 
     router.push('/dashboard/cadastros/usuarios');
@@ -134,6 +167,7 @@ export default function NovoUsuarioPage() {
                 <Select
                   value={formData.funcao}
                   onValueChange={(value) => handleInputChange('funcao', value)}
+                  required
                 >
                   <SelectTrigger id="funcao">
                     <SelectValue placeholder="Selecione a função" />
@@ -180,5 +214,3 @@ export default function NovoUsuarioPage() {
     </div>
   );
 }
-
-    
