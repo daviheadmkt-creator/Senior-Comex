@@ -32,31 +32,23 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { Badge } from '@/components/ui/badge';
-import { useEffect, useState } from 'react';
-
-const initialUsers = [
-    { id: 1, nome: 'Vitória Eduarda', email: 'vitoria@agricolaferrari.com.br', cargo: 'COMÉRCIO EXTERIOR', permissao: 'Administrador' },
-    { id: 2, nome: 'Ricardo Rossi', email: 'ricardo@agricolaferrari.com.br', cargo: 'Contador', permissao: 'Operador' },
-];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 export default function ListaUsuariosPage() {
-  const [users, setUsers] = useState<any[]>([]);
+  const firestore = useFirestore();
+  const usersCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'users') : null),
+    [firestore]
+  );
+  const { data: users, isLoading } = useCollection(usersCollection);
 
-  useEffect(() => {
-    const storedUsers = localStorage.getItem('users');
-    if (storedUsers && JSON.parse(storedUsers).length > 0) {
-      setUsers(JSON.parse(storedUsers));
-    } else {
-        localStorage.setItem('users', JSON.stringify(initialUsers));
-        setUsers(initialUsers);
-    }
-  }, []);
 
-  const handleDelete = (id: number) => {
-    const updatedUsers = users.filter(u => u.id !== id);
-    setUsers(updatedUsers);
-    localStorage.setItem('users', JSON.stringify(updatedUsers));
+  const handleDelete = (id: string) => {
+    if (!firestore) return;
+    const userDoc = doc(firestore, 'users', id);
+    deleteDoc(userDoc);
   };
 
 
@@ -96,7 +88,8 @@ export default function ListaUsuariosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {users.map((usuario) => (
+            {isLoading && <TableRow><TableCell colSpan={5} className="text-center">Carregando...</TableCell></TableRow>}
+            {users?.map((usuario) => (
               <TableRow key={usuario.id}>
                 <TableCell className="font-medium">{usuario.nome}</TableCell>
                 <TableCell>{usuario.email}</TableCell>
