@@ -10,6 +10,9 @@ import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 const GoogleIcon = () => (
     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
@@ -24,16 +27,43 @@ const GoogleIcon = () => (
 
 export default function LoginPage() {
   const router = useRouter();
+  const auth = useAuth();
+  const { toast } = useToast();
+  
+  const [email, setEmail] = useState('test@test.com');
+  const [password, setPassword] = useState('password');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call
-    setTimeout(() => {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
-    }, 1000);
+    } catch (error: any) {
+        // If user not found, try to create a new user (for first-time login)
+        if (error.code === 'auth/user-not-found') {
+            try {
+                await createUserWithEmailAndPassword(auth, email, password);
+                router.push('/dashboard');
+            } catch (creationError: any) {
+                 toast({
+                    title: 'Erro de Autenticação',
+                    description: creationError.message,
+                    variant: 'destructive',
+                });
+            }
+        } else {
+             toast({
+                title: 'Erro de Autenticação',
+                description: error.message,
+                variant: 'destructive',
+            });
+        }
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -73,6 +103,8 @@ export default function LoginPage() {
                             placeholder="nome@email.com"
                             required
                             className="pl-10"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                 </div>
@@ -90,7 +122,8 @@ export default function LoginPage() {
                             autoComplete="current-password"
                             required
                             className="pl-10"
-                            defaultValue="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none">

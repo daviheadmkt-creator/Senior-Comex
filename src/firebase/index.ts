@@ -2,7 +2,7 @@
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
@@ -24,6 +24,17 @@ export function initializeFirebase() {
       }
       firebaseApp = initializeApp(firebaseConfig);
     }
+    
+    // Create a default user for easy login during development
+    if (process.env.NODE_ENV === 'development') {
+        const auth = getAuth(firebaseApp);
+        signInWithEmailAndPassword(auth, 'test@test.com', 'password').catch((error) => {
+            if (error.code === 'auth/user-not-found') {
+                createUserWithEmailAndPassword(auth, 'test@test.com', 'password');
+            }
+        });
+    }
+
 
     return getSdks(firebaseApp);
   }

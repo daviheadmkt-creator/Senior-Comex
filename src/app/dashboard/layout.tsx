@@ -43,7 +43,8 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { useAuth, useUser, initiateAnonymousSignIn } from '@/firebase';
+import { useAuth, useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 
 export default function DashboardLayout({
@@ -51,14 +52,14 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const auth = useAuth();
   const { user, isUserLoading } = useUser();
+  const router = useRouter();
 
   useEffect(() => {
     if (!isUserLoading && !user) {
-      initiateAnonymousSignIn(auth);
+      router.push('/');
     }
-  }, [auth, user, isUserLoading]);
+  }, [user, isUserLoading, router]);
 
   return (
     <SidebarProvider>
@@ -193,5 +194,3 @@ export default function DashboardLayout({
     </SidebarProvider>
   );
 }
-
-    
