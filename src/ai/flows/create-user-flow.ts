@@ -5,20 +5,12 @@
  *
  * - createUser - Creates a user in Firebase Auth, sends a password reset email, and stores their profile in Firestore.
  * - CreateUserInput - The input type for the createUser function.
- * - CreateUserOutputSchema - The return type for the createUser function.
+ * - CreateUserOutput - The return type for the createUser function.
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
 import { createUserTool } from '../tools/user-tools';
-import { CreateUserInputSchema, CreateUserInput } from '../schemas/user-schemas';
-
-
-export const CreateUserOutputSchema = z.object({
-  uid: z.string().describe("The new user's unique ID."),
-  message: z.string().describe('A summary of the action taken.'),
-});
-export type CreateUserOutput = z.infer<typeof CreateUserOutputSchema>;
+import { CreateUserInputSchema, CreateUserInput, CreateUserOutputSchema, CreateUserOutput } from '../schemas/user-schemas';
 
 
 const createUserFlow = ai.defineFlow(
