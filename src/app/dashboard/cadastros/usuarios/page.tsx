@@ -38,6 +38,7 @@ import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 export default function ListaUsuariosPage() {
   const firestore = useFirestore();
+  
   const usersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'users') : null),
     [firestore]
@@ -48,6 +49,7 @@ export default function ListaUsuariosPage() {
   const handleDelete = (id: string) => {
     if (!firestore) return;
     const userDoc = doc(firestore, 'users', id);
+    // Note: Deleting from Firestore does not delete from Firebase Auth
     deleteDoc(userDoc);
   };
 
@@ -114,8 +116,7 @@ export default function ListaUsuariosPage() {
                             <AlertDialogHeader>
                               <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                               <AlertDialogDescription>
-                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário
-                                e removerá seus dados de nossos servidores.
+                                Essa ação não pode ser desfeita. Isso excluirá permanentemente o usuário do banco de dados, mas não da autenticação do Firebase.
                               </AlertDialogDescription>
                             </AlertDialogHeader>
                             <AlertDialogFooter>
