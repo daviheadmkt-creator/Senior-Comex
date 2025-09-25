@@ -42,12 +42,6 @@ const configOptions = [
         icon: Mail,
     },
     {
-        title: 'Gerenciamento de Usuários',
-        description: 'Adicione, edite e defina permissões para os usuários.',
-        href: '/dashboard/cadastros/usuarios',
-        icon: UserCog,
-    },
-    {
         title: 'Relatório de Log',
         description: 'Visualize o histórico de atividades e alterações no sistema.',
         href: '/dashboard/configuracoes/log',

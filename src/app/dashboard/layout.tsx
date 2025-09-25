@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect } from 'react';
 import {
@@ -141,11 +140,6 @@ export default function DashboardLayout({
                      <SidebarMenuSubItem>
                         <SidebarMenuSubButton href="/dashboard/dados-referencia/terminais">
                             Terminais
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/dados-referencia/usuarios">
-                            Usuários
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
                 </SidebarMenuSub>
