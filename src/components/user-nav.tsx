@@ -21,6 +21,7 @@ import {
 import { LogOut, User, Settings, Bell, CheckCircle, CalendarClock, FileWarning, AlertTriangle } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle";
 import { Badge } from "./ui/badge";
+import { useEffect, useState } from "react";
 
 
 const notifications = [
@@ -52,6 +53,13 @@ const notifications = [
 
 export function UserNav() {
   const router = useRouter();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  useEffect(() => {
+    if (notifications.length > 0) {
+      setIsNotificationOpen(true);
+    }
+  }, []);
 
   const handleLogout = () => {
     router.push('/');
@@ -60,7 +68,7 @@ export function UserNav() {
   return (
     <div className="flex items-center gap-2">
         <ThemeToggle />
-         <DropdownMenu>
+         <DropdownMenu open={isNotificationOpen} onOpenChange={setIsNotificationOpen}>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
                      {notifications.length > 0 && (
