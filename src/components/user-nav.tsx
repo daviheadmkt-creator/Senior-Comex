@@ -18,42 +18,36 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
-import { LogOut, User, Settings, Bell, CheckCircle } from "lucide-react"
+import { LogOut, User, Settings, Bell, CheckCircle, CalendarClock, FileWarning, AlertTriangle } from "lucide-react"
 import { ThemeToggle } from "./theme-toggle";
 import { Badge } from "./ui/badge";
 
 
 const notifications = [
     {
-        icon: <CheckCircle className="h-6 w-6 text-green-500" />,
-        title: 'Parabéns!',
-        description: 'Seu perfil foi verificado.',
-        time: '23 min atrás',
+        id: 1,
+        icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
+        title: "Deadline Próximo",
+        description: "Deadline de Draft para o processo SEN2378-26 se aproxima (2 dias).",
+        time: 'Agora',
+        link: "/dashboard/processos"
     },
     {
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704a',
-        name: 'Ronald Richards',
-        description: 'Convidou você para o projeto X.',
-        time: '23 min atrás',
+        id: 2,
+        icon: <FileWarning className="h-5 w-5 text-orange-500" />,
+        title: "Documento Faltante",
+        description: "Faltando Packing List para o processo SEN2378-26.",
+        time: 'Agora',
+        link: "/dashboard/processos"
     },
     {
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704b',
-        name: 'Arlene McCoy',
-        description: 'Convidou você para prototipar.',
-        time: '23 min atrás',
+        id: 3,
+        icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
+        title: "Processo Atrasado",
+        description: "Processo SEN2378-28 com status 'Atrasado'.",
+        time: 'Agora',
+        link: "/dashboard/processos"
     },
-    {
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704c',
-        name: 'Annette Black',
-        description: 'Convidou você para prototipar.',
-        time: '23 min atrás',
-    },
-    {
-        avatar: 'https://i.pravatar.cc/150?u=a042581f4e29026704d',
-        name: 'Darlene Robertson',
-        description: 'Convidou você para prototipar.',
-        time: '23 min atrás',
-    }
 ]
 
 export function UserNav() {
@@ -69,10 +63,12 @@ export function UserNav() {
          <DropdownMenu>
             <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative">
-                     <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
-                     </span>
+                     {notifications.length > 0 && (
+                        <span className="absolute top-1.5 right-1.5 flex h-2.5 w-2.5">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
+                        </span>
+                     )}
                     <Bell className="h-5 w-5" />
                     <span className="sr-only">Notifications</span>
                 </Button>
@@ -81,35 +77,44 @@ export function UserNav() {
                 <DropdownMenuLabel>
                     <div className="flex justify-between items-center">
                         <span className="font-semibold">Notificações</span>
-                        <Badge variant="secondary">5</Badge>
+                         {notifications.length > 0 && <Badge variant="destructive">{notifications.length}</Badge>}
                     </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <div className="max-h-80 overflow-y-auto">
-                    {notifications.map((notification, index) => (
-                         <DropdownMenuItem key={index} className="flex items-start gap-3 p-2">
-                             {notification.icon ? (
-                                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-green-100">
-                                    {notification.icon}
+                    {notifications.map((notification) => (
+                         <Link href={notification.link || '#'} key={notification.id} passHref>
+                            <DropdownMenuItem className="flex items-start gap-3 p-2 cursor-pointer">
+                                {notification.icon ? (
+                                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-muted">
+                                        {notification.icon}
+                                    </div>
+                                ) : (
+                                    <Avatar className="h-10 w-10">
+                                        <AvatarImage src={''} />
+                                        <AvatarFallback>{notification.title?.charAt(0)}</AvatarFallback>
+                                    </Avatar>
+                                )}
+                                <div className="flex-1">
+                                    <p className="font-semibold">{notification.title}</p>
+                                    <p className="text-sm text-muted-foreground">{notification.description}</p>
+                                    <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
                                 </div>
-                             ) : (
-                                <Avatar className="h-10 w-10">
-                                    <AvatarImage src={notification.avatar} />
-                                    <AvatarFallback>{notification.name?.charAt(0)}</AvatarFallback>
-                                </Avatar>
-                             )}
-                            <div className="flex-1">
-                                <p className="font-semibold">{notification.title || notification.name}</p>
-                                <p className="text-sm text-muted-foreground">{notification.description}</p>
-                                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-                            </div>
-                        </DropdownMenuItem>
+                            </DropdownMenuItem>
+                        </Link>
                     ))}
+                     {notifications.length === 0 && (
+                        <div className="text-center text-muted-foreground p-4">
+                            Nenhuma notificação nova.
+                        </div>
+                    )}
                 </div>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem className="justify-center">
-                    Ver Todas as Notificações
-                </DropdownMenuItem>
+                 <Link href="/dashboard" passHref>
+                    <DropdownMenuItem className="justify-center">
+                        Ver Todos os Alertas
+                    </DropdownMenuItem>
+                </Link>
             </DropdownMenuContent>
         </DropdownMenu>
       <DropdownMenu>
