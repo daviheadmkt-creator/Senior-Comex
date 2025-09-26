@@ -60,6 +60,12 @@ const initialOriginalDocs = [
     { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true, completionDate: null },
 ]
 
+const initialPartners = [
+    { id: '1', nome_fantasia: 'AGRICOLA FERRARI', tipo_parceiro: 'Exportador' },
+    { id: '2', nome_fantasia: 'DFT LOGISTICS', tipo_parceiro: 'Agente de Carga' },
+    { id: '3', nome_fantasia: 'MSC', tipo_parceiro: 'Armador' },
+];
+
 
 export default function NovoProcessoPage() {
   const router = useRouter();
@@ -117,15 +123,19 @@ export default function NovoProcessoPage() {
     if (storedPartnersRaw) {
         try {
             const storedPartners = JSON.parse(storedPartnersRaw);
-            if (Array.isArray(storedPartners)) {
+            if (Array.isArray(storedPartners) && storedPartners.length > 0) {
                 setParceiros(storedPartners);
             } else {
-                 setParceiros([]);
+                 setParceiros(initialPartners);
+                 localStorage.setItem('partners', JSON.stringify(initialPartners));
             }
         } catch (e) {
             console.error("Failed to parse partners from localStorage", e);
-            setParceiros([]);
+            setParceiros(initialPartners);
         }
+    } else {
+        setParceiros(initialPartners);
+        localStorage.setItem('partners', JSON.stringify(initialPartners));
     }
     
     const storedPorts = JSON.parse(localStorage.getItem('ports') || '[]');
@@ -954,3 +964,4 @@ export default function NovoProcessoPage() {
     
 
     
+
