@@ -113,8 +113,20 @@ export default function NovoProcessoPage() {
     const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
     setProdutos(storedProducts);
 
-    const storedPartners = JSON.parse(localStorage.getItem('partners') || '[]');
-    setParceiros(storedPartners);
+    const storedPartnersRaw = localStorage.getItem('partners');
+    if (storedPartnersRaw) {
+        try {
+            const storedPartners = JSON.parse(storedPartnersRaw);
+            if (Array.isArray(storedPartners)) {
+                setParceiros(storedPartners);
+            } else {
+                 setParceiros([]);
+            }
+        } catch (e) {
+            console.error("Failed to parse partners from localStorage", e);
+            setParceiros([]);
+        }
+    }
     
     const storedPorts = JSON.parse(localStorage.getItem('ports') || '[]');
     setPortos(storedPorts);
@@ -437,10 +449,10 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
                             <SelectTrigger id="exportadorId">
-                                <SelectValue placeholder="Aqui ele visualiza todos os exportador cadastrado em parceiros" />
+                                <SelectValue placeholder="Selecione o parceiro exportador" />
                             </SelectTrigger>
                             <SelectContent>
-                                {parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
                             </SelectContent>
                             </Select>
                         </div>
@@ -510,7 +522,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder="Selecione o armador" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {parceiros.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                        {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
