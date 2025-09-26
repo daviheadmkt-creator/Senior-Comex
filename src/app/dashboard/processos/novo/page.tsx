@@ -457,13 +457,13 @@ export default function NovoProcessoPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="exportadorId">Unidade Carregadora (Cliente/Importador)</Label>
+                            <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
                             <SelectTrigger id="exportadorId">
-                                <SelectValue placeholder="Aqui é para exibir o parceiro importador" />
+                                <SelectValue placeholder="Selecione o exportador" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Cliente (Importador)').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
+                                {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
                             </SelectContent>
                             </Select>
                         </div>
@@ -965,5 +965,6 @@ export default function NovoProcessoPage() {
     
 
     
+
 
 
