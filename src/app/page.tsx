@@ -11,7 +11,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth } from '@/firebase';
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
 const GoogleIcon = () => (
@@ -42,25 +42,11 @@ export default function LoginPage() {
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-        // If user not found, try to create a new user (for first-time login)
-        if (error.code === 'auth/user-not-found') {
-            try {
-                await createUserWithEmailAndPassword(auth, email, password);
-                router.push('/dashboard');
-            } catch (creationError: any) {
-                 toast({
-                    title: 'Erro de Autenticação',
-                    description: creationError.message,
-                    variant: 'destructive',
-                });
-            }
-        } else {
-             toast({
-                title: 'Erro de Autenticação',
-                description: error.message,
-                variant: 'destructive',
-            });
-        }
+        toast({
+            title: 'Erro de Autenticação',
+            description: 'Usuário ou senha inválidos. Verifique seus dados e tente novamente.',
+            variant: 'destructive',
+        });
     } finally {
         setIsLoading(false);
     }
@@ -212,3 +198,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    
