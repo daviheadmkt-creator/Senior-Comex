@@ -30,8 +30,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const { toast } = useToast();
   
-  const [email, setEmail] = useState('test@test.com');
-  const [password, setPassword] = useState('password');
+  const [email, setEmail] = useState('davi@dftarget.com.br');
+  const [password, setPassword] = useState('Brasil142536@');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 

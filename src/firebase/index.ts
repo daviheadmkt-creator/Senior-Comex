@@ -28,9 +28,11 @@ export function initializeFirebase() {
     // Create a default user for easy login during development
     if (process.env.NODE_ENV === 'development') {
         const auth = getAuth(firebaseApp);
-        signInWithEmailAndPassword(auth, 'test@test.com', 'password').catch((error) => {
+        const email = 'davi@dftarget.com.br';
+        const password = 'Brasil142536@';
+        signInWithEmailAndPassword(auth, email, password).catch((error) => {
             if (error.code === 'auth/user-not-found') {
-                createUserWithEmailAndPassword(auth, 'test@test.com', 'password');
+                createUserWithEmailAndPassword(auth, email, password);
             }
         });
     }
