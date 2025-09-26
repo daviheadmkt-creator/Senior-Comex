@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -436,7 +437,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
                             <SelectTrigger id="exportadorId">
-                                <SelectValue placeholder="Selecione o exportador" />
+                                <SelectValue placeholder="Aqui ele visualiza todos os exportador cadastrado em parceiros" />
                             </SelectTrigger>
                             <SelectContent>
                                 {parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
