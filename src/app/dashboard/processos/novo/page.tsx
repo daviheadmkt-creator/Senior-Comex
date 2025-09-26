@@ -458,7 +458,7 @@ export default function NovoProcessoPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                            <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
+                            <Select value={formData.exportadorId} onValueChange={value => handleInputChange('exportadorId', value)}>
                             <SelectTrigger id="exportadorId">
                                 <SelectValue placeholder="Selecione o exportador" />
                             </SelectTrigger>
@@ -965,6 +965,7 @@ export default function NovoProcessoPage() {
     
 
     
+
 
 
 
