@@ -64,6 +64,7 @@ const initialPartners = [
     { id: '1', nome_fantasia: 'AGRICOLA FERRARI', tipo_parceiro: 'Exportador' },
     { id: '2', nome_fantasia: 'DFT LOGISTICS', tipo_parceiro: 'Agente de Carga' },
     { id: '3', nome_fantasia: 'MSC', tipo_parceiro: 'Armador' },
+    { id: '4', nome_fantasia: 'Client Import One', tipo_parceiro: 'Cliente (Importador)' },
 ];
 
 
@@ -456,13 +457,13 @@ export default function NovoProcessoPage() {
                             </div>
                         </div>
                         <div className="space-y-2">
-                            <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
+                            <Label htmlFor="exportadorId">Unidade Carregadora (Cliente/Importador)</Label>
                             <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
                             <SelectTrigger id="exportadorId">
-                                <SelectValue placeholder="Selecione o parceiro exportador" />
+                                <SelectValue placeholder="Aqui é para exibir o parceiro importador" />
                             </SelectTrigger>
                             <SelectContent>
-                                {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
+                                {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Cliente (Importador)').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
                             </SelectContent>
                             </Select>
                         </div>
@@ -964,4 +965,5 @@ export default function NovoProcessoPage() {
     
 
     
+
 
