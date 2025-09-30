@@ -29,6 +29,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 
 const processStatusOptions = [
@@ -60,18 +62,11 @@ const initialOriginalDocs = [
     { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true, completionDate: null },
 ]
 
-const initialPartners = [
-    { id: '1', nome_fantasia: 'AGRICOLA FERRARI', tipo_parceiro: 'Exportador' },
-    { id: '2', nome_fantasia: 'DFT LOGISTICS', tipo_parceiro: 'Agente de Carga' },
-    { id: '3', nome_fantasia: 'MSC', tipo_parceiro: 'Armador' },
-    { id: '4', nome_fantasia: 'Client Import One', tipo_parceiro: 'Cliente (Importador)' },
-];
-
-
 export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [formData, setFormData] = useState({
     id: null,
@@ -107,10 +102,16 @@ export default function NovoProcessoPage() {
   });
 
   const [produtos, setProdutos] = useState<any[]>([]);
-  const [parceiros, setParceiros] = useState<any[]>([]);
   const [portos, setPortos] = useState<any[]>([]);
   const [terminais, setTerminais] = useState<any[]>([]);
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
+
+  // Fetch partners from Firestore
+  const partnersCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'partners') : null),
+    [firestore]
+  );
+  const { data: parceiros, isLoading: isLoadingPartners } = useCollection(partnersCollection);
 
 
   const isEditing = searchParams.has('edit');
@@ -119,25 +120,6 @@ export default function NovoProcessoPage() {
   useEffect(() => {
     const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
     setProdutos(storedProducts);
-
-    const storedPartnersRaw = localStorage.getItem('partners');
-    if (storedPartnersRaw) {
-        try {
-            const storedPartners = JSON.parse(storedPartnersRaw);
-            if (Array.isArray(storedPartners) && storedPartners.length > 0) {
-                setParceiros(storedPartners);
-            } else {
-                 setParceiros(initialPartners);
-                 localStorage.setItem('partners', JSON.stringify(initialPartners));
-            }
-        } catch (e) {
-            console.error("Failed to parse partners from localStorage", e);
-            setParceiros(initialPartners);
-        }
-    } else {
-        setParceiros(initialPartners);
-        localStorage.setItem('partners', JSON.stringify(initialPartners));
-    }
     
     const storedPorts = JSON.parse(localStorage.getItem('ports') || '[]');
     setPortos(storedPorts);
@@ -321,7 +303,7 @@ export default function NovoProcessoPage() {
         const updatedProcessos = storedProcessos.map((p: any) => {
             if (p.id === formData.id) {
                 const selectedProduct = produtos.find(prod => String(prod.id) === String(formData.produtoId));
-                const selectedExporter = parceiros.find(part => String(part.id) === String(formData.exportadorId));
+                const selectedExporter = parceiros?.find(part => String(part.id) === String(formData.exportadorId));
                 const selectedPortoDescarga = portos.find(port => String(port.id) === String(formData.portoDescargaId));
                 return { 
                     ...p, // keep old values if not present in formData
@@ -345,7 +327,7 @@ export default function NovoProcessoPage() {
         const newId = storedProcessos.length > 0 ? Math.max(...storedProcessos.map((p: any) => p.id)) + 1 : 1;
         
         const selectedProduct = produtos.find(p => String(p.id) === formData.produtoId);
-        const selectedExporter = parceiros.find(p => String(p.id) === formData.exportadorId);
+        const selectedExporter = parceiros?.find(p => String(p.id) === formData.exportadorId);
         const selectedPortoDescarga = portos.find(p => String(p.id) === formData.portoDescargaId);
 
         const newProcesso = {
@@ -458,13 +440,14 @@ export default function NovoProcessoPage() {
                         </div>
                         <div className="space-y-2">
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                            <Select value={String(formData.exportadorId || '')} onValueChange={value => handleInputChange('exportadorId', value)}>
-                            <SelectTrigger id="exportadorId">
-                                <SelectValue placeholder="Selecione o exportador" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
-                            </SelectContent>
+                            <Select value={formData.exportadorId} onValueChange={(value) => handleInputChange('exportadorId', value)}>
+                                <SelectTrigger id="exportadorId">
+                                    <SelectValue placeholder="Unidade Carregadora (Exportador)" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {isLoadingPartners && <SelectItem value="loading" disabled>Carregando...</SelectItem>}
+                                    {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
+                                </SelectContent>
                             </Select>
                         </div>
                         <div className="grid md:grid-cols-3 gap-4">
@@ -533,7 +516,8 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder="Selecione o armador" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                        {isLoadingPartners && <SelectItem value="loading" disabled>Carregando...</SelectItem>}
+                                        {parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -963,13 +947,3 @@ export default function NovoProcessoPage() {
 }
 
     
-
-    
-
-
-
-
-
-
-
-
