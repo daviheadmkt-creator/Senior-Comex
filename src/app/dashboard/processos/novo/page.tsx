@@ -460,7 +460,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={formData.exportadorId || ''} onValueChange={value => handleInputChange('exportadorId', value)}>
                             <SelectTrigger id="exportadorId">
-                                <SelectValue placeholder="Exibir as empresas parceira Exportadoras" />
+                                <SelectValue placeholder="Exibir todas as empresas que estiver com tipo exportador mostra o seletor Pagina Parceiros" />
                             </SelectTrigger>
                             <SelectContent>
                                 {Array.isArray(parceiros) && parceiros.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
@@ -965,6 +965,7 @@ export default function NovoProcessoPage() {
     
 
     
+
 
 
 
