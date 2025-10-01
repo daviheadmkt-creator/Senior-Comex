@@ -2,22 +2,38 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    // Regra para a coleção 'users'
     match /users/{userId} {
-      // Only the authenticated user can read or write their own document
+      // O próprio usuário pode ler e escrever seus dados.
+      // Administradores também podem (lógica a ser adicionada se o campo 'funcao' for usado para isso).
       allow read, write: if request.auth != null && request.auth.uid == userId;
 
-      // Only admins can list users
-      allow list: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
+      // Regras para subcoleções de 'users'
+      match /auditLogs/{auditLogId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
+      match /reports/{reportId} {
+        allow read, write: if request.auth != null && request.auth.uid == userId;
+      }
     }
 
+    // Regra para a coleção 'partners'
     match /partners/{partnerId} {
-        // Any authenticated user can read, write, create, update, delete partners
-        allow read, write: if request.auth != null;
-    }
-    
-    match /processos/{docId} {
-      allow list, get, create, update, delete: if request.auth != null;
+      // Qualquer usuário autenticado pode ler, criar, atualizar e deletar parceiros.
+      allow read, write: if request.auth != null;
     }
 
+    // Regra para a coleção 'processos'
+    match /processos/{docId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      
+      // Permite ler/listar para qualquer usuário autenticado
+      allow list, get: if isSignedIn();
+
+      // Permite criar, atualizar e deletar para qualquer usuário autenticado
+      allow create, update, delete: if isSignedIn();
+    }
   }
 }
