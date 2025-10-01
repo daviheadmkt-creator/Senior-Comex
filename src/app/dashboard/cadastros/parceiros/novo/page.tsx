@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -67,10 +67,13 @@ export default function NovoParceiroPage() {
   const { data: partnerData, isLoading: isPartnerLoading } = useDoc(partnerDocRef);
 
   useEffect(() => {
-    if (partnerData) {
-      setFormData(partnerData as any);
+    if (isEditing && partnerId && partnerData) {
+      setFormData({
+        ...partnerData,
+        contatos: partnerData.contatos && partnerData.contatos.length > 0 ? partnerData.contatos : [{ nome: '', email: '', telefone: '', cargo: '' }]
+      } as any);
     }
-  }, [partnerData]);
+  }, [isEditing, partnerId, partnerData]);
 
 
   const pageTitle = isEditing ? 'Editar Parceiro' : 'Novo Parceiro';
@@ -160,6 +163,11 @@ export default function NovoParceiroPage() {
 
     router.push('/dashboard/cadastros/parceiros');
   };
+
+
+  if (isPartnerLoading) {
+    return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
 
   return (

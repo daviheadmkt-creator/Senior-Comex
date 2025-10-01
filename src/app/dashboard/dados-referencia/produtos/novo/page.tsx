@@ -16,14 +16,16 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 export default function NovoProdutoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [formData, setFormData] = useState({
-    id: null,
     descricao: '',
     descricao_en: '',
     ncm: '',
@@ -31,21 +33,22 @@ export default function NovoProdutoPage() {
     peso_padrao: '50',
     embalagem_padrao: 'Sacos de polipropileno branco',
   });
-  const [isLoading, setIsLoading] = useState(true);
-
+  
   const isEditing = searchParams.has('edit');
   const productId = searchParams.get('id');
 
+  const productDocRef = useMemoFirebase(() => {
+    if (!firestore || !productId) return null;
+    return doc(firestore, 'products', productId);
+  }, [firestore, productId]);
+  
+  const { data: productData, isLoading: isLoadingProduct } = useDoc(productDocRef);
+
   useEffect(() => {
-    if (isEditing && productId) {
-        const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-        const productToEdit = storedProducts.find((p: any) => String(p.id) === productId);
-        if (productToEdit) {
-            setFormData(productToEdit);
-        }
+    if (isEditing && productId && productData) {
+        setFormData(productData as any);
     }
-    setIsLoading(false);
-  }, [isEditing, productId]);
+  }, [isEditing, productId, productData]);
 
 
   const pageTitle = isEditing ? 'Editar Produto' : 'Novo Produto';
@@ -59,17 +62,12 @@ export default function NovoProdutoPage() {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    
-    if (isEditing) {
-        const updatedProducts = storedProducts.map((p: any) => p.id === formData.id ? formData : p);
-        localStorage.setItem('products', JSON.stringify(updatedProducts));
-    } else {
-        const newId = storedProducts.length > 0 ? Math.max(...storedProducts.map((p: any) => p.id)) + 1 : 1;
-        const newProduct = { ...formData, id: newId };
-        const updatedProducts = [...storedProducts, newProduct];
-        localStorage.setItem('products', JSON.stringify(updatedProducts));
-    }
+    if (!firestore) return;
+
+    const docId = productId || doc(collection(firestore, 'products')).id;
+    const productRef = doc(firestore, 'products', docId);
+
+    setDocumentNonBlocking(productRef, formData, { merge: true });
     
     toast({
         title: "Sucesso!",
@@ -80,7 +78,7 @@ export default function NovoProdutoPage() {
     router.push('/dashboard/dados-referencia/produtos');
   };
 
-  if (isLoading) {
+  if (isLoadingProduct) {
       return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 

@@ -20,33 +20,42 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Edit, PlusCircle, Trash2 } from 'lucide-react';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc, deleteDoc } from 'firebase/firestore';
+
 
 export default function TerminaisPage() {
     const { toast } = useToast();
-    const [terminals, setTerminals] = useState<any[]>([]);
-    const [ports, setPorts] = useState<any[]>([]);
+    const firestore = useFirestore();
     const [formData, setFormData] = useState({ name: '', portoId: '' });
-    const [editingId, setEditingId] = useState<number | null>(null);
+    const [editingId, setEditingId] = useState<string | null>(null);
 
-    useEffect(() => {
-        const storedTerminals = localStorage.getItem('terminals');
-        if (storedTerminals) {
-            setTerminals(JSON.parse(storedTerminals));
-        }
-        const storedPorts = localStorage.getItem('ports');
-        if (storedPorts) {
-            setPorts(JSON.parse(storedPorts));
-        }
-    }, []);
+    const terminalsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
+    const { data: terminals, isLoading: isLoadingTerminals } = useCollection(terminalsCollection);
+
+    const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
+    const { data: ports, isLoading: isLoadingPorts } = useCollection(portsCollection);
+
+    const terminalsWithPortNames = useMemo(() => {
+        if (!terminals || !ports) return [];
+        return terminals.map(terminal => {
+            const port = ports.find(p => p.id === terminal.portoId);
+            return {
+                ...terminal,
+                portName: port ? port.name : 'N/A'
+            };
+        });
+    }, [terminals, ports]);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({...prev, [field]: value}));
     }
 
     const handleSave = () => {
+        if (!firestore) return;
         if (!formData.name || !formData.portoId) {
             toast({
                 title: "Erro",
@@ -56,20 +65,10 @@ export default function TerminaisPage() {
             return;
         }
 
-        let updatedTerminals;
-        const portName = ports.find(p => String(p.id) === formData.portoId)?.name || 'N/A';
-        const dataToSave = { ...formData, portName };
+        const docId = editingId || doc(collection(firestore, 'terminals')).id;
+        const terminalRef = doc(firestore, 'terminals', docId);
 
-        if (editingId !== null) {
-            // Edit
-            updatedTerminals = terminals.map(t => t.id === editingId ? {id: editingId, ...dataToSave} : t);
-        } else {
-            // Add
-            const newId = terminals.length > 0 ? Math.max(...terminals.map(t => t.id)) + 1 : 1;
-            updatedTerminals = [...terminals, { id: newId, ...dataToSave }];
-        }
-        setTerminals(updatedTerminals);
-        localStorage.setItem('terminals', JSON.stringify(updatedTerminals));
+        setDocumentNonBlocking(terminalRef, formData, { merge: true });
         
         toast({
             title: "Sucesso!",
@@ -85,10 +84,9 @@ export default function TerminaisPage() {
         setFormData({ name: terminal.name, portoId: String(terminal.portoId) });
     };
 
-    const handleDelete = (id: number) => {
-        const updatedTerminals = terminals.filter(t => t.id !== id);
-        setTerminals(updatedTerminals);
-        localStorage.setItem('terminals', JSON.stringify(updatedTerminals));
+    const handleDelete = (id: string) => {
+        if (!firestore) return;
+        deleteDoc(doc(firestore, 'terminals', id));
         toast({
             title: "Sucesso!",
             description: "Terminal excluído.",
@@ -120,7 +118,8 @@ export default function TerminaisPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {terminals.map((terminal) => (
+                            {(isLoadingTerminals || isLoadingPorts) && <TableRow><TableCell colSpan={3}>Carregando...</TableCell></TableRow>}
+                            {terminalsWithPortNames.map((terminal) => (
                                 <TableRow key={terminal.id}>
                                     <TableCell className="font-medium">{terminal.name}</TableCell>
                                     <TableCell>{terminal.portName}</TableCell>
@@ -153,10 +152,10 @@ export default function TerminaisPage() {
                             <Label htmlFor="portoId">Porto</Label>
                             <Select value={formData.portoId} onValueChange={(value) => handleInputChange('portoId', value)}>
                                 <SelectTrigger id="portoId">
-                                    <SelectValue placeholder="Selecione o porto" />
+                                    <SelectValue placeholder={isLoadingPorts ? 'Carregando...' : 'Selecione o porto'} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {ports.map((port) => (
+                                    {ports?.map((port) => (
                                         <SelectItem key={port.id} value={String(port.id)}>
                                             {port.name}
                                         </SelectItem>

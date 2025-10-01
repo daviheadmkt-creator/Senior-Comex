@@ -100,17 +100,20 @@ export default function NovoProcessoPage() {
     awb_courier: '',
   });
 
-  const [produtos, setProdutos] = useState<any[]>([]);
-  const [portos, setPortos] = useState<any[]>([]);
-  const [terminais, setTerminais] = useState<any[]>([]);
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
   // Fetch partners from Firestore
-  const partnersCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'partners') : null),
-    [firestore]
-  );
+  const partnersCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'partners') : null), [firestore]);
   const { data: parceiros, isLoading: isLoadingPartners } = useCollection(partnersCollection);
+
+  const productsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'products') : null), [firestore]);
+  const { data: produtos, isLoading: isLoadingProducts } = useCollection(productsCollection);
+
+  const portsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'ports') : null), [firestore]);
+  const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
+
+  const terminalsCollection = useMemoFirebase(() => (firestore ? collection(firestore, 'terminals') : null), [firestore]);
+  const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminalsCollection);
 
 
   const isEditing = searchParams.has('edit');
@@ -124,16 +127,6 @@ export default function NovoProcessoPage() {
   const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
 
   useEffect(() => {
-    // Load local storage data for non-firestore entities
-    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    setProdutos(storedProducts);
-    
-    const storedPorts = JSON.parse(localStorage.getItem('ports') || '[]');
-    setPortos(storedPorts);
-
-    const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
-    setTerminais(storedTerminais);
-
     // If editing, load data from Firestore
     if (isEditing && processId && processoData) {
         setFormData({
@@ -143,12 +136,12 @@ export default function NovoProcessoPage() {
             bls: processoData.bls || [],
             documentos_originais: processoData.documentos_originais || initialOriginalDocs,
         });
-        if (processoData.portoEmbarqueId) {
-            const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+        if (processoData.portoEmbarqueId && terminais) {
+            const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
             setFilteredTerminais(filtered);
         }
     }
-  }, [isEditing, processId, processoData]);
+  }, [isEditing, processId, processoData, terminais]);
 
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
@@ -162,8 +155,10 @@ export default function NovoProcessoPage() {
 
   const handlePortChange = (value: string) => {
     handleInputChange('portoEmbarqueId', value);
-    const filtered = terminais.filter(t => String(t.portoId) === value);
-    setFilteredTerminais(filtered);
+    if (terminais) {
+        const filtered = terminais.filter(t => String(t.portoId) === value);
+        setFilteredTerminais(filtered);
+    }
     handleInputChange('terminalEstufagemId', null); // Reset terminal selection
   }
   
@@ -299,7 +294,7 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
+    if (!firestore || !produtos || !parceiros || !portos) return;
     
     // Get names for relations before saving
     const selectedProduct = produtos.find(p => String(p.id) === String(formData.produtoId));
@@ -404,10 +399,10 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor="produtoId">Produto</Label>
                                 <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
                                 <SelectTrigger id="produtoId">
-                                    <SelectValue placeholder="Selecione o produto" />
+                                    <SelectValue placeholder={isLoadingProducts ? "Carregando..." : "Selecione o produto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {produtos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
+                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
                             </div>
@@ -420,10 +415,9 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={formData.exportadorId} onValueChange={(value) => handleInputChange('exportadorId', value)}>
                                 <SelectTrigger id="exportadorId">
-                                    <SelectValue placeholder="Selecione o exportador" />
+                                    <SelectValue placeholder={isLoadingPartners ? "Carregando..." : "Selecione o exportador"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {isLoadingPartners && <SelectItem value="loading" disabled>Carregando...</SelectItem>}
                                     {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
                                 </SelectContent>
                             </Select>
@@ -433,10 +427,10 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
                             <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
                                 <SelectTrigger id="portoEmbarqueId">
-                                    <SelectValue placeholder="Selecione o porto" />
+                                    <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                                    {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -444,7 +438,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
                              <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)} disabled={!formData.portoEmbarqueId}>
                                 <SelectTrigger id="terminalEstufagemId">
-                                    <SelectValue placeholder="Selecione o terminal" />
+                                    <SelectValue placeholder={isLoadingTerminals ? "Carregando..." : "Selecione o terminal"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {filteredTerminais.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
@@ -455,10 +449,10 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
                             <Select value={String(formData.portoDescargaId || '')} onValueChange={value => handleInputChange('portoDescargaId', value)}>
                             <SelectTrigger id="portoDescargaId">
-                                <SelectValue placeholder="Selecione o porto" />
+                                <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                             </SelectTrigger>
                             <SelectContent>
-                                {portos.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                                {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
                             </SelectContent>
                             </Select>
                         </div>
@@ -491,10 +485,9 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor="armadorId">Armador</Label>
                                 <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
                                     <SelectTrigger id="armadorId">
-                                        <SelectValue placeholder="Selecione o armador" />
+                                        <SelectValue placeholder={isLoadingPartners ? "Carregando..." : "Selecione o armador"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {isLoadingPartners && <SelectItem value="loading" disabled>Carregando...</SelectItem>}
                                         {parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                     </SelectContent>
                                 </Select>

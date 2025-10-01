@@ -31,28 +31,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useEffect, useState } from 'react';
-
-
-const initialProducts: any[] = [];
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 export default function ListaProdutosPage() {
-  const [products, setProducts] = useState(initialProducts);
+  const firestore = useFirestore();
+  const productsCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'products') : null),
+    [firestore]
+  );
+  const { data: products, isLoading } = useCollection(productsCollection);
 
-  useEffect(() => {
-    const storedProducts = localStorage.getItem('products');
-    if (storedProducts) {
-      setProducts(JSON.parse(storedProducts));
-    } else {
-      localStorage.setItem('products', JSON.stringify(initialProducts));
-    }
-  }, []);
-
-  const handleDelete = (id: number) => {
-    const updatedProducts = products.filter(p => p.id !== id);
-    setProducts(updatedProducts);
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+  const handleDelete = (id: string) => {
+    if (!firestore) return;
+    deleteDoc(doc(firestore, 'products', id));
   };
 
 
@@ -91,7 +84,8 @@ export default function ListaProdutosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {products.map((product) => (
+            {isLoading && <TableRow><TableCell colSpan={4}>Carregando...</TableCell></TableRow>}
+            {products?.map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.descricao}</TableCell>
                 <TableCell>{product.ncm}</TableCell>
