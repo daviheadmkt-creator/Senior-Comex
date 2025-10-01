@@ -30,7 +30,7 @@ import {
   useUser,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, setDoc } from 'firebase/firestore';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
 const userStatus = ['Ativo', 'Inativo'];
@@ -81,22 +81,18 @@ export default function NovoUsuarioPage() {
     let docId = userId;
     let isFirstUser = false;
     
-    const usersCollectionRef = collection(firestore, 'users');
-
-    // If creating a new user, check if it's the first one to make it an admin
-    if (!isEditing) {
+    // Fallback to creating a new ID if for some reason currentUser isn't available
+    if(!isEditing && !docId) {
+      docId = doc(collection(firestore, 'users')).id;
+    }
+    
+    // The first user created becomes an admin. Use their auth UID if available.
+    if (!isEditing && currentUser && !userId) {
+        const usersCollectionRef = collection(firestore, 'users');
         const snapshot = await getCountFromServer(usersCollectionRef);
         if (snapshot.data().count === 0) {
             isFirstUser = true;
-            // The first user created becomes an admin. Use their auth UID if available.
-            if (currentUser) {
-              docId = currentUser.uid;
-            } else {
-              // Fallback to creating a new ID if for some reason currentUser isn't available
-              docId = doc(usersCollectionRef).id;
-            }
-        } else {
-            docId = doc(usersCollectionRef).id;
+            docId = currentUser.uid;
         }
     }
     
@@ -113,7 +109,7 @@ export default function NovoUsuarioPage() {
       funcao: isFirstUser ? 'Administrador' : (formData.funcao || 'Operador'),
     };
     
-    setDocumentNonBlocking(userRef, dataToSave, { merge: true });
+    await setDoc(userRef, dataToSave, { merge: true });
 
     toast({
         title: 'Sucesso!',
