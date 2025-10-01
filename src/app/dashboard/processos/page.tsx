@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -33,8 +34,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useEffect, useState } from 'react';
-// import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-// import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -45,8 +44,7 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     return 'default';
 }
 
-// DADOS ESTÁTICOS PARA DESBLOQUEIO
-const staticProcessos = [
+const initialProcessos = [
     {
         id: '1',
         processo_interno: 'SEN-2024-001',
@@ -76,21 +74,25 @@ const staticProcessos = [
 
 export default function GestaoProcessosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  // const firestore = useFirestore();
+  const [processos, setProcessos] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // const processosCollection = useMemoFirebase(
-  //   () => (firestore ? collection(firestore, 'processos') : null),
-  //   [firestore]
-  // );
-  // const { data: processos, isLoading } = useCollection(processosCollection);
-  
-  const [processos, setProcessos] = useState(staticProcessos);
-  const [isLoading, setIsLoading] = useState(false);
+  useEffect(() => {
+    const storedProcessos = localStorage.getItem('processos');
+    if (storedProcessos && JSON.parse(storedProcessos).length > 0) {
+        setProcessos(JSON.parse(storedProcessos));
+    } else {
+        localStorage.setItem('processos', JSON.stringify(initialProcessos));
+        setProcessos(initialProcessos);
+    }
+    setIsLoading(false);
+  }, []);
+
 
   const handleDelete = (id: string) => {
-    // if (!firestore) return;
-    // deleteDoc(doc(firestore, 'processos', id));
-    setProcessos(currentProcessos => currentProcessos.filter(p => p.id !== id));
+    const updatedProcessos = processos.filter(p => p.id !== id);
+    setProcessos(updatedProcessos);
+    localStorage.setItem('processos', JSON.stringify(updatedProcessos));
   };
   
   const filteredProcessos = processos?.filter(processo => 

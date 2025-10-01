@@ -136,38 +136,29 @@ export default function NovoProcessoPage() {
     setTerminais(storedTerminais);
 
     // If editing, load data from Firestore
-    if (isEditing && processoData) {
-        setFormData({
-            ...processoData,
-            documentos: processoData.documentos || initialDocuments,
-            containers: processoData.containers || [],
-            bls: processoData.bls || [],
-            documentos_originais: processoData.documentos_originais || initialOriginalDocs,
-        });
-        if (processoData.portoEmbarqueId) {
-            const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
-            setFilteredTerminais(filtered);
+    if (isEditing && processId) {
+        const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+        const processoToEdit = storedProcessos.find((p: any) => String(p.id) === processId);
+
+        if (processoToEdit) {
+            setFormData({
+                ...processoToEdit,
+                documentos: processoToEdit.documentos || initialDocuments,
+                containers: processoToEdit.containers || [],
+                bls: processoToEdit.bls || [],
+                documentos_originais: processoToEdit.documentos_originais || initialOriginalDocs,
+            });
+            if (processoToEdit.portoEmbarqueId) {
+                const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoToEdit.portoEmbarqueId));
+                setFilteredTerminais(filtered);
+            }
         }
-    } else if (isEditing) {
-        // MOCK: If we are editing, but there's no data (due to error), fill with some data to show the form
-        setFormData({
-            ...formData, // keep some defaults
-            processo_interno: 'SEN-2024-001',
-            po_number: '12345',
-            produtoId: storedProducts.length > 0 ? storedProducts[0].id : '',
-            quantidade: '100 TON',
-            status: 'Em trânsito',
-            documentos: initialDocuments,
-            containers: [],
-            bls: [],
-            documentos_originais: initialOriginalDocs,
-        });
     }
 
     if (isEditing) {
         setIsLoadingProcesso(false);
     }
-  }, [isEditing, processoData]);
+  }, [isEditing, processId]);
 
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
@@ -318,8 +309,7 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
-
+    
     // Get names for relations before saving
     const selectedProduct = produtos.find(p => String(p.id) === String(formData.produtoId));
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
@@ -332,22 +322,27 @@ export default function NovoProcessoPage() {
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
     };
     
-    // Determine the document ID
-    const docId = processId || doc(collection(firestore, 'processos')).id;
-    const processoRef = doc(firestore, 'processos', docId);
+    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
 
-    // Save the document
-    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
+    if (isEditing) {
+        const index = storedProcessos.findIndex((p: any) => String(p.id) === processId);
+        if (index > -1) {
+            storedProcessos[index] = { ...dataToSave, id: processId };
+        }
+        localStorage.setItem('processos', JSON.stringify(storedProcessos));
+    } else {
+        const newId = storedProcessos.length > 0 ? String(Math.max(...storedProcessos.map((p: any) => Number(p.id))) + 1) : '1';
+        const newProcesso = { ...dataToSave, id: newId };
+        localStorage.setItem('processos', JSON.stringify([...storedProcessos, newProcesso]));
+    }
     
     toast({
         title: "Sucesso!",
-        description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
+        description: `Processo ${isEditing ? 'atualizado' : 'criado'} localmente.`,
         variant: "default",
     });
 
-    if (!isEditing) {
-        router.push('/dashboard/processos');
-    }
+    router.push('/dashboard/processos');
   };
   
   if (isLoadingProcesso) {
