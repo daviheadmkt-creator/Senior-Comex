@@ -2,38 +2,19 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Regra para a coleção 'users'
+    // Usuários só podem acessar seus próprios documentos
     match /users/{userId} {
-      // O próprio usuário pode ler e escrever seus dados.
-      // Administradores também podem (lógica a ser adicionada se o campo 'funcao' for usado para isso).
       allow read, write: if request.auth != null && request.auth.uid == userId;
-
-      // Regras para subcoleções de 'users'
-      match /auditLogs/{auditLogId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
-      match /reports/{reportId} {
-        allow read, write: if request.auth != null && request.auth.uid == userId;
-      }
     }
 
-    // Regra para a coleção 'partners'
+    // Parceiros podem ser lidos e escritos por qualquer usuário autenticado
     match /partners/{partnerId} {
-      // Qualquer usuário autenticado pode ler, criar, atualizar e deletar parceiros.
       allow read, write: if request.auth != null;
     }
 
-    // Regra para a coleção 'processos'
-    match /processos/{docId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      
-      // Permite ler/listar para qualquer usuário autenticado
-      allow list, get: if isSignedIn();
-
-      // Permite criar, atualizar e deletar para qualquer usuário autenticado
-      allow create, update, delete: if isSignedIn();
+    // Processos podem ser lidos e escritos por qualquer usuário autenticado
+    match /processos/{processoId} {
+      allow read, write: if request.auth != null;
     }
   }
 }
