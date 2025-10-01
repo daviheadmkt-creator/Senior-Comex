@@ -27,15 +27,30 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Allow authenticated users to read and write to the 'products' collection.
-    match /products/{productId} {
+    /**
+     * @description Allows read and write access to the products collection for any authenticated user.
+     * @path /products/{docId}
+     */
+    match /products/{docId} {
       allow read, write: if request.auth != null;
     }
-    
-    // Allow authenticated users to read and write to the 'processos' collection.
-    match /processos/{processoId} {
-      allow read, write: if request.auth != null;
-    }
+
+    /**
+     * @description Allows reading and writing partner data. Any authenticated user can read or write partner data.
+     * @path /partners/{partnerId}
+     * @allow (create) Any authenticated user can create a partner.
+     * @allow (get) Any authenticated user can read a partner.
+     * @allow (update) Any authenticated user can update a partner.
+     * @allow (delete) Any authenticated user can delete a partner.
+     * @principle Allows any authenticated user to read or write partner data.
+     */
+     match /partners/{partnerId} {
+        function isSignedIn() {
+          return request.auth != null;
+        }
+
+        allow read, write: if isSignedIn();
+     }
 
     /**
      * @description Allows reading and writing user profile data. Only the user themselves can read/write their own profile data, and only admins can list all users.
@@ -88,11 +103,7 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow read, write: if isSignedIn() && isOwner(userId);
     }
 
     /**
@@ -115,31 +126,27 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
 
-      allow get: if isSignedIn() && isOwner(userId);
-      allow list: if isSignedIn() && isOwner(userId);
-      allow create: if isSignedIn() && isOwner(userId);
-      allow update: if isSignedIn() && isOwner(userId) && resource != null;
-      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
+      allow read, write: if isSignedIn() && isOwner(userId);
     }
-    /**
-     * @description Allows reading and writing partner data. Any authenticated user can read or write partner data.
-     * @path /partners/{partnerId}
-     * @allow (create) Any authenticated user can create a partner.
-     * @allow (get) Any authenticated user can read a partner.
-     * @allow (update) Any authenticated user can update a partner.
-     * @allow (delete) Any authenticated user can delete a partner.
-     * @principle Allows any authenticated user to read or write partner data.
-     */
-     match /partners/{partnerId} {
-        function isSignedIn() {
-          return request.auth != null;
-        }
 
-        allow get: if isSignedIn();
-        allow list: if isSignedIn();
-        allow create: if isSignedIn();
-        allow update: if isSignedIn() && resource != null;
-        allow delete: if isSignedIn() && resource != null;
-     }
+    /**
+     * @description Allow read and write access to a user's 'processos' subcollection.
+     *              Only the user who owns the parent user document can access these processes.
+     * @path /users/{userId}/processos/{processoId}
+     */
+    match /users/{userId}/processos/{processoId} {
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+      allow read, write: if request.auth != null && isOwner(userId);
+    }
+    
+    /**
+     * @description Allows read and write access to the 'processos' collection.
+     * @path /processos/{processoId}
+     */
+    match /processos/{processoId} {
+        allow read, write: if request.auth != null;
+    }
   }
 }
