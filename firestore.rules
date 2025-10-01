@@ -2,13 +2,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // --- Regra para a coleção 'processos' ---
-    // Permite que qualquer usuário autenticado leia, escreva, atualize e delete.
-    match /processos/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // --- Regra para a coleção 'users' ---
     match /users/{userId} {
       function isSignedIn() {
         return request.auth != null;
@@ -17,26 +10,26 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
       function isAdmin() {
-        // Acesso ao documento do usuário que está fazendo a requisição
-        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
+        // First check if the user document exists before accessing data
+        return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
       }
-
-      // Permite leitura apenas para o dono do perfil
       allow get: if isSignedIn() && isOwner(userId);
-      // Permite listar todos os usuários apenas se for admin
       allow list: if isSignedIn() && isAdmin();
-      // Permite criação se o ID do documento for o mesmo do usuário autenticado
-      allow create: if isSignedIn();
-      // Permite atualização apenas para o dono do perfil
-      allow update: if isSignedIn() && isOwner(userId);
-      // Permite deleção apenas para o dono do perfil
-      allow delete: if isSignedIn() && isOwner(userId);
+      allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
+      allow update: if isSignedIn() && isOwner(userId) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
-    // --- Regra para a coleção 'partners' ---
     match /partners/{partnerId} {
-      // Permite que qualquer usuário autenticado leia e escreva
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow read, write: if isSignedIn();
+    }
+    
+    match /processos/{docId} {
       allow read, write: if request.auth != null;
     }
+
   }
 }
