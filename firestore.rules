@@ -132,18 +132,27 @@ service cloud.firestore {
         allow delete: if isSignedIn() && resource != null;
      }
 
-     /**
-      * @description Allows reading and writing product data. Any authenticated user can read or write product data.
-      * @path /products/{productId}
-      * @principle Allows any authenticated user to manage product data.
-      */
-     match /products/{productId} {
-        function isSignedIn() {
-          return request.auth != null;
-        }
+    /**
+     * @description Allows reading product data. Listing, creating, updating, and deleting products are restricted to administrators.
+     * @path /products/{productId}
+     * @allow (get) Any authenticated user can read a product.
+     * @allow (list) Only administrators can list all products.
+     * @allow (create) Only administrators can create a new product.
+     * @deny (list) A non-admin user cannot list all products.
+     * @principle Enforces role-based access control for product management.
+     */
+    match /products/{productId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
 
-        allow get, list: if isSignedIn();
-        allow create, update, delete: if isSignedIn();
-     }
+      function isAdmin() {
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
+      }
+
+      allow get: if isSignedIn();
+      allow list: if isSignedIn() && isAdmin();
+      allow create, update, delete: if isSignedIn() && isAdmin();
+    }
   }
 }
