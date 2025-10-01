@@ -33,8 +33,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useEffect, useState } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, deleteDoc, doc } from 'firebase/firestore';
+// import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+// import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -45,19 +45,52 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     return 'default';
 }
 
+// DADOS ESTÁTICOS PARA DESBLOQUEIO
+const staticProcessos = [
+    {
+        id: '1',
+        processo_interno: 'SEN-2024-001',
+        exportadorNome: 'Cliente Exemplo A',
+        produtoNome: 'Soja em Grãos',
+        destino: 'Xangai',
+        status: 'Em trânsito',
+    },
+    {
+        id: '2',
+        processo_interno: 'SEN-2024-002',
+        exportadorNome: 'Cliente Exemplo B',
+        produtoNome: 'Milho',
+        destino: 'Roterdã',
+        status: 'Aguardando Booking',
+    },
+    {
+        id: '3',
+        processo_interno: 'SEN-2024-003',
+        exportadorNome: 'Cliente Exemplo C',
+        produtoNome: 'Algodão',
+        destino: 'Singapura',
+        status: 'Concluído',
+    },
+];
+
+
 export default function GestaoProcessosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const firestore = useFirestore();
+  // const firestore = useFirestore();
 
-  const processosCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'processos') : null),
-    [firestore]
-  );
-  const { data: processos, isLoading } = useCollection(processosCollection);
+  // const processosCollection = useMemoFirebase(
+  //   () => (firestore ? collection(firestore, 'processos') : null),
+  //   [firestore]
+  // );
+  // const { data: processos, isLoading } = useCollection(processosCollection);
+  
+  const [processos, setProcessos] = useState(staticProcessos);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleDelete = (id: string) => {
-    if (!firestore) return;
-    deleteDoc(doc(firestore, 'processos', id));
+    // if (!firestore) return;
+    // deleteDoc(doc(firestore, 'processos', id));
+    setProcessos(currentProcessos => currentProcessos.filter(p => p.id !== id));
   };
   
   const filteredProcessos = processos?.filter(processo => 
