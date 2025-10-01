@@ -11,16 +11,20 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
+
 
 export default function NovoProdutoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [formData, setFormData] = useState({
     descricao: '',
@@ -32,6 +36,22 @@ export default function NovoProdutoPage() {
   });
 
   const isEditing = searchParams.has('edit');
+  const productId = searchParams.get('id');
+
+  const productDocRef = useMemoFirebase(() => {
+    if (!firestore || !productId) return null;
+    return doc(firestore, 'products', productId);
+  }, [firestore, productId]);
+
+  const { data: productData, isLoading: isProductLoading } = useDoc(productDocRef);
+
+  useEffect(() => {
+    if (productData) {
+      setFormData(productData as any);
+    }
+  }, [productData]);
+
+
   const pageTitle = isEditing ? 'Editar Produto' : 'Novo Produto';
   const pageDescription = isEditing
     ? 'Altere as informações do produto selecionado.'
@@ -43,26 +63,25 @@ export default function NovoProdutoPage() {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
-    const newId = storedProducts.length > 0 ? Math.max(...storedProducts.map((p: any) => p.id)) + 1 : 1;
-    
-    const newProduct = {
-      id: newId,
-      ...formData,
-    };
+    if (!firestore) return;
 
-    const updatedProducts = [...storedProducts, newProduct];
-    localStorage.setItem('products', JSON.stringify(updatedProducts));
+    const docId = productId || doc(collection(firestore, 'products')).id;
+    const productRef = doc(firestore, 'products', docId);
+
+    setDocumentNonBlocking(productRef, formData, { merge: true });
     
     toast({
         title: "Sucesso!",
-        description: "O produto foi salvo.",
+        description: `O produto foi ${isEditing ? 'atualizado' : 'salvo'}.`,
         variant: "default",
     });
 
     router.push('/dashboard/dados-referencia/produtos');
   };
 
+  if (isProductLoading) {
+      return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
+  }
 
   return (
     <div className="space-y-6">
@@ -71,7 +90,7 @@ export default function NovoProdutoPage() {
           <div className="flex justify-between items-center">
              <div className='flex items-center gap-4'>
                 <Link href="/dashboard/dados-referencia/produtos" passHref>
-                    <Button variant="outline" size="icon">
+                    <Button variant="outline" size="icon" type="button">
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                 </Link>
@@ -119,7 +138,7 @@ export default function NovoProdutoPage() {
 
              <div className="flex justify-end gap-2 pt-4">
                   <Link href="/dashboard/dados-referencia/produtos" passHref>
-                    <Button variant="outline">Cancelar</Button>
+                    <Button variant="outline" type="button">Cancelar</Button>
                   </Link>
                   <Button type="submit">Salvar</Button>
              </div>
