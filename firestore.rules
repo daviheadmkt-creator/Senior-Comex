@@ -2,6 +2,18 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
+    match /processos/{docId} {
+      allow list, get, create, update, delete: if request.auth != null;
+    }
+
+    match /partners/{partnerId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isSignedIn() && resource != null;
+    }
+
     match /users/{userId} {
       function isSignedIn() {
         return request.auth != null;
@@ -10,8 +22,7 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
       function isAdmin() {
-        // First check if the user document exists before accessing data
-        return isSignedIn() && exists(/databases/$(database)/documents/users/$(request.auth.uid)) && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
+        return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
       }
       allow get: if isSignedIn() && isOwner(userId);
       allow list: if isSignedIn() && isAdmin();
@@ -19,17 +30,5 @@ service cloud.firestore {
       allow update: if isSignedIn() && isOwner(userId) && resource != null && request.resource.data.id == resource.data.id;
       allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
-
-    match /partners/{partnerId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-      allow read, write: if isSignedIn();
-    }
-    
-    match /processos/{docId} {
-      allow read, write: if request.auth != null;
-    }
-
   }
 }
