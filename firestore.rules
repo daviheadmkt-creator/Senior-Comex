@@ -141,12 +141,12 @@ service cloud.firestore {
      * @allow (delete) Any authenticated user can delete a product.
      * @principle Allows any authenticated user to read or write product data.
      */
-    match /products/{productId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
+     match /products/{productId} {
+        function isSignedIn() {
+          return request.auth != null;
+        }
 
-      allow read, write: if isSignedIn();
-    }
+        allow read, write: if isSignedIn();
+     }
   }
 }
