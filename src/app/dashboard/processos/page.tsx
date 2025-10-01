@@ -33,56 +33,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useEffect, useState } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
-const initialProcessos = [
-    {
-        id: 1,
-        processo_interno: 'SEN-2024-001',
-        po_number: '3426B',
-        produtoId: '1',
-        produtoNome: 'Gergelim',
-        quantidade: '270,00000 TON',
-        exportadorId: '1',
-        exportadorNome: 'AGRICOLA FERRARI',
-        terminalEstufagemId: '5',
-        portoEmbarqueId: '1',
-        portoDescargaId: '2',
-        destino: 'Damietta',
-        status: 'Booking Confirmado / Aguardando Draft',
-        booking_number: 'EBKG12749239',
-        armadorId: '3',
-        navio: 'MSC EUGENIA',
-        viagem: 'NAS21R',
-        documentos: [
-            { id: 'bl', name: 'Bill of Lading (B/L)', status: 'Aguardando Envio' },
-            { id: 'invoice', name: 'Commercial Invoice', status: 'Aguardando Envio' },
-            { id: 'packing', name: 'Packing List', status: 'Aguardando Envio' },
-            { id: 'co', name: 'Certificado de Origem', status: 'Aguardando Envio' },
-        ],
-        containers: [
-            { id: 1, numero: 'MSCU1234567', lacre: 'SEAL123', vgm: '25000', inspecionado: true, novo_lacre: 'FJ22391479' },
-            { id: 2, numero: 'MSNU5520181', lacre: 'SEAL124', vgm: '25100', inspecionado: true, novo_lacre: 'FJ22391480' },
-            { id: 3, numero: 'MSAU2468135', lacre: 'SEAL125', vgm: '24950', inspecionado: false, novo_lacre: '' },
-        ],
-        nf_remessa: '14575, 14579, 14582',
-        nf_retorno: '16109',
-        nf_exportacao: '55670',
-        due_numero: '24BR0001234567',
-        due_status: 'Desembaraçada',
-        lpco_protocolo: 'E2500273876',
-        mapa_status: 'Deferido',
-        bl_master: 'MEDUHI295369',
-        navio_final: 'MSC AMALFI',
-        viagem_final: 'NA522R',
-        documentos_originais: [
-            { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: true },
-            { id: 'coo_original', name: 'Emitir Certificado de Origem (COO) Original', done: true },
-            { id: 'fito_original', name: 'Emitir Certificado Fitossanitário (FITO) Original', done: false },
-            { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: true, isSubtask: true },
-        ],
-        awb_courier: '',
-    }
-];
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (status.includes('Aguardando') || status.includes('EM_APROVAÇÃO') || status.includes('Iniciado')) return 'secondary';
@@ -93,26 +46,21 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 }
 
 export default function GestaoProcessosPage() {
-  const [processos, setProcessos] = useState<any[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    const storedProcessos = localStorage.getItem('processos');
-    if (storedProcessos && JSON.parse(storedProcessos).length > 0) {
-      setProcessos(JSON.parse(storedProcessos));
-    } else {
-        localStorage.setItem('processos', JSON.stringify(initialProcessos));
-        setProcessos(initialProcessos);
-    }
-  }, []);
+  const processosCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'processos') : null),
+    [firestore]
+  );
+  const { data: processos, isLoading } = useCollection(processosCollection);
 
-  const handleDelete = (id: number) => {
-    const updatedProcessos = processos.filter(p => p.id !== id);
-    setProcessos(updatedProcessos);
-    localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+  const handleDelete = (id: string) => {
+    if (!firestore) return;
+    deleteDoc(doc(firestore, 'processos', id));
   };
   
-  const filteredProcessos = processos.filter(processo => 
+  const filteredProcessos = processos?.filter(processo => 
       (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
   );
@@ -159,7 +107,12 @@ export default function GestaoProcessosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {filteredProcessos.map((processo) => (
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={6} className="text-center">Carregando...</TableCell>
+              </TableRow>
+            )}
+            {filteredProcessos?.map((processo) => (
               <TableRow key={processo.id}>
                 <TableCell className="font-medium">{processo.processo_interno}</TableCell>
                 <TableCell>{processo.exportadorNome}</TableCell>
@@ -201,6 +154,11 @@ export default function GestaoProcessosPage() {
                 </TableCell>
               </TableRow>
             ))}
+             {!isLoading && filteredProcessos?.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

@@ -29,8 +29,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 
 const processStatusOptions = [
@@ -68,8 +68,7 @@ export default function NovoProcessoPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
 
-  const [formData, setFormData] = useState({
-    id: null,
+  const [formData, setFormData] = useState<any>({
     processo_interno: '',
     data_nomeacao: '',
     po_number: '',
@@ -117,7 +116,14 @@ export default function NovoProcessoPage() {
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
 
+  const processoDocRef = useMemoFirebase(() => {
+    if (!firestore || !processId) return null;
+    return doc(firestore, 'processos', processId);
+  }, [firestore, processId]);
+  const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
+
   useEffect(() => {
+    // Load local storage data for non-firestore entities
     const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
     setProdutos(storedProducts);
     
@@ -127,25 +133,21 @@ export default function NovoProcessoPage() {
     const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
     setTerminais(storedTerminais);
 
-    if (isEditing && processId) {
-        const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
-        const existingProcess = storedProcessos.find((p: any) => p.id === Number(processId));
-        if (existingProcess) {
-            setFormData({
-                ...formData, // Start with default values
-                ...existingProcess,
-                documentos: existingProcess.documentos || initialDocuments,
-                containers: existingProcess.containers || [],
-                bls: existingProcess.bls || [],
-                documentos_originais: existingProcess.documentos_originais || initialOriginalDocs,
-            });
-             if (existingProcess.portoEmbarqueId) {
-                const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(existingProcess.portoEmbarqueId));
-                setFilteredTerminais(filtered);
-            }
+    // If editing, load data from Firestore
+    if (isEditing && processoData) {
+        setFormData({
+            ...processoData,
+            documentos: processoData.documentos || initialDocuments,
+            containers: processoData.containers || [],
+            bls: processoData.bls || [],
+            documentos_originais: processoData.documentos_originais || initialOriginalDocs,
+        });
+        if (processoData.portoEmbarqueId) {
+            const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+            setFilteredTerminais(filtered);
         }
     }
-  }, [isEditing, processId]);
+  }, [isEditing, processoData]);
 
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
@@ -296,61 +298,32 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+    if (!firestore) return;
+
+    // Get names for relations before saving
+    const selectedProduct = produtos.find(p => String(p.id) === String(formData.produtoId));
+    const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
+    const selectedPortoDescarga = portos.find(p => String(p.id) === String(formData.portoDescargaId));
+
+    const dataToSave = {
+        ...formData,
+        produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
+        exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+        destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+    };
     
-    if (isEditing) {
-        // Update existing process
-        const updatedProcessos = storedProcessos.map((p: any) => {
-            if (p.id === formData.id) {
-                const selectedProduct = produtos.find(prod => String(prod.id) === String(formData.produtoId));
-                const selectedExporter = parceiros?.find(part => String(part.id) === String(formData.exportadorId));
-                const selectedPortoDescarga = portos.find(port => String(port.id) === String(formData.portoDescargaId));
-                return { 
-                    ...p, // keep old values if not present in formData
-                    ...formData,
-                    produtoNome: selectedProduct?.descricao || p.produtoNome,
-                    exportadorNome: selectedExporter?.nome_fantasia || p.exportadorNome,
-                    destino: selectedPortoDescarga?.name || p.destino,
-                };
-            }
-            return p;
-        });
-        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
-        toast({
-            title: "Sucesso!",
-            description: "Processo atualizado.",
-            variant: "default",
-        });
+    // Determine the document ID
+    const docId = processId || doc(collection(firestore, 'processos')).id;
+    const processoRef = doc(firestore, 'processos', docId);
 
-    } else {
-        // Create new process
-        const newId = storedProcessos.length > 0 ? Math.max(...storedProcessos.map((p: any) => p.id)) + 1 : 1;
-        
-        const selectedProduct = produtos.find(p => String(p.id) === formData.produtoId);
-        const selectedExporter = parceiros?.find(p => String(p.id) === formData.exportadorId);
-        const selectedPortoDescarga = portos.find(p => String(p.id) === formData.portoDescargaId);
-
-        const newProcesso = {
-          ...formData,
-          id: newId,
-          produtoNome: selectedProduct?.descricao || 'N/A',
-          exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
-          destino: selectedPortoDescarga?.name || 'N/A',
-          documentos: initialDocuments,
-          containers: [],
-          bls: [],
-          documentos_originais: initialOriginalDocs,
-        };
-
-        const updatedProcessos = [...storedProcessos, newProcesso];
-        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
-        
-        toast({
-            title: "Sucesso!",
-            description: "Novo processo criado a partir da nomeação.",
-            variant: "default",
-        });
-    }
+    // Save the document
+    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
+    
+    toast({
+        title: "Sucesso!",
+        description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
+        variant: "default",
+    });
 
     if (!isEditing) {
         router.push('/dashboard/processos');
@@ -442,7 +415,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={formData.exportadorId} onValueChange={(value) => handleInputChange('exportadorId', value)}>
                                 <SelectTrigger id="exportadorId">
-                                    <SelectValue placeholder="Unidade Carregadora (Exportador)" />
+                                    <SelectValue placeholder="Selecione o exportador" />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {isLoadingPartners && <SelectItem value="loading" disabled>Carregando...</SelectItem>}
@@ -945,5 +918,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
