@@ -1,20 +1,39 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+    
+    // Helper function to check if the user is an admin
+    function isAdmin(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.funcao == 'Administrador';
+    }
 
-    // Usuários só podem acessar seus próprios documentos
+    // Rules for the 'users' collection
     match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+      // Admins can read/write any user document
+      // Users can only read/write their own document
+      allow read, write: if request.auth != null && (isAdmin(request.auth.uid) || request.auth.uid == userId);
     }
-
-    // Parceiros podem ser lidos e escritos por qualquer usuário autenticado
+    
+    // Rules for the 'partners' collection
     match /partners/{partnerId} {
+       // Any authenticated user can manage partners
       allow read, write: if request.auth != null;
     }
 
-    // Processos podem ser lidos e escritos por qualquer usuário autenticado
+    // Rules for the 'processos' collection
     match /processos/{processoId} {
-      allow read, write: if request.auth != null;
+      // Only admins can read and write to the 'processos' collection
+      allow read, write: if request.auth != null && isAdmin(request.auth.uid);
+    }
+    
+    // Subcollections should generally be protected by the parent document's rules
+    // or have their own specific rules if needed.
+    match /{path=**}/auditLogs/{auditLogId} {
+        allow read, write: if request.auth != null; // Or more specific rules
+    }
+    
+    match /{path=**}/reports/{reportId} {
+        allow read, write: if request.auth != null; // Or more specific rules
     }
   }
 }
