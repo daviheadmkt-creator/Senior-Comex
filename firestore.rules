@@ -6,25 +6,10 @@ service cloud.firestore {
       function isSignedIn() {
         return request.auth != null;
       }
-
-      // Permite listar e buscar documentos da coleção
       allow list, get: if isSignedIn();
-
-      // Se quiser permitir também criar, editar e deletar:
       allow create, update, delete: if isSignedIn();
     }
 
-    /**
-     * @description Allows reading and writing user profile data. Only the user themselves can read/write their own profile data, and only admins can list all users.
-     * @path /users/{userId}
-     * @allow (create) User with ID 'user123' can create their own profile.
-     * @allow (get) User with ID 'user123' can read their own profile.
-     * @allow (update) User with ID 'user123' can update their own profile.
-     * @allow (delete) User with ID 'user123' can delete their own profile.
-     * @deny (create) User with ID 'user456' cannot create a profile for 'user123'.
-     * @deny (get) User with ID 'user456' cannot read the profile of 'user123'.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
     match /users/{userId} {
       function isSignedIn() {
         return request.auth != null;
@@ -45,17 +30,6 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
-    /**
-     * @description Allows reading and writing audit logs for a specific user. Only the user themselves can manage their own audit logs.
-     * @path /users/{userId}/auditLogs/{auditLogId}
-     * @allow (create) User with ID 'user123' can create an audit log for themselves.
-     * @allow (get) User with ID 'user123' can read their own audit logs.
-     * @allow (update) User with ID 'user123' can update their own audit logs.
-     * @allow (delete) User with ID 'user123' can delete their own audit logs.
-     * @deny (create) User with ID 'user456' cannot create an audit log for 'user123'.
-     * @deny (get) User with ID 'user456' cannot read the audit logs of 'user123'.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
     match /users/{userId}/auditLogs/{auditLogId} {
       function isSignedIn() {
         return request.auth != null;
@@ -72,17 +46,6 @@ service cloud.firestore {
       allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
 
-    /**
-     * @description Allows reading and writing reports for a specific user. Only the user themselves can manage their own reports.
-     * @path /users/{userId}/reports/{reportId}
-     * @allow (create) User with ID 'user123' can create a report for themselves.
-     * @allow (get) User with ID 'user123' can read their own reports.
-     * @allow (update) User with ID 'user123' can update their own reports.
-     * @allow (delete) User with ID 'user123' can delete their own reports.
-     * @deny (create) User with ID 'user456' cannot create a report for 'user123'.
-     * @deny (get) User with ID 'user456' cannot read the reports of 'user123'.
-     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
-     */
     match /users/{userId}/reports/{reportId} {
       function isSignedIn() {
         return request.auth != null;
@@ -98,15 +61,6 @@ service cloud.firestore {
       allow update: if isSignedIn() && isOwner(userId) && resource != null;
       allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
-    /**
-     * @description Allows reading and writing partner data. Any authenticated user can read or write partner data.
-     * @path /partners/{partnerId}
-     * @allow (create) Any authenticated user can create a partner.
-     * @allow (get) Any authenticated user can read a partner.
-     * @allow (update) Any authenticated user can update a partner.
-     * @allow (delete) Any authenticated user can delete a partner.
-     * @principle Allows any authenticated user to read or write partner data.
-     */
      match /partners/{partnerId} {
         function isSignedIn() {
           return request.auth != null;
@@ -118,5 +72,9 @@ service cloud.firestore {
         allow update: if isSignedIn() && resource != null;
         allow delete: if isSignedIn() && resource != null;
      }
+
+     match /products/{docId} {
+      allow list, get, create, update, delete: if request.auth != null;
+    }
   }
 }
