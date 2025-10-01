@@ -115,14 +115,13 @@ export default function NovoProcessoPage() {
 
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
-  const [isLoadingProcesso, setIsLoadingProcesso] = useState(isEditing);
 
-  // const processoDocRef = useMemoFirebase(() => {
-  //   if (!firestore || !processId) return null;
-  //   return doc(firestore, 'processos', processId);
-  // }, [firestore, processId]);
-  // const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
-  const processoData = null; // MOCK DATA TO AVOID ERROR
+  const processoDocRef = useMemoFirebase(() => {
+    if (!firestore || !processId) return null;
+    return doc(firestore, 'processos', processId);
+  }, [firestore, processId]);
+  
+  const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
 
   useEffect(() => {
     // Load local storage data for non-firestore entities
@@ -136,29 +135,20 @@ export default function NovoProcessoPage() {
     setTerminais(storedTerminais);
 
     // If editing, load data from Firestore
-    if (isEditing && processId) {
-        const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
-        const processoToEdit = storedProcessos.find((p: any) => String(p.id) === processId);
-
-        if (processoToEdit) {
-            setFormData({
-                ...processoToEdit,
-                documentos: processoToEdit.documentos || initialDocuments,
-                containers: processoToEdit.containers || [],
-                bls: processoToEdit.bls || [],
-                documentos_originais: processoToEdit.documentos_originais || initialOriginalDocs,
-            });
-            if (processoToEdit.portoEmbarqueId) {
-                const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoToEdit.portoEmbarqueId));
-                setFilteredTerminais(filtered);
-            }
+    if (isEditing && processId && processoData) {
+        setFormData({
+            ...processoData,
+            documentos: processoData.documentos || initialDocuments,
+            containers: processoData.containers || [],
+            bls: processoData.bls || [],
+            documentos_originais: processoData.documentos_originais || initialOriginalDocs,
+        });
+        if (processoData.portoEmbarqueId) {
+            const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+            setFilteredTerminais(filtered);
         }
     }
-
-    if (isEditing) {
-        setIsLoadingProcesso(false);
-    }
-  }, [isEditing, processId]);
+  }, [isEditing, processId, processoData]);
 
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
@@ -309,6 +299,7 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore) return;
     
     // Get names for relations before saving
     const selectedProduct = produtos.find(p => String(p.id) === String(formData.produtoId));
@@ -322,23 +313,14 @@ export default function NovoProcessoPage() {
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
     };
     
-    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+    const docId = processId || doc(collection(firestore, 'processos')).id;
+    const processoRef = doc(firestore, 'processos', docId);
 
-    if (isEditing) {
-        const index = storedProcessos.findIndex((p: any) => String(p.id) === processId);
-        if (index > -1) {
-            storedProcessos[index] = { ...dataToSave, id: processId };
-        }
-        localStorage.setItem('processos', JSON.stringify(storedProcessos));
-    } else {
-        const newId = storedProcessos.length > 0 ? String(Math.max(...storedProcessos.map((p: any) => Number(p.id))) + 1) : '1';
-        const newProcesso = { ...dataToSave, id: newId };
-        localStorage.setItem('processos', JSON.stringify([...storedProcessos, newProcesso]));
-    }
+    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
     
     toast({
         title: "Sucesso!",
-        description: `Processo ${isEditing ? 'atualizado' : 'criado'} localmente.`,
+        description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
         variant: "default",
     });
 
@@ -941,4 +923,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
