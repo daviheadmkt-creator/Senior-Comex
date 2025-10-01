@@ -132,21 +132,12 @@ service cloud.firestore {
         allow delete: if isSignedIn() && resource != null;
      }
 
-    /**
-     * @description Allows reading and writing product data. Any authenticated user can read or write product data.
-     * @path /products/{productId}
-     * @allow (create) Any authenticated user can create a product.
-     * @allow (get) Any authenticated user can read a product.
-     * @allow (update) Any authenticated user can update a product.
-     * @allow (delete) Any authenticated user can delete a product.
-     * @principle Allows any authenticated user to read or write product data.
-     */
-     match /products/{productId} {
-        function isSignedIn() {
-          return request.auth != null;
-        }
+    match /products/{productId} {
+      allow read, write: if request.auth != null;
+    }
 
-        allow read, write: if isSignedIn();
-     }
+    match /processos/{processoId} {
+      allow read, write: if request.auth != null;
+    }
   }
 }
