@@ -38,6 +38,7 @@ import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (!status) return 'outline';
     if (status.includes('Aguardando') || status.includes('EM_APROVAÇÃO') || status.includes('Iniciado')) return 'secondary';
     if (status.includes('Confirmado') || status.includes('APROVADOS') || status.includes('Desembaraçada') || status.includes('Deferido') || status.includes('Realizada') || status.includes('trânsito')) return 'default';
     if (status.includes('Atrasado') || status.includes('Cancelado') || status.includes('CORRECAO') || status.includes('Indeferido')) return 'destructive';
