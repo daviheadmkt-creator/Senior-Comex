@@ -1,18 +1,20 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    // Regra para a coleção 'processos'
     match /processos/{docId} {
       function isSignedIn() {
         return request.auth != null;
       }
-
-      // Permite que qualquer usuário autenticado leia e escreva.
-      allow read, write: if isSignedIn();
+      allow list, get: if isSignedIn();
+      allow create, update, delete: if isSignedIn();
     }
-
-    // Regra para a coleção 'users'
+    match /partners/{partnerId} {
+      function isSignedIn() {
+        return request.auth != null;
+      }
+      allow get, list, create: if isSignedIn();
+      allow update, delete: if isSignedIn() && resource != null;
+    }
     match /users/{userId} {
       function isSignedIn() {
         return request.auth != null;
@@ -21,34 +23,16 @@ service cloud.firestore {
         return request.auth.uid == userId;
       }
       function isAdmin() {
-        // Acesso ao documento do usuário para verificar a função 'funcao'
         return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
       }
-      
-      // Um usuário pode ler seu próprio documento
       allow get: if isSignedIn() && isOwner(userId);
-      
-      // Apenas administradores podem listar todos os usuários
       allow list: if isSignedIn() && isAdmin();
-      
-      // Um usuário pode criar seu próprio documento se o ID for o mesmo do auth
       allow create: if isSignedIn() && isOwner(userId) && request.resource.data.id == userId;
-      
-      // Um usuário pode atualizar seu próprio documento
-      allow update: if isSignedIn() && isOwner(userId);
-      
-      // Um usuário pode deletar seu próprio documento
-      allow delete: if isSignedIn() && isOwner(userId);
+      allow update: if isSignedIn() && isOwner(userId) && resource != null && request.resource.data.id == resource.data.id;
+      allow delete: if isSignedIn() && isOwner(userId) && resource != null;
     }
-
-    // Regra para a coleção 'partners'
-    match /partners/{partnerId} {
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
-      // Qualquer usuário autenticado pode ler e escrever.
-      allow read, write: if isSignedIn();
+    match /products/{docId} {
+      allow list, get, create, update, delete: if request.auth != null;
     }
   }
 }
