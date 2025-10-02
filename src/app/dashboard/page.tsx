@@ -22,8 +22,6 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
 
 const volumeData = [
   { time: '09:00', volume: 12000 },
@@ -43,20 +41,20 @@ const alerts = [
     { id: 3, icon: <AlertTriangle className="h-5 w-5 text-red-600" />, message: "Processo SEN2378-28 com status 'Atrasado'.", link: "/dashboard/processos" },
 ]
 
+const staticProcessos = [
+    { id: '1', status: 'Em trânsito' },
+    { id: '2', status: 'Atrasado' },
+    { id: '3', status: 'Concluído' },
+    { id: '4', status: 'Aguardando embarque' },
+    { id: '5', status: 'Em trânsito' },
+];
 
 export default function DashboardPage() {
-    const firestore = useFirestore();
-    const processosCollection = useMemoFirebase(
-      () => (firestore ? collection(firestore, 'processos') : null),
-      [firestore]
-    );
-    const { data: processos, isLoading } = useCollection(processosCollection);
+    const totalOperacoes = staticProcessos.length;
+    const alertasAtuais = staticProcessos.filter(p => p.status === 'Atrasado').length;
+    const concluidosMes = staticProcessos.filter(p => p.status === 'Concluído').length; 
 
-    const totalOperacoes = processos?.length || 0;
-    const alertasAtuais = processos?.filter(p => p.status === 'Atrasado').length || 0;
-    const concluidosMes = processos?.filter(p => p.status === 'Concluído').length || 0; 
-
-    const statusData = processos?.reduce((acc, processo) => {
+    const statusData = staticProcessos.reduce((acc, processo) => {
         const status = processo.status;
         const existingStatus = acc.find(item => item.name === status);
         if (existingStatus) {
@@ -88,7 +86,7 @@ export default function DashboardPage() {
                     <PackageSearch className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{isLoading ? '...' : totalOperacoes}</div>
+                    <div className="text-2xl font-bold">{totalOperacoes}</div>
                     <p className="text-xs text-muted-foreground">Total de processos cadastrados</p>
                 </CardContent>
             </Card>
@@ -108,7 +106,7 @@ export default function DashboardPage() {
                     <AlertTriangle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className={`text-2xl font-bold ${alertasAtuais > 0 ? 'text-destructive' : ''}`}>{isLoading ? '...' : alertasAtuais}</div>
+                    <div className={`text-2xl font-bold ${alertasAtuais > 0 ? 'text-destructive' : ''}`}>{alertasAtuais}</div>
                     <p className="text-xs text-muted-foreground">Processos com status 'Atrasado'</p>
                 </CardContent>
             </Card>
@@ -118,7 +116,7 @@ export default function DashboardPage() {
                     <CheckCircle className="h-4 w-4 text-muted-foreground" />
                 </CardHeader>
                 <CardContent>
-                    <div className="text-2xl font-bold">{isLoading ? '...' : concluidosMes}</div>
+                    <div className="text-2xl font-bold">{concluidosMes}</div>
                     <p className="text-xs text-muted-foreground">Total de processos concluídos</p>
                 </CardContent>
             </Card>
