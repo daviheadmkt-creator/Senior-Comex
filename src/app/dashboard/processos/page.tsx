@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -33,8 +33,9 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useEffect, useState } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
-const initialProcessos: any[] = [];
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
@@ -47,34 +48,24 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 
 export default function GestaoProcessosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [processos, setProcessos] = useState(initialProcessos);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    try {
-      const storedProcessos = localStorage.getItem('processos');
-      if (storedProcessos) {
-        setProcessos(JSON.parse(storedProcessos));
-      } else {
-        localStorage.setItem('processos', JSON.stringify(initialProcessos));
-      }
-    } catch (error) {
-      console.error("Failed to load processos from localStorage", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+  const processosCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'processos') : null),
+    [firestore]
+  );
+  const { data: processos, isLoading } = useCollection(processosCollection);
+
 
   const handleDelete = (id: string) => {
-    const updatedProcessos = processos.filter(p => p.id !== id);
-    setProcessos(updatedProcessos);
-    localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+    if (!firestore) return;
+    deleteDoc(doc(firestore, 'processos', id));
   };
   
-  const filteredProcessos = processos.filter(processo => 
+  const filteredProcessos = processos?.filter(processo => 
       (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+  ) || [];
 
   return (
     <Card>
@@ -120,10 +111,14 @@ export default function GestaoProcessosPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">Carregando...</TableCell>
+                <TableCell colSpan={6} className="text-center">
+                    <div className='flex justify-center items-center p-4'>
+                        <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                    </div>
+                </TableCell>
               </TableRow>
             )}
-            {filteredProcessos?.map((processo) => (
+            {!isLoading && filteredProcessos?.map((processo) => (
               <TableRow key={processo.id}>
                 <TableCell className="font-medium">{processo.processo_interno}</TableCell>
                 <TableCell>{processo.exportadorNome}</TableCell>

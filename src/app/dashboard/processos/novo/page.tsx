@@ -29,6 +29,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
+
 
 const processStatusOptions = [
     "Iniciado / Aguardando Booking",
@@ -62,13 +65,29 @@ export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
   
-  // Static data as a fallback
-  const [parceiros, setParceiros] = useState<any[]>([]);
-  const [produtos, setProdutos] = useState<any[]>([]);
-  const [portos, setPortos] = useState<any[]>([]);
-  const [terminais, setTerminais] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const isEditing = searchParams.has('edit');
+  const processId = searchParams.get('id');
+
+  // Firestore data hooks
+  const parceirosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'partners') : null, [firestore]);
+  const { data: parceiros, isLoading: isLoadingParceiros } = useCollection(parceirosCollection);
+  
+  const produtosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'products') : null, [firestore]);
+  const { data: produtos, isLoading: isLoadingProdutos } = useCollection(produtosCollection);
+
+  const portosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
+  const { data: portos, isLoading: isLoadingPortos } = useCollection(portosCollection);
+  
+  const terminaisCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
+  const { data: terminais, isLoading: isLoadingTerminais } = useCollection(terminaisCollection);
+
+  const processoDocRef = useMemoFirebase(() => {
+    if (!firestore || !processId) return null;
+    return doc(firestore, 'processos', processId);
+  }, [firestore, processId]);
+  const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
 
   const [formData, setFormData] = useState<any>({
     id: '',
@@ -104,53 +123,24 @@ export default function NovoProcessoPage() {
   });
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
-
-  const isEditing = searchParams.has('edit');
-  const processId = searchParams.get('id');
   
   useEffect(() => {
-    // Load reference data from localStorage
-    try {
-      const storedPartners = localStorage.getItem('partners');
-      if (storedPartners) setParceiros(JSON.parse(storedPartners));
-      
-      const storedProducts = localStorage.getItem('products');
-      if (storedProducts) setProdutos(JSON.parse(storedProducts));
-
-      const storedPorts = localStorage.getItem('ports');
-      if (storedPorts) setPortos(JSON.parse(storedPorts));
-      
-      const storedTerminals = localStorage.getItem('terminals');
-      if (storedTerminals) setTerminais(JSON.parse(storedTerminals));
-
-      if (isEditing && processId) {
-        const storedProcessos = localStorage.getItem('processos');
-        if (storedProcessos) {
-          const allProcessos = JSON.parse(storedProcessos);
-          const processoData = allProcessos.find((p: any) => p.id === processId);
-          if (processoData) {
-            setFormData({
-                ...processoData,
-                documentos: processoData.documentos || initialDocuments,
-                containers: processoData.containers || [],
-                bls: processoData.bls || [],
-                documentos_originais: processoData.documentos_originais || initialOriginalDocs,
-            });
-            if (processoData.portoEmbarqueId && storedTerminals) {
-                const allTerminals = JSON.parse(storedTerminals);
-                const filtered = allTerminals.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
-                setFilteredTerminais(filtered);
-            }
-          }
+    if (isEditing && processId && processoData) {
+        setFormData({
+            ...processoData,
+            documentos: processoData.documentos || initialDocuments,
+            containers: processoData.containers || [],
+            bls: processoData.bls || [],
+            documentos_originais: processoData.documentos_originais || initialOriginalDocs,
+        });
+        if (processoData.portoEmbarqueId && terminais) {
+            const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+            setFilteredTerminais(filtered);
         }
-      }
-    } catch (error) {
-      console.error("Failed to load data from localStorage", error);
-    } finally {
-        setIsLoading(false);
     }
-  }, [isEditing, processId]);
+  }, [isEditing, processId, processoData, terminais]);
 
+  const isLoading = isLoadingParceiros || isLoadingProdutos || isLoadingPortos || isLoadingTerminais || (isEditing && isLoadingProcesso);
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
@@ -163,8 +153,10 @@ export default function NovoProcessoPage() {
 
   const handlePortChange = (value: string) => {
     handleInputChange('portoEmbarqueId', value);
-    const filtered = terminais.filter(t => String(t.portoId) === value);
-    setFilteredTerminais(filtered);
+    if (terminais) {
+        const filtered = terminais.filter(t => String(t.portoId) === value);
+        setFilteredTerminais(filtered);
+    }
     handleInputChange('terminalEstufagemId', null); // Reset terminal selection
   }
   
@@ -299,13 +291,12 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+    if (!firestore) return;
     
     // Get names for relations before saving
-    const selectedProduct = produtos.find(p => String(p.id) === String(formData.produtoId));
+    const selectedProduct = produtos?.find(p => String(p.id) === String(formData.produtoId));
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
-    const selectedPortoDescarga = portos.find(p => String(p.id) === String(formData.portoDescargaId));
+    const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
 
     const dataToSave = {
         ...formData,
@@ -314,17 +305,10 @@ export default function NovoProcessoPage() {
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
     };
     
-    if (isEditing) {
-        const index = storedProcessos.findIndex((p: any) => p.id === processId);
-        if (index > -1) {
-            storedProcessos[index] = dataToSave;
-        }
-    } else {
-        dataToSave.id = Date.now().toString(); // Simple ID for localStorage
-        storedProcessos.push(dataToSave);
-    }
+    const docId = processId || doc(collection(firestore, 'processos')).id;
+    const processoRef = doc(firestore, 'processos', docId);
 
-    localStorage.setItem('processos', JSON.stringify(storedProcessos));
+    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
     
     toast({
         title: "Sucesso!",
@@ -412,7 +396,7 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor="produtoId">Produto</Label>
                                 <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
                                 <SelectTrigger id="produtoId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o produto"} />
+                                    <SelectValue placeholder={isLoadingProdutos ? "Carregando..." : "Selecione o produto"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
@@ -428,7 +412,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                             <Select value={formData.exportadorId} onValueChange={(value) => handleInputChange('exportadorId', value)}>
                                 <SelectTrigger id="exportadorId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o exportador"} />
+                                    <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o exportador"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={p.id}>{p.nome_fantasia}</SelectItem>)}
@@ -440,7 +424,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
                             <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
                                 <SelectTrigger id="portoEmbarqueId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o porto"} />
+                                    <SelectValue placeholder={isLoadingPortos ? "Carregando..." : "Selecione o porto"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
@@ -451,7 +435,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
                              <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)} disabled={!formData.portoEmbarqueId}>
                                 <SelectTrigger id="terminalEstufagemId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o terminal"} />
+                                    <SelectValue placeholder={isLoadingTerminais ? "Carregando..." : "Selecione o terminal"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {filteredTerminais.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
@@ -462,7 +446,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
                             <Select value={String(formData.portoDescargaId || '')} onValueChange={value => handleInputChange('portoDescargaId', value)}>
                             <SelectTrigger id="portoDescargaId">
-                                <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o porto"} />
+                                <SelectValue placeholder={isLoadingPortos ? "Carregando..." : "Selecione o porto"} />
                             </SelectTrigger>
                             <SelectContent>
                                 {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
@@ -498,7 +482,7 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor="armadorId">Armador</Label>
                                 <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
                                     <SelectTrigger id="armadorId">
-                                        <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o armador"} />
+                                        <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o armador"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
