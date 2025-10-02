@@ -38,7 +38,8 @@ import {
   TrendingUp,
   CreditCard,
   Globe,
-  Warehouse
+  Warehouse,
+  Loader2
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
@@ -60,6 +61,14 @@ export default function DashboardLayout({
       router.push('/');
     }
   }, [user, isUserLoading, router]);
+
+  if (isUserLoading || !user) {
+    return (
+      <div className="flex h-screen w-full items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <SidebarProvider>
