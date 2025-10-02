@@ -33,8 +33,6 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useState, useEffect } from 'react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -83,10 +81,10 @@ export default function GestaoProcessosPage() {
     setProcessos(prev => prev.filter(p => p.id !== id));
   };
   
-  const filteredProcessos = processos?.filter(processo => 
+  const filteredProcessos = processos.filter(processo => 
       (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
-  ) || [];
+  );
 
   return (
     <Card>
@@ -139,7 +137,7 @@ export default function GestaoProcessosPage() {
                 </TableCell>
               </TableRow>
             )}
-            {!isLoading && filteredProcessos?.map((processo) => (
+            {!isLoading && filteredProcessos.map((processo) => (
               <TableRow key={processo.id}>
                 <TableCell className="font-medium">{processo.processo_interno}</TableCell>
                 <TableCell>{processo.exportadorNome}</TableCell>
@@ -180,7 +178,7 @@ export default function GestaoProcessosPage() {
                 </TableCell>
               </TableRow>
             ))}
-             {!isLoading && filteredProcessos?.length === 0 && (
+             {!isLoading && filteredProcessos.length === 0 && (
                 <TableRow>
                     <TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
                 </TableRow>
