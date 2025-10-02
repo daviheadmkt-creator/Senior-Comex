@@ -32,7 +32,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
 
@@ -46,20 +46,41 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     return 'default';
 }
 
+const staticProcessos = [
+    {
+      id: '1',
+      processo_interno: 'SEN-2024-001',
+      exportadorNome: 'CHS DO BRASIL',
+      produtoNome: 'Gergelim',
+      destino: 'Damietta',
+      status: 'Em trânsito',
+    },
+    {
+      id: '2',
+      processo_interno: 'SEN-2024-002',
+      exportadorNome: 'AGRO EXPORT',
+      produtoNome: 'Soja',
+      destino: 'Rotterdam',
+      status: 'Concluído',
+    },
+    {
+      id: '3',
+      processo_interno: 'SEN-2024-003',
+      exportadorNome: 'FAZENDA FELIZ',
+      produtoNome: 'Milho',
+      destino: 'Xangai',
+      status: 'Aguardando embarque',
+    }
+];
+
 export default function GestaoProcessosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const firestore = useFirestore();
-
-  const processosCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'processos') : null),
-    [firestore]
-  );
-  const { data: processos, isLoading } = useCollection(processosCollection);
+  const [processos, setProcessos] = useState(staticProcessos);
+  const isLoading = false;
 
 
   const handleDelete = (id: string) => {
-    if (!firestore) return;
-    deleteDoc(doc(firestore, 'processos', id));
+    setProcessos(prev => prev.filter(p => p.id !== id));
   };
   
   const filteredProcessos = processos?.filter(processo => 
@@ -146,8 +167,7 @@ export default function GestaoProcessosPage() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Você tem certeza?</AlertDialogTitle>
                           <AlertDialogDescription>
-                            Essa ação não pode ser desfeita. Isso excluirá permanentemente o processo
-                            e removerá seus dados de nossos servidores.
+                            Essa ação não pode ser desfeita. Isso excluirá permanentemente o processo.
                           </AlertDialogDescription>
                         </AlertDialogHeader>
                         <AlertDialogFooter>

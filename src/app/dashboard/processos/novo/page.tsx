@@ -83,12 +83,6 @@ export default function NovoProcessoPage() {
   const terminaisCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
   const { data: terminais, isLoading: isLoadingTerminais } = useCollection(terminaisCollection);
 
-  const processoDocRef = useMemoFirebase(() => {
-    if (!firestore || !processId) return null;
-    return doc(firestore, 'processos', processId);
-  }, [firestore, processId]);
-  const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
-
   const [formData, setFormData] = useState<any>({
     id: '',
     processo_interno: '',
@@ -125,22 +119,26 @@ export default function NovoProcessoPage() {
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
   
   useEffect(() => {
-    if (isEditing && processId && processoData) {
-        setFormData({
-            ...processoData,
-            documentos: processoData.documentos || initialDocuments,
-            containers: processoData.containers || [],
-            bls: processoData.bls || [],
-            documentos_originais: processoData.documentos_originais || initialOriginalDocs,
-        });
-        if (processoData.portoEmbarqueId && terminais) {
-            const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
-            setFilteredTerminais(filtered);
+    if (isEditing && processId) {
+        const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+        const processoData = storedProcessos.find((p: any) => p.id === processId);
+        if (processoData) {
+            setFormData({
+                ...processoData,
+                documentos: processoData.documentos || initialDocuments,
+                containers: processoData.containers || [],
+                bls: processoData.bls || [],
+                documentos_originais: processoData.documentos_originais || initialOriginalDocs,
+            });
+            if (processoData.portoEmbarqueId && terminais) {
+                const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+                setFilteredTerminais(filtered);
+            }
         }
     }
-  }, [isEditing, processId, processoData, terminais]);
+  }, [isEditing, processId, terminais]);
 
-  const isLoading = isLoadingParceiros || isLoadingProdutos || isLoadingPortos || isLoadingTerminais || (isEditing && isLoadingProcesso);
+  const isLoading = isLoadingParceiros || isLoadingProdutos || isLoadingPortos || isLoadingTerminais;
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
@@ -291,24 +289,40 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
     
     // Get names for relations before saving
     const selectedProduct = produtos?.find(p => String(p.id) === String(formData.produtoId));
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
 
-    const dataToSave = {
-        ...formData,
-        produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
-        exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
-        destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-    };
-    
-    const docId = processId || doc(collection(firestore, 'processos')).id;
-    const processoRef = doc(firestore, 'processos', docId);
+    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
 
-    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
+    if (isEditing) {
+        const updatedProcessos = storedProcessos.map((p: any) => {
+            if (p.id === processId) {
+                return {
+                    ...p,
+                    ...formData,
+                    produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
+                    exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+                    destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+                }
+            }
+            return p;
+        });
+        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+    } else {
+        const newId = String(Date.now());
+         const newProcesso = {
+            ...formData,
+            id: newId,
+            produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
+            exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+            destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+        };
+        const updatedProcessos = [...storedProcessos, newProcesso];
+        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+    }
     
     toast({
         title: "Sucesso!",
