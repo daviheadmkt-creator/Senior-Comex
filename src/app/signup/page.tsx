@@ -30,10 +30,14 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore) {
+        toast({ title: 'Erro', description: 'O serviço de base de dados não está disponível.', variant: 'destructive'});
+        return;
+    }
     if (password !== confirmPassword) {
         toast({
             title: 'Erro',
-            description: 'As palavras-passe não coincidem.',
+            description: 'As senhas não coincidem.',
             variant: 'destructive',
         });
         return;
@@ -43,14 +47,15 @@ export default function SignupPage() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Check if this is the first user
+      // Now that the user is created in Auth, create the Firestore document.
       const usersCollectionRef = collection(firestore, 'users');
+      
+      // We check the count *after* user creation in auth, but *before* creating the doc.
       const snapshot = await getCountFromServer(usersCollectionRef);
       const isFirstUser = snapshot.data().count === 0;
 
-      // Create user document in Firestore
-      const userRef = doc(firestore, 'users', user.uid);
-      await setDoc(userRef, {
+      const userDocRef = doc(firestore, 'users', user.uid);
+      await setDoc(userDocRef, {
         id: user.uid,
         nome: name,
         email: user.email,
@@ -225,3 +230,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+    
