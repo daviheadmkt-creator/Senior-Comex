@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import {
@@ -44,41 +45,36 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     return 'default';
 }
 
-const staticProcessos = [
-    {
-      id: '1',
-      processo_interno: 'SEN-2024-001',
-      exportadorNome: 'CHS DO BRASIL',
-      produtoNome: 'Gergelim',
-      destino: 'Damietta',
-      status: 'Em trânsito',
-    },
-    {
-      id: '2',
-      processo_interno: 'SEN-2024-002',
-      exportadorNome: 'AGRO EXPORT',
-      produtoNome: 'Soja',
-      destino: 'Rotterdam',
-      status: 'Concluído',
-    },
-    {
-      id: '3',
-      processo_interno: 'SEN-2024-003',
-      exportadorNome: 'FAZENDA FELIZ',
-      produtoNome: 'Milho',
-      destino: 'Xangai',
-      status: 'Aguardando embarque',
-    }
-];
+const initialProcessos: any[] = [];
 
 export default function GestaoProcessosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [processos, setProcessos] = useState(staticProcessos);
-  const isLoading = false;
+  const [processos, setProcessos] = useState(initialProcessos);
+  const [isLoading, setIsLoading] = useState(true);
 
+  useEffect(() => {
+    try {
+        const storedProcessos = localStorage.getItem('processos');
+        if (storedProcessos) {
+            setProcessos(JSON.parse(storedProcessos));
+        } else {
+            localStorage.setItem('processos', JSON.stringify(initialProcessos));
+        }
+    } catch (error) {
+        console.error("Failed to load data from localStorage", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  const updateLocalStorage = (updatedProcessos: any[]) => {
+      localStorage.setItem('processos', JSON.stringify(updatedProcessos));
+  }
 
   const handleDelete = (id: string) => {
-    setProcessos(prev => prev.filter(p => p.id !== id));
+    const updatedProcessos = processos.filter(p => p.id !== id);
+    setProcessos(updatedProcessos);
+    updateLocalStorage(updatedProcessos);
   };
   
   const filteredProcessos = processos.filter(processo => 
