@@ -175,9 +175,9 @@ export default function LoginPage() {
                     </p>
                     <p className="mt-4 text-muted-foreground">
                         Não tem uma conta?{' '}
-                        <a href="#" className="font-medium text-primary hover:text-primary/80">
+                        <Link href="/signup" className="font-medium text-primary hover:text-primary/80">
                             Cadastre-se
-                        </a>
+                        </Link>
                     </p>
                  </div>
               </div>
@@ -198,5 +198,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
