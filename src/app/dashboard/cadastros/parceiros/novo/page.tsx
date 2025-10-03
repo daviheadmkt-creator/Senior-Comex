@@ -25,6 +25,7 @@ import { doc, collection } from 'firebase/firestore';
 const partnerTypes = [
     "Cliente (Importador)",
     "Exportador",
+    "Produto",
     "Despachante Aduaneiro",
     "Agente de Carga",
     "Armador",
@@ -297,3 +298,5 @@ export default function NovoParceiroPage() {
     </div>
   );
 }
+
+    

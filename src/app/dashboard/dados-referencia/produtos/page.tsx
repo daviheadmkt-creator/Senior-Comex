@@ -31,38 +31,23 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useEffect, useState } from 'react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
 
-
-const initialProducts: any[] = [];
 
 export default function ListaProdutosPage() {
-  const [products, setProducts] = useState(initialProducts);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
+  
+  const productsQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'partners'), where('tipo_parceiro', '==', 'Produto'));
+  }, [firestore]);
 
-  useEffect(() => {
-    try {
-        const storedProducts = localStorage.getItem('ref_products');
-        if (storedProducts) {
-            setProducts(JSON.parse(storedProducts));
-        } else {
-            localStorage.setItem('ref_products', JSON.stringify(initialProducts));
-        }
-    } catch (error) {
-        console.error("Failed to load products from localStorage", error);
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
-  const updateLocalStorage = (updatedProducts: any[]) => {
-    localStorage.setItem('ref_products', JSON.stringify(updatedProducts));
-  }
+  const { data: products, isLoading } = useCollection(productsQuery);
 
   const handleDelete = (id: string) => {
-    const updatedProducts = products.filter(p => p.id !== id);
-    setProducts(updatedProducts);
-    updateLocalStorage(updatedProducts);
+    if (!firestore) return;
+    deleteDoc(doc(firestore, 'partners', id));
   };
 
 
@@ -102,11 +87,11 @@ export default function ListaProdutosPage() {
           </TableHeader>
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-            {!isLoading && products.map((product) => (
+            {!isLoading && products?.map((product) => (
               <TableRow key={product.id}>
-                <TableCell className="font-medium">{product.descricao}</TableCell>
-                <TableCell>{product.ncm}</TableCell>
-                <TableCell>{product.unidade}</TableCell>
+                <TableCell className="font-medium">{product.nome_fantasia}</TableCell>
+                <TableCell>{product.cnpj}</TableCell>
+                <TableCell>{(product as any).unidade || 'N/A'}</TableCell>
                 <TableCell>
                     <div className='flex gap-2'>
                         <Link href={`/dashboard/dados-referencia/produtos/novo?id=${product.id}&edit=true`} passHref>
@@ -138,7 +123,7 @@ export default function ListaProdutosPage() {
                 </TableCell>
               </TableRow>
             ))}
-             {!isLoading && products.length === 0 && (
+             {!isLoading && products?.length === 0 && (
                 <TableRow>
                     <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum produto encontrado.</TableCell>
                 </TableRow>
@@ -149,3 +134,5 @@ export default function ListaProdutosPage() {
     </Card>
   );
 }
+
+    

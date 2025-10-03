@@ -16,39 +16,40 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc, collection } from 'firebase/firestore';
 
 export default function NovoProdutoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
 
   const [formData, setFormData] = useState({
-    id: '',
-    descricao: '',
-    descricao_en: '',
-    ncm: '',
+    nome_fantasia: '', // Usado para Descrição PT
+    razao_social: '',  // Usado para Descrição EN
+    cnpj: '',          // Usado para NCM
     unidade: 'KG',
     peso_padrao: '50',
     embalagem_padrao: 'Sacos de polipropileno branco',
+    tipo_parceiro: 'Produto',
   });
   
-  const [isLoading, setIsLoading] = useState(false);
   const isEditing = searchParams.has('edit');
   const productId = searchParams.get('id');
 
+  const productDocRef = useMemoFirebase(() => {
+    if (!firestore || !productId) return null;
+    return doc(firestore, 'partners', productId);
+  }, [firestore, productId]);
+
+  const { data: productData, isLoading: isProductLoading } = useDoc(productDocRef);
+
   useEffect(() => {
-    if (isEditing && productId) {
-        setIsLoading(true);
-        const storedProducts = localStorage.getItem('ref_products');
-        if (storedProducts) {
-            const productData = JSON.parse(storedProducts).find((p: any) => p.id === productId);
-            if (productData) {
-                setFormData(productData);
-            }
-        }
-        setIsLoading(false);
+    if (isEditing && productId && productData) {
+        setFormData(productData as any);
     }
-  }, [isEditing, productId]);
+  }, [isEditing, productId, productData]);
 
 
   const pageTitle = isEditing ? 'Editar Produto' : 'Novo Produto';
@@ -62,19 +63,12 @@ export default function NovoProdutoPage() {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    if (!firestore) return;
 
-    const storedProducts = JSON.parse(localStorage.getItem('ref_products') || '[]');
-    let updatedProducts;
+    const docId = productId || doc(collection(firestore, 'partners')).id;
+    const productRef = doc(firestore, 'partners', docId);
 
-    if (isEditing && productId) {
-        updatedProducts = storedProducts.map((p: any) => p.id === productId ? { ...p, ...formData } : p);
-    } else {
-        const newId = String(Date.now());
-        const newProduct = { ...formData, id: newId };
-        updatedProducts = [...storedProducts, newProduct];
-    }
-    
-    localStorage.setItem('ref_products', JSON.stringify(updatedProducts));
+    setDocumentNonBlocking(productRef, formData, { merge: true });
     
     toast({
         title: "Sucesso!",
@@ -85,7 +79,7 @@ export default function NovoProdutoPage() {
     router.push('/dashboard/dados-referencia/produtos');
   };
 
-  if (isLoading) {
+  if (isProductLoading) {
       return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
@@ -113,18 +107,18 @@ export default function NovoProdutoPage() {
           <form onSubmit={handleSubmit} className="grid gap-6">
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="descricao">Descrição</Label>
-                <Input id="descricao" value={formData.descricao} onChange={e => handleInputChange('descricao', e.target.value)} placeholder="Ex: Gergelim" />
+                <Label htmlFor="nome_fantasia">Descrição</Label>
+                <Input id="nome_fantasia" value={formData.nome_fantasia} onChange={e => handleInputChange('nome_fantasia', e.target.value)} placeholder="Ex: Gergelim" />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="descricao_en">Descrição em Inglês</Label>
-                <Input id="descricao_en" value={formData.descricao_en} onChange={e => handleInputChange('descricao_en', e.target.value)} placeholder="Ex: SESAME SEEDS" />
+                <Label htmlFor="razao_social">Descrição em Inglês</Label>
+                <Input id="razao_social" value={formData.razao_social} onChange={e => handleInputChange('razao_social', e.target.value)} placeholder="Ex: SESAME SEEDS" />
               </div>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="ncm">NCM / Classificação Fiscal</Label>
-                <Input id="ncm" value={formData.ncm} onChange={e => handleInputChange('ncm', e.target.value)} placeholder="Ex: 12074090" />
+                <Label htmlFor="cnpj">NCM / Classificação Fiscal</Label>
+                <Input id="cnpj" value={formData.cnpj} onChange={e => handleInputChange('cnpj', e.target.value)} placeholder="Ex: 12074090" />
               </div>
               <div className="space-y-2">
                 <Label htmlFor="unidade">Unidade de Medida Padrão</Label>
@@ -154,3 +148,5 @@ export default function NovoProdutoPage() {
     </div>
   );
 }
+
+    
