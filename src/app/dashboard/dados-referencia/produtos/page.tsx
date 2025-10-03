@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -31,21 +31,38 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
 
+
+const initialProducts: any[] = [];
 
 export default function ListaProdutosPage() {
-  const firestore = useFirestore();
-  const productsCollection = useMemoFirebase(
-    () => (firestore ? collection(firestore, 'products') : null),
-    [firestore]
-  );
-  const { data: products, isLoading } = useCollection(productsCollection);
+  const [products, setProducts] = useState(initialProducts);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    try {
+        const storedProducts = localStorage.getItem('ref_products');
+        if (storedProducts) {
+            setProducts(JSON.parse(storedProducts));
+        } else {
+            localStorage.setItem('ref_products', JSON.stringify(initialProducts));
+        }
+    } catch (error) {
+        console.error("Failed to load products from localStorage", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  const updateLocalStorage = (updatedProducts: any[]) => {
+    localStorage.setItem('ref_products', JSON.stringify(updatedProducts));
+  }
 
   const handleDelete = (id: string) => {
-    if (!firestore) return;
-    deleteDoc(doc(firestore, 'products', id));
+    const updatedProducts = products.filter(p => p.id !== id);
+    setProducts(updatedProducts);
+    updateLocalStorage(updatedProducts);
   };
 
 
@@ -84,8 +101,8 @@ export default function ListaProdutosPage() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && <TableRow><TableCell colSpan={4}>Carregando...</TableCell></TableRow>}
-            {products?.map((product) => (
+            {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+            {!isLoading && products.map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.descricao}</TableCell>
                 <TableCell>{product.ncm}</TableCell>
@@ -121,6 +138,11 @@ export default function ListaProdutosPage() {
                 </TableCell>
               </TableRow>
             ))}
+             {!isLoading && products.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum produto encontrado.</TableCell>
+                </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

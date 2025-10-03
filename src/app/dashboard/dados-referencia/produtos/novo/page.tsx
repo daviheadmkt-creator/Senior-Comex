@@ -16,16 +16,14 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { useDoc, useFirestore, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
-import { doc, collection } from 'firebase/firestore';
 
 export default function NovoProdutoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const firestore = useFirestore();
 
   const [formData, setFormData] = useState({
+    id: '',
     descricao: '',
     descricao_en: '',
     ncm: '',
@@ -34,21 +32,23 @@ export default function NovoProdutoPage() {
     embalagem_padrao: 'Sacos de polipropileno branco',
   });
   
+  const [isLoading, setIsLoading] = useState(false);
   const isEditing = searchParams.has('edit');
   const productId = searchParams.get('id');
 
-  const productDocRef = useMemoFirebase(() => {
-    if (!firestore || !productId) return null;
-    return doc(firestore, 'products', productId);
-  }, [firestore, productId]);
-  
-  const { data: productData, isLoading: isLoadingProduct } = useDoc(productDocRef);
-
   useEffect(() => {
-    if (isEditing && productId && productData) {
-        setFormData(productData as any);
+    if (isEditing && productId) {
+        setIsLoading(true);
+        const storedProducts = localStorage.getItem('ref_products');
+        if (storedProducts) {
+            const productData = JSON.parse(storedProducts).find((p: any) => p.id === productId);
+            if (productData) {
+                setFormData(productData);
+            }
+        }
+        setIsLoading(false);
     }
-  }, [isEditing, productId, productData]);
+  }, [isEditing, productId]);
 
 
   const pageTitle = isEditing ? 'Editar Produto' : 'Novo Produto';
@@ -62,12 +62,19 @@ export default function NovoProdutoPage() {
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
 
-    const docId = productId || doc(collection(firestore, 'products')).id;
-    const productRef = doc(firestore, 'products', docId);
+    const storedProducts = JSON.parse(localStorage.getItem('ref_products') || '[]');
+    let updatedProducts;
 
-    setDocumentNonBlocking(productRef, formData, { merge: true });
+    if (isEditing && productId) {
+        updatedProducts = storedProducts.map((p: any) => p.id === productId ? { ...p, ...formData } : p);
+    } else {
+        const newId = String(Date.now());
+        const newProduct = { ...formData, id: newId };
+        updatedProducts = [...storedProducts, newProduct];
+    }
+    
+    localStorage.setItem('ref_products', JSON.stringify(updatedProducts));
     
     toast({
         title: "Sucesso!",
@@ -78,7 +85,7 @@ export default function NovoProdutoPage() {
     router.push('/dashboard/dados-referencia/produtos');
   };
 
-  if (isLoadingProduct) {
+  if (isLoading) {
       return <div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>
   }
 
