@@ -1,161 +1,119 @@
 /**
- * @fileoverview Firestore Security Rules for SeniorComex application.
- *
- * Core Philosophy:
- * This ruleset enforces a strict user-ownership model for user-related data (audit logs, reports),
- * allowing users to only access their own resources. Partner data is open for now but can be locked
- * down later with specific access controls.  We are operating in prototyping mode, so data shape
- * validation is minimized in favor of strict authorization.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a strict user-ownership model for user profiles, audit logs, and reports,
+ *              while providing public read access to partner information.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profile information.  Each user can only manage their own profile.
- * - /users/{userId}/auditLogs/{auditLogId}: Stores audit logs.  Each user can only access their own audit logs.
- * - /users/{userId}/reports/{reportId}: Stores reports. Each user can only access their own reports.
- * - /partners/{partnerId}: Stores partner information.  Access to this collection is currently open for listing (get, list).
+ * - /users/{userId}: Stores user profile information, accessible only to the owning user.
+ * - /users/{userId}/auditLogs/{auditLogId}: Stores audit logs, accessible only to the owning user.
+ * - /users/{userId}/reports/{reportId}: Stores reports, accessible only to the owning user.
+ * - /partners/{partnerId}: Stores partner information, publicly readable.
  *
  * Key Security Decisions:
- * - User listing is disabled.
- * - Audit logs and reports are strictly user-owned via path-based ownership.
+ * - User listing is disabled for privacy.
+ * - Audit logs and reports are strictly user-owned, enforced via path-based ownership.
+ * - Partner data is publicly readable, but write access is not yet defined (TODO).
+ * - Data validation is minimal in this prototyping phase, focusing on authorization.
  *
  * Denormalization for Authorization:
- *  Path-based ownership is used to avoid `get()` calls during authorization checks for audit logs and reports. The user ID is encoded in the path itself.
+ * - The userID is present in paths to allow for easier authorization with "isOwner()".
  *
  * Structural Segregation:
- *  User-specific data (auditLogs, reports) is stored in subcollections to maintain clear ownership and simplify access control.
+ * - Private user data (profiles, logs, reports) is segregated under /users/{userId} to simplify access control and prevent accidental exposure.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Checks if the user is signed in.
-     * @return {bool} True if the user is signed in, false otherwise.
+     * @description Secures user profile information.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user123' can create their own profile.
+     * @deny (create) User with ID 'user456' cannot create a profile for 'user123'.
+     * @allow (get) User with ID 'user123' can read their own profile.
+     * @deny (get) User with ID 'user456' cannot read the profile of 'user123'.
+     * @allow (update) User with ID 'user123' can update their own profile.
+     * @deny (update) User with ID 'user456' cannot update the profile of 'user123'.
+     * @allow (delete) User with ID 'user123' can delete their own profile.
+     * @deny (delete) User with ID 'user456' cannot delete the profile of 'user123'.
+     * @principle Enforces document ownership for all operations.
      */
-    function isSignedIn() {
-      return request.auth != null;
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // User listing is disabled for privacy.
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
     /**
-     * @description Checks if the request is made by the owner of the resource.
-     * @param {string} userId - The user ID to check against.
-     * @return {bool} True if the user is the owner, false otherwise.
+     * @description Secures audit logs for each user.
+     * @path /users/{userId}/auditLogs/{auditLogId}
+     * @allow (create) User 'user123' can create audit logs under their profile.
+     * @deny (create) User 'user456' cannot create audit logs under 'user123' profile.
+     * @allow (get) User 'user123' can read audit logs under their profile.
+     * @deny (get) User 'user456' cannot read audit logs under 'user123' profile.
+     * @allow (update) User 'user123' can update audit logs under their profile.
+     * @deny (update) User 'user456' cannot update audit logs under 'user123' profile.
+     * @allow (delete) User 'user123' can delete audit logs under their profile.
+     * @deny (delete) User 'user456' cannot delete audit logs under 'user123' profile.
+     * @principle Enforces path-based ownership: all audit logs belong to the user specified in the path.
      */
-    function isOwner(userId) {
-      return isSignedIn() && request.auth.uid == userId;
+    match /users/{userId}/auditLogs/{auditLogId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Secures reports generated by each user.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow (create) User 'user123' can create reports under their profile.
+     * @deny (create) User 'user456' cannot create reports under 'user123' profile.
+     * @allow (get) User 'user123' can read reports under their profile.
+     * @deny (get) User 'user456' cannot read reports under 'user123' profile.
+     * @allow (update) User 'user123' can update reports under their profile.
+     * @deny (update) User 'user456' cannot update reports under 'user123' profile.
+     * @allow (delete) User 'user123' can delete reports under their profile.
+     * @deny (delete) User 'user456' cannot delete reports under 'user123' profile.
+     * @principle Enforces path-based ownership: all reports belong to the user specified in the path.
+     */
+    match /users/{userId}/reports/{reportId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId) && resource != null;
+      allow delete: if isOwner(userId) && resource != null;
     }
 
      /**
-      * @description Checks if the user is the owner and the document exists.
-      * @param {string} userId - The user ID to check against.
-      * @return {bool} True if the user is the owner and the document exists, false otherwise.
-      */
-    function isExistingOwner(userId) {
-      return isOwner(userId) && resource != null;
-    }
-
-    /**
-     * @description Rules for the /users/{userId} collection.
-     * @path /users/{userId}
-     * @allow (create) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can create their own user document.
-     * @allow (get) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can get their own user document.
-     * @allow (update) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can update their own user document.
-     * @allow (delete) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can delete their own user document.
-     * @deny (create) User 'SOMEONE_ELSE' cannot create a user document with ID 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (get) User 'SOMEONE_ELSE' cannot get user document with ID 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (update) User 'SOMEONE_ELSE' cannot update user document with ID 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (delete) User 'SOMEONE_ELSE' cannot delete user document with ID 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @principle Enforces document ownership for user profiles.
-     */
-    match /users/{userId} {
-      // Only the user can read their own profile
-      allow get: if isOwner(userId);
-      // No listing of users
-      allow list: if false;
-
-      // Only the user can create their own profile, and the userId in the path must match the document id.
-      allow create: if isOwner(userId) && request.resource.data.id == userId;
-
-      // Only the user can update their own profile, and the userId cannot be changed.
-      allow update: if isExistingOwner(userId) && request.resource.data.id == resource.data.id;
-
-      // Only the user can delete their own profile
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for the /users/{userId}/auditLogs/{auditLogId} collection.
-     * @path /users/{userId}/auditLogs/{auditLogId}
-     * @allow (create) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can create an audit log under their user.
-     * @allow (get) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can get an audit log under their user.
-     * @allow (list) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can list audit logs under their user.
-     * @allow (update) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can update an audit log under their user.
-     * @allow (delete) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can delete an audit log under their user.
-     * @deny (create) User 'SOMEONE_ELSE' cannot create an audit log under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (get) User 'SOMEONE_ELSE' cannot get an audit log under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (list) User 'SOMEONE_ELSE' cannot list audit logs under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (update) User 'SOMEONE_ELSE' cannot update an audit log under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (delete) User 'SOMEONE_ELSE' cannot delete an audit log under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @principle Restricts access to audit logs to the owning user.
-     */
-    match /users/{userId}/auditLogs/{auditLogId} {
-      // Only the owner can read their own audit logs
-      allow get, list: if isOwner(userId);
-
-      // Only the owner can create their own audit logs
-      allow create: if isOwner(userId);
-
-      // Only the owner can update their own audit logs
-      allow update: if isExistingOwner(userId);
-
-      // Only the owner can delete their own audit logs
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for the /users/{userId}/reports/{reportId} collection.
-     * @path /users/{userId}/reports/{reportId}
-     * @allow (create) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can create a report under their user.
-     * @allow (get) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can get a report under their user.
-     * @allow (list) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can list reports under their user.
-     * @allow (update) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can update a report under their user.
-     * @allow (delete) User 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32' can delete a report under their user.
-     * @deny (create) User 'SOMEONE_ELSE' cannot create a report under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (get) User 'SOMEONE_ELSE' cannot get a report under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (list) User 'SOMEONE_ELSE' cannot list reports under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (update) User 'SOMEONE_ELSE' cannot update a report under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @deny (delete) User 'SOMEONE_ELSE' cannot delete a report under user 'FJ4TWLjbvtdMx44fdAOTb4h8Ze32'.
-     * @principle Restricts access to reports to the owning user.
-     */
-    match /users/{userId}/reports/{reportId} {
-      // Only the owner can read their own reports
-      allow get, list: if isOwner(userId);
-
-      // Only the owner can create their own reports
-      allow create: if isOwner(userId);
-
-      // Only the owner can update their own reports
-      allow update: if isExistingOwner(userId);
-
-      // Only the owner can delete their own reports
-      allow delete: if isExistingOwner(userId);
-    }
-
-    /**
-     * @description Rules for the /partners/{partnerId} collection.
+     * @description Secures partner information (publicly readable).
      * @path /partners/{partnerId}
-     * @allow (get) Any user can get a partner document.
-     * @allow (list) Any user can list partner documents.
-     * @deny (create) No one can create a partner document. // TODO: Add owner validation once the schema is updated with an ownership field.
-     * @deny (update) No one can update a partner document. // TODO: Add owner validation once the schema is updated with an ownership field.
-     * @deny (delete) No one can delete a partner document. // TODO: Add owner validation once the schema is updated with an ownership field.
-     * @principle Currently allows public read access, but write access is denied by default until ownership is defined.
+     * @allow (get) Any user can read partner information.
+     * @allow (list) Any user can list partner information.
+     * @deny (create) No one can create partner documents without proper authorization. // TODO: Define proper authorization
+     * @deny (update) No one can update partner documents without proper authorization. // TODO: Define proper authorization
+     * @deny (delete) No one can delete partner documents without proper authorization. // TODO: Define proper authorization
+     * @principle Provides public read access to partner data, with restricted write access.
      */
     match /partners/{partnerId} {
-      // Allow anyone to read partner data
-      allow get, list: if true;
-
-      // No writes allowed without authentication
-      allow create, update, delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow get: if true;
+      allow list: if true;
+      allow create: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow update: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
+      allow delete: if false; // TODO: Add owner validation once the schema is updated with an ownership field.
     }
   }
 }
