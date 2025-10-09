@@ -134,5 +134,4 @@ export default function ListaProdutosPage() {
     </Card>
   );
 }
-
     
