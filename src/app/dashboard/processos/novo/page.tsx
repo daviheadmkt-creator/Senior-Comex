@@ -110,11 +110,12 @@ export default function NovoProcessoPage() {
     useEffect(() => {
         try {
             const storedParceiros = JSON.parse(localStorage.getItem('partners') || '[]');
+            const storedProdutos = JSON.parse(localStorage.getItem('products') || '[]');
             const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
             const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
             
             setParceiros(storedParceiros);
-            setProdutos(storedParceiros.filter((p: any) => p.tipo_parceiro === 'Produto'));
+            setProdutos(storedProdutos);
             setPortos(storedPortos);
             setTerminais(storedTerminais);
 
@@ -311,7 +312,7 @@ export default function NovoProcessoPage() {
                 return {
                     ...p,
                     ...formData,
-                    produtoNome: selectedProduct?.nome_fantasia || formData.produtoNome || 'N/A',
+                    produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
                     exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
                     destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
                 }
@@ -324,7 +325,7 @@ export default function NovoProcessoPage() {
          const newProcesso = {
             ...formData,
             id: newId,
-            produtoNome: selectedProduct?.nome_fantasia || 'N/A',
+            produtoNome: selectedProduct?.descricao || 'N/A',
             exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
             destino: selectedPortoDescarga?.name || 'N/A',
         };
@@ -421,7 +422,7 @@ export default function NovoProcessoPage() {
                                     <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o produto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
                             </div>
