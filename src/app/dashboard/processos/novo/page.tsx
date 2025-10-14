@@ -50,6 +50,7 @@ const processStatusOptions = [
 ]
 
 const initialDocuments: any[] = [];
+const initialProducts: any[] = [];
 
 const initialOriginalDocs = [
     { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false, isSubtask: false, completionDate: null },
@@ -70,6 +71,7 @@ export default function NovoProcessoPage() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [portos, setPortos] = useState<any[]>([]);
   const [terminais, setTerminais] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [formData, setFormData] = useState<any>({
@@ -103,6 +105,7 @@ export default function NovoProcessoPage() {
     viagem_final: '',
     documentos_originais: initialOriginalDocs,
     awb_courier: '',
+    analistaId: '',
   });
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
@@ -110,17 +113,22 @@ export default function NovoProcessoPage() {
     useEffect(() => {
         try {
             const storedParceiros = JSON.parse(localStorage.getItem('partners') || '[]');
-            const storedProdutos = JSON.parse(localStorage.getItem('products') || '[]');
+            const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
             const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
             const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
+            const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+            const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
             
             setParceiros(storedParceiros);
-            setProdutos(storedProdutos);
             setPortos(storedPortos);
             setTerminais(storedTerminais);
+            setUsuarios(storedUsers);
+            
+            // Corrigindo a leitura dos produtos
+            const productsData = JSON.parse(localStorage.getItem('products') || '[]');
+            setProdutos(productsData);
 
             if (isEditing && processId) {
-                const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
                 const processoData = storedProcessos.find((p: any) => p.id === processId);
                 if (processoData) {
                     setFormData({
@@ -257,36 +265,33 @@ export default function NovoProcessoPage() {
         const allOriginalDocsDone = documentos_originais.every(d => d.done);
 
         switch (step) {
-            case 1: // Nomeação
-                return <CheckCircle className="h-5 w-5 text-green-500" />;
-            case 2: // Booking
+            case 1: // Nomeação + Booking
                 if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (status === 'Iniciado / Aguardando Booking') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 3: // Drafts
+                 return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            case 2: // Drafts
                 if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
                 if (allDocsApproved) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (status.includes('DRAFT')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 4: // Liberação Fiscal
+            case 3: // Liberação Fiscal
                 if (due_status === 'Desembaraçada') return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (allDocsApproved) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 5: // Inspeção MAPA
+            case 4: // Inspeção MAPA
                 if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
                 if (mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (due_status === 'Desembaraçada') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                  return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 6: // Embarque
+            case 5: // Embarque
                 if (formData.bls.length > 0 && formData.bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 7: // Docs Originais
+            case 6: // Docs Originais
                 if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (formData.bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                  return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 8: // Encerramento
+            case 7: // Encerramento
                 if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (allOriginalDocsDone) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
@@ -299,12 +304,10 @@ export default function NovoProcessoPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Get names for relations before saving
+    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
     const selectedProduct = produtos?.find(p => String(p.id) === String(formData.produtoId));
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
-
-    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
 
     if (isEditing) {
         const updatedProcessos = storedProcessos.map((p: any) => {
@@ -312,7 +315,7 @@ export default function NovoProcessoPage() {
                 return {
                     ...p,
                     ...formData,
-                    produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
+                    produtoNome: selectedProduct?.nome_fantasia || formData.produtoNome || 'N/A',
                     exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
                     destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
                 }
@@ -325,7 +328,7 @@ export default function NovoProcessoPage() {
          const newProcesso = {
             ...formData,
             id: newId,
-            produtoNome: selectedProduct?.descricao || 'N/A',
+            produtoNome: selectedProduct?.nome_fantasia || 'N/A',
             exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
             destino: selectedPortoDescarga?.name || 'N/A',
         };
@@ -380,8 +383,8 @@ export default function NovoProcessoPage() {
                 <div className='flex items-center gap-3'>
                     {getStepStatusIcon(1)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 1: Nomeação do Processo</h3>
-                        <p className='text-sm text-muted-foreground'>Dados iniciais recebidos para começar o processo de exportação.</p>
+                        <h3 className="text-lg font-semibold">Etapa 1: Dados do Processo e Booking</h3>
+                        <p className='text-sm text-muted-foreground'>Dados da nomeação e da reserva de praça confirmada pelo armador.</p>
                     </div>
                 </div>
             </AccordionTrigger>
@@ -396,6 +399,17 @@ export default function NovoProcessoPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
+                                </SelectContent>
+                            </Select>
+                        </div>
+                         <div className="space-y-2">
+                            <Label htmlFor="analistaId">Nome do Analista/Cliente</Label>
+                            <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)}>
+                                <SelectTrigger id="analistaId">
+                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o analista"} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {usuarios?.map(user => <SelectItem key={user.id} value={String(user.id)}>{user.nome}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -422,7 +436,7 @@ export default function NovoProcessoPage() {
                                     <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o produto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
+                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
                             </div>
@@ -477,26 +491,8 @@ export default function NovoProcessoPage() {
                             </Select>
                         </div>
                         </div>
-                    </CardContent>
-                </Card>
-            </AccordionContent>
-          </AccordionItem>
 
-          {/* Etapa 2 */}
-          <AccordionItem value="item-2" disabled={!isEditing}>
-             <AccordionTrigger>
-                <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(2)}
-                    <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 2: Confirmação de Booking</h3>
-                        <p className='text-sm text-muted-foreground'>Dados da reserva de praça confirmada pelo armador.</p>
-                    </div>
-                </div>
-            </AccordionTrigger>
-            <AccordionContent>
-                <Card>
-                    <CardContent className="grid gap-6 pt-6">
-                        <div className="grid md:grid-cols-2 gap-4">
+                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="booking_number">Nº do Booking</Label>
                                 <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
@@ -562,18 +558,19 @@ export default function NovoProcessoPage() {
                                 </div>
                             </div>
                         </div>
+
                     </CardContent>
                 </Card>
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 3 */}
-          <AccordionItem value="item-3" disabled={!isEditing}>
+           {/* Etapa 2 */}
+          <AccordionItem value="item-2" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(3)}
+                    {getStepStatusIcon(2)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 3: Gestão de Documentos (Drafts)</h3>
+                        <h3 className="text-lg font-semibold">Etapa 2: Gestão de Documentos (Drafts)</h3>
                         <p className='text-sm text-muted-foreground'>Upload e controle da aprovação dos documentos de embarque.</p>
                     </div>
                 </div>
@@ -639,13 +636,13 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-           {/* Etapa 4 */}
-          <AccordionItem value="item-4" disabled={!isEditing}>
+           {/* Etapa 3 */}
+          <AccordionItem value="item-3" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(4)}
+                    {getStepStatusIcon(3)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 4: Liberação Física e Fiscal na Origem</h3>
+                        <h3 className="text-lg font-semibold">Etapa 3: Liberação Física e Fiscal na Origem</h3>
                         <p className='text-sm text-muted-foreground'>Gerencie as notas fiscais, contêineres e o desembaraço aduaneiro.</p>
                     </div>
                 </div>
@@ -724,13 +721,13 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 5 */}
-          <AccordionItem value="item-5" disabled={!isEditing}>
+           {/* Etapa 4 */}
+          <AccordionItem value="item-4" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(5)}
+                    {getStepStatusIcon(4)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 5: Gestão da Inspeção Final (MAPA)</h3>
+                        <h3 className="text-lg font-semibold">Etapa 4: Gestão da Inspeção Final (MAPA)</h3>
                         <p className='text-sm text-muted-foreground'>Gerencie a inspeção do MAPA e a liberação final para embarque.</p>
                     </div>
                 </div>
@@ -790,13 +787,13 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 6 */}
-            <AccordionItem value="item-6" disabled={!isEditing}>
+           {/* Etapa 5 */}
+            <AccordionItem value="item-5" disabled={!isEditing}>
                 <AccordionTrigger>
                     <div className='flex items-center gap-3'>
-                        {getStepStatusIcon(6)}
+                        {getStepStatusIcon(5)}
                         <div className='text-left'>
-                            <h3 className="text-lg font-semibold">Etapa 6: Confirmação de Embarque (BLs)</h3>
+                            <h3 className="text-lg font-semibold">Etapa 5: Confirmação de Embarque (BLs)</h3>
                             <p className='text-sm text-muted-foreground'>Gerencie os detalhes dos Conhecimentos de Embarque (Bills of Lading).</p>
                         </div>
                     </div>
@@ -855,13 +852,13 @@ export default function NovoProcessoPage() {
                 </AccordionContent>
             </AccordionItem>
 
-           {/* Etapa 7 */}
-          <AccordionItem value="item-7" disabled={!isEditing}>
+           {/* Etapa 6 */}
+          <AccordionItem value="item-6" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(7)}
+                    {getStepStatusIcon(6)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 7: Obtenção dos Documentos Originais</h3>
+                        <h3 className="text-lg font-semibold">Etapa 6: Obtenção dos Documentos Originais</h3>
                         <p className='text-sm text-muted-foreground'>Gerencie a coleta e o envio dos documentos de pós-embarque.</p>
                     </div>
                 </div>
@@ -904,13 +901,13 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 8 */}
-          <AccordionItem value="item-8" disabled={!isEditing}>
+           {/* Etapa 7 */}
+          <AccordionItem value="item-7" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(8)}
+                    {getStepStatusIcon(7)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 8: Envio dos Documentos e Encerramento</h3>
+                        <h3 className="text-lg font-semibold">Etapa 7: Envio dos Documentos e Encerramento</h3>
                         <p className='text-sm text-muted-foreground'>Conclua o processo e arquive todo o histórico.</p>
                     </div>
                 </div>
@@ -920,7 +917,7 @@ export default function NovoProcessoPage() {
                     <CardContent className="space-y-6 pt-6">
                        <div className='text-center py-4'>
                          <p className='text-lg font-semibold'>Processo pronto para ser finalizado.</p>
-                         <p className='text-muted-foreground'>Verifique se o AWB do courier foi inserido na Etapa 7. Ao concluir, o status do processo será alterado para "Concluído" e sairá da lista de processos ativos.</p>
+                         <p className='text-muted-foreground'>Verifique se o AWB do courier foi inserido na Etapa 6. Ao concluir, o status do processo será alterado para "Concluído" e sairá da lista de processos ativos.</p>
                        </div>
                         <Button className='w-full' onClick={() => handleInputChange('status', 'Concluído')}>
                             <CheckCircle className='mr-2 h-4 w-4' />
@@ -936,5 +933,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
