@@ -109,11 +109,12 @@ export default function NovoProcessoPage() {
   });
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
+  const [filteredAnalistas, setFilteredAnalistas] = useState<any[]>([]);
 
     useEffect(() => {
         try {
             const storedParceiros = JSON.parse(localStorage.getItem('partners') || '[]');
-            const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
+            const storedProducts = JSON.parse(localStorage.getItem('partners') || '[]').filter((p: any) => p.tipo_parceiro === 'Produto');
             const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
             const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
             const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
@@ -123,10 +124,7 @@ export default function NovoProcessoPage() {
             setPortos(storedPortos);
             setTerminais(storedTerminais);
             setUsuarios(storedUsers);
-            
-            // Corrigindo a leitura dos produtos
-            const productsData = JSON.parse(localStorage.getItem('products') || '[]');
-            setProdutos(productsData);
+            setProdutos(storedProducts);
 
             if (isEditing && processId) {
                 const processoData = storedProcessos.find((p: any) => p.id === processId);
@@ -141,6 +139,10 @@ export default function NovoProcessoPage() {
                      if (processoData.portoEmbarqueId && storedTerminais) {
                         const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
                         setFilteredTerminais(filtered);
+                    }
+                    if (processoData.exportadorId && storedParceiros) {
+                        const exportador = storedParceiros.find(p => p.id === processoData.exportadorId);
+                        setFilteredAnalistas(exportador?.contatos || []);
                     }
                 }
             }
@@ -165,6 +167,13 @@ export default function NovoProcessoPage() {
   const handleInputChange = (id: string, value: string | number | null) => {
     setFormData(prev => ({ ...prev, [id]: value }));
   };
+  
+  const handleExportadorChange = (value: string) => {
+    handleInputChange('exportadorId', value);
+    const exportador = parceiros.find(p => p.id === value);
+    setFilteredAnalistas(exportador?.contatos || []);
+    handleInputChange('analistaId', null); // Reset analista selection
+  }
 
   const handlePortChange = (value: string) => {
     handleInputChange('portoEmbarqueId', value);
@@ -402,17 +411,7 @@ export default function NovoProcessoPage() {
                                 </SelectContent>
                             </Select>
                         </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="analistaId">Nome do Analista/Cliente</Label>
-                            <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)}>
-                                <SelectTrigger id="analistaId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o analista"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {usuarios?.map(user => <SelectItem key={user.id} value={String(user.id)}>{user.nome}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                         
                         <div className="grid md:grid-cols-3 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="processo_interno">Número do Processo Interno</Label>
@@ -427,6 +426,36 @@ export default function NovoProcessoPage() {
                                 <DatePicker showTime />
                             </div>
                         </div>
+
+                         <div className="grid md:grid-cols-2 gap-4">
+                             <div className="space-y-2">
+                                <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
+                                <Select value={String(formData.exportadorId || '')} onValueChange={handleExportadorChange}>
+                                    <SelectTrigger id="exportadorId">
+                                        <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o exportador"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="analistaId">Analista Responsável (Cliente)</Label>
+                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)} disabled={!formData.exportadorId}>
+                                    <SelectTrigger id="analistaId">
+                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o analista"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {filteredAnalistas.length > 0 ? (
+                                            filteredAnalistas.map((contato, index) => <SelectItem key={`${contato.nome}-${index}`} value={contato.nome}>{contato.nome} ({contato.cargo})</SelectItem>)
+                                        ) : (
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum contato encontrado.</div>
+                                        )}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                         </div>
+
                         <div className="grid md:grid-cols-2 gap-4">
                            
                             <div className="space-y-2">
@@ -445,17 +474,7 @@ export default function NovoProcessoPage() {
                                 <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
                             </div>
                         </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                            <Select value={String(formData.exportadorId || '')} onValueChange={(value) => handleInputChange('exportadorId', value)}>
-                                <SelectTrigger id="exportadorId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o exportador"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                        
                         <div className="grid md:grid-cols-3 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
