@@ -13,7 +13,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -295,24 +295,20 @@ export default function NovoProcessoPage() {
                 if (status.includes('DRAFT')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 3: // Liberação Fiscal
-                if (due_status === 'Desembaraçada') return <CheckCircle className="h-5 w-5 text-green-500" />;
+            case 3: // Liberação Fiscal e Inspeção
+                if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
+                if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
                 if (allDocsApproved) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 4: // Inspeção MAPA
-                if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
-                if (mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (due_status === 'Desembaraçada') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 5: // Embarque
+            case 4: // Embarque
                 if (formData.bls.length > 0 && formData.bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+                if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 6: // Docs Originais
+            case 5: // Docs Originais
                 if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (formData.bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                  return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 7: // Encerramento
+            case 6: // Encerramento
                 if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (allOriginalDocsDone) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
@@ -695,8 +691,8 @@ export default function NovoProcessoPage() {
                  <div className='flex items-center gap-3'>
                     {getStepStatusIcon(3)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 3: Liberação Física e Fiscal na Origem</h3>
-                        <p className='text-sm text-muted-foreground'>Gerencie as notas fiscais, contêineres e o desembaraço aduaneiro.</p>
+                        <h3 className="text-lg font-semibold">Etapa 3: Liberação Física, Fiscal e Inspeção</h3>
+                        <p className='text-sm text-muted-foreground'>Gerencie NFs, contêineres, desembaraço e inspeção MAPA.</p>
                     </div>
                 </div>
             </AccordionTrigger>
@@ -705,25 +701,40 @@ export default function NovoProcessoPage() {
                     <CardContent className="space-y-6 pt-6">
                         <div className='grid md:grid-cols-3 gap-4'>
                             <div className="space-y-2">
-                                <Label htmlFor="nf_remessa">NFs de Remessa</Label>
-                                <Input id="nf_remessa" value={formData.nf_remessa || ''} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Ex: 14575, 14579" />
+                                <Label htmlFor="nf_remessa">NFs de Remessa (Chave)</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input id="nf_remessa" value={formData.nf_remessa || ''} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Insira a chave de acesso..." />
+                                    <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="nf_retorno">NF de Retorno (Estufagem)</Label>
-                                <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Ex: 16109" />
+                                <Label htmlFor="nf_retorno">NF de Retorno (Chave)</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Insira a chave de acesso..." />
+                                    <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="nf_exportacao">NF de Exportação (NF-e)</Label>
-                                <Input id="nf_exportacao" value={formData.nf_exportacao || ''} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira o nº da NF-e" />
+                                <Label htmlFor="nf_exportacao">NF de Exportação (Chave)</Label>
+                                <div className="flex items-center gap-2">
+                                    <Input id="nf_exportacao" value={formData.nf_exportacao || ''} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira a chave de acesso..." />
+                                    <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                </div>
                             </div>
                         </div>
                         <div>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-md font-medium">Dados dos Contêineres</h3>
-                                <Button type="button" variant="outline" size="sm" onClick={addContainer}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adicionar Contêiner
-                                </Button>
+                                <div className='flex items-center gap-2'>
+                                    <Button type="button" variant="outline" size="sm">
+                                        <FileUp className="mr-2 h-4 w-4" />
+                                        Importar Planilha (XLSX)
+                                    </Button>
+                                    <Button type="button" variant="outline" size="sm" onClick={addContainer}>
+                                        <PlusCircle className="mr-2 h-4 w-4" />
+                                        Adicionar Contêiner
+                                    </Button>
+                                </div>
                             </div>
                             <Table>
                                 <TableHeader>
@@ -769,26 +780,7 @@ export default function NovoProcessoPage() {
                                 </Select>
                             </div>
                         </div>
-                    </CardContent>
-                </Card>
-            </AccordionContent>
-          </AccordionItem>
-          
-           {/* Etapa 4 */}
-          <AccordionItem value="item-4" disabled={!isEditing}>
-             <AccordionTrigger>
-                 <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(4)}
-                    <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 4: Gestão da Inspeção Final (MAPA)</h3>
-                        <p className='text-sm text-muted-foreground'>Gerencie a inspeção do MAPA e a liberação final para embarque.</p>
-                    </div>
-                </div>
-            </AccordionTrigger>
-            <AccordionContent>
-                <Card>
-                    <CardContent className="space-y-6 pt-6">
-                        <div className="grid md:grid-cols-2 gap-4">
+                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="lpco_protocolo">Protocolo LPCO</Label>
                                 <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
@@ -840,13 +832,13 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 5 */}
-            <AccordionItem value="item-5" disabled={!isEditing}>
+           {/* Etapa 4 */}
+            <AccordionItem value="item-4" disabled={!isEditing}>
                 <AccordionTrigger>
                     <div className='flex items-center gap-3'>
-                        {getStepStatusIcon(5)}
+                        {getStepStatusIcon(4)}
                         <div className='text-left'>
-                            <h3 className="text-lg font-semibold">Etapa 5: Confirmação de Embarque (BLs)</h3>
+                            <h3 className="text-lg font-semibold">Etapa 4: Confirmação de Embarque (BLs)</h3>
                             <p className='text-sm text-muted-foreground'>Gerencie os detalhes dos Conhecimentos de Embarque (Bills of Lading).</p>
                         </div>
                     </div>
@@ -905,13 +897,13 @@ export default function NovoProcessoPage() {
                 </AccordionContent>
             </AccordionItem>
 
-           {/* Etapa 6 */}
-          <AccordionItem value="item-6" disabled={!isEditing}>
+           {/* Etapa 5 */}
+          <AccordionItem value="item-5" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(6)}
+                    {getStepStatusIcon(5)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 6: Obtenção dos Documentos Originais</h3>
+                        <h3 className="text-lg font-semibold">Etapa 5: Obtenção dos Documentos Originais</h3>
                         <p className='text-sm text-muted-foreground'>Gerencie a coleta e o envio dos documentos de pós-embarque.</p>
                     </div>
                 </div>
@@ -954,13 +946,13 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 7 */}
-          <AccordionItem value="item-7" disabled={!isEditing}>
+           {/* Etapa 6 */}
+          <AccordionItem value="item-6" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
-                    {getStepStatusIcon(7)}
+                    {getStepStatusIcon(6)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 7: Envio dos Documentos e Encerramento</h3>
+                        <h3 className="text-lg font-semibold">Etapa 6: Envio dos Documentos e Encerramento</h3>
                         <p className='text-sm text-muted-foreground'>Conclua o processo e arquive todo o histórico.</p>
                     </div>
                 </div>
@@ -970,7 +962,7 @@ export default function NovoProcessoPage() {
                     <CardContent className="space-y-6 pt-6">
                        <div className='text-center py-4'>
                          <p className='text-lg font-semibold'>Processo pronto para ser finalizado.</p>
-                         <p className='text-muted-foreground'>Verifique se o AWB do courier foi inserido na Etapa 6. Ao concluir, o status do processo será alterado para "Concluído" e sairá da lista de processos ativos.</p>
+                         <p className='text-muted-foreground'>Verifique se o AWB do courier foi inserido na Etapa 5. Ao concluir, o status do processo será alterado para "Concluído" e sairá da lista de processos ativos.</p>
                        </div>
                         <Button className='w-full' onClick={() => handleInputChange('status', 'Concluído')}>
                             <CheckCircle className='mr-2 h-4 w-4' />
@@ -986,4 +978,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
