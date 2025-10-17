@@ -29,6 +29,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { Textarea } from '@/components/ui/textarea';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+
 
 const processStatusOptions = [
     "Iniciado / Aguardando Booking",
@@ -106,6 +110,14 @@ export default function NovoProcessoPage() {
     documentos_originais: initialOriginalDocs,
     awb_courier: '',
     analistaId: '',
+    // Draft fields
+    draft_bl_shipper: '',
+    draft_bl_consignee: '',
+    draft_bl_notify: '',
+    draft_bl_port_loading: '',
+    draft_bl_port_discharge: '',
+    draft_bl_marks: '',
+    draft_bl_description: '',
   });
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
@@ -114,7 +126,7 @@ export default function NovoProcessoPage() {
     useEffect(() => {
         try {
             const storedParceiros = JSON.parse(localStorage.getItem('partners') || '[]');
-            const storedProducts = JSON.parse(localStorage.getItem('partners') || '[]').filter((p: any) => p.tipo_parceiro === 'Produto');
+            const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
             const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
             const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
             const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
@@ -307,6 +319,47 @@ export default function NovoProcessoPage() {
             default:
                 return null;
         }
+    };
+
+    const generatePdf = () => {
+        const doc = new jsPDF();
+        
+        doc.setFontSize(18);
+        doc.text(`Pacote de Drafts - Processo: ${formData.processo_interno || 'N/A'}`, 14, 22);
+
+        // Draft BL
+        doc.setFontSize(14);
+        doc.text('DRAFT - BILL OF LADING', 14, 40);
+        (doc as any).autoTable({
+            startY: 45,
+            theme: 'grid',
+            body: [
+                ['Shipper', formData.draft_bl_shipper || ''],
+                ['Consignee', formData.draft_bl_consignee || ''],
+                ['Notify Party', formData.draft_bl_notify || ''],
+                ['Port of Loading', formData.draft_bl_port_loading || ''],
+                ['Port of Discharge', formData.draft_bl_port_discharge || ''],
+                ['Marks and Numbers', formData.draft_bl_marks || ''],
+                ['Description of Goods', formData.draft_bl_description || ''],
+            ],
+            styles: { fontSize: 10 },
+        });
+
+        const blTableHeight = (doc as any).lastAutoTable.finalY;
+
+        // Draft Fito / COO
+        doc.setFontSize(14);
+        doc.text('DRAFT - Certificado Fitossanitário / de Origem', 14, blTableHeight + 15);
+        doc.setFontSize(10);
+        doc.text("Esta seção é um placeholder para os dados do Certificado Fitossanitário e de Origem.", 14, blTableHeight + 22);
+        doc.text("Os campos para estes documentos serão adicionados em uma futura implementação.", 14, blTableHeight + 28);
+        
+        doc.save(`Drafts_${formData.processo_interno || 'processo'}.pdf`);
+
+        toast({
+            title: "PDF Gerado!",
+            description: "O pacote de drafts foi gerado com sucesso.",
+        });
     };
 
 
@@ -590,66 +643,47 @@ export default function NovoProcessoPage() {
                     {getStepStatusIcon(2)}
                     <div className='text-left'>
                         <h3 className="text-lg font-semibold">Etapa 2: Gestão de Documentos (Drafts)</h3>
-                        <p className='text-sm text-muted-foreground'>Upload e controle da aprovação dos documentos de embarque.</p>
+                        <p className='text-sm text-muted-foreground'>Gere e envie os drafts de BL, Fito e Origem para aprovação do cliente.</p>
                     </div>
                 </div>
             </AccordionTrigger>
             <AccordionContent>
                 <Card>
                     <CardHeader>
-                        <div className='flex justify-between items-center'>
-                            <CardTitle className='text-base'>Lista de Documentos</CardTitle>
-                            <Button size="sm" variant="outline" type="button" onClick={addDocument}>
-                                <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Documento
+                        <div className="flex justify-between items-center">
+                            <CardTitle className='text-base'>Dados para Geração de Drafts</CardTitle>
+                             <Button size="sm" variant="outline" type="button" onClick={generatePdf}>
+                                <FileDown className="mr-2 h-4 w-4" /> Gerar Pacote de Drafts (PDF)
                             </Button>
                         </div>
                     </CardHeader>
-                    <CardContent>
-                        <Table>
-                            <TableHeader>
-                                <TableRow>
-                                    <TableHead className='w-[30%]'>Nome do Documento</TableHead>
-                                    <TableHead>Data do Status</TableHead>
-                                    <TableHead>Status</TableHead>
-                                    <TableHead>Anexo</TableHead>
-                                    <TableHead className="text-right">Ações</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {formData.documentos.map((doc, index) => (
-                                    <TableRow key={doc.id}>
-                                        <TableCell><Input value={doc.name || ''} onChange={e => handleDocumentChange(index, 'name', e.target.value)} placeholder="Ex: Bill of Lading" /></TableCell>
-                                        <TableCell>{doc.date || 'N/A'}</TableCell>
-                                        <TableCell>
-                                            <Badge variant={getStatusVariant(doc.status)}>{doc.status}</Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                             <Button size="sm" variant="outline" type="button">
-                                                <Upload className="mr-2 h-4 w-4" /> Anexar
-                                            </Button>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <div className='flex gap-1 justify-end'>
-                                                <Button size="icon" variant="ghost" type="button" className="text-red-600 hover:text-red-700" onClick={() => handleDocumentStatusChange(index, 'Rejeitado')} title="Rejeitar">
-                                                    <XCircle className="h-4 w-4" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" type="button" className="text-green-600 hover:text-green-700" onClick={() => handleDocumentStatusChange(index, 'Aprovado')} title="Aprovar">
-                                                    <CheckCircle className="h-4 w-4" />
-                                                </Button>
-                                                <Button size="icon" variant="ghost" type="button" onClick={() => removeDocument(index)} title="Remover">
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </div>
-                                        </TableCell>
-                                    </TableRow>
-                                ))}
-                                {formData.documentos.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={5} className="text-center text-muted-foreground">Nenhum documento adicionado.</TableCell>
-                                    </TableRow>
-                                )}
-                            </TableBody>
-                        </Table>
+                    <CardContent className='space-y-6'>
+                        <div className="p-4 border rounded-lg space-y-4">
+                            <h4 className='font-medium'>Draft - Bill of Lading (BL)</h4>
+                             <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="draft_bl_shipper">Shipper (Exportador)</Label>
+                                    <Textarea id="draft_bl_shipper" value={formData.draft_bl_shipper} onChange={e => handleInputChange('draft_bl_shipper', e.target.value)} placeholder="Nome completo e endereço do exportador" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="draft_bl_consignee">Consignee (Importador)</Label>
+                                    <Textarea id="draft_bl_consignee" value={formData.draft_bl_consignee} onChange={e => handleInputChange('draft_bl_consignee', e.target.value)} placeholder="Nome completo e endereço do importador" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="draft_bl_notify">Notify Party (Notificar)</Label>
+                                    <Textarea id="draft_bl_notify" value={formData.draft_bl_notify} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="draft_bl_description">Description of Goods</Label>
+                                    <Textarea id="draft_bl_description" value={formData.draft_bl_description} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
+                                </div>
+                            </div>
+                        </div>
+
+                         <div className="p-4 border rounded-lg space-y-4 text-muted-foreground">
+                            <h4 className='font-medium'>Draft - Certificado Fitossanitário / Origem (Em breve)</h4>
+                            <p className='text-sm'>Os campos para geração dos drafts do Certificado Fitossanitário e de Origem estarão disponíveis em uma futura atualização.</p>
+                         </div>
                     </CardContent>
                 </Card>
             </AccordionContent>
@@ -952,3 +986,4 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
