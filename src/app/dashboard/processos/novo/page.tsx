@@ -54,7 +54,6 @@ const processStatusOptions = [
 ]
 
 const initialDocuments: any[] = [];
-const initialProducts: any[] = [];
 
 const initialOriginalDocs = [
     { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false, isSubtask: false, completionDate: null },
@@ -104,7 +103,6 @@ export default function NovoProcessoPage() {
     due_status: 'Não registrada',
     lpco_protocolo: '',
     mapa_status: 'Aguardando Análise',
-    bl_master: '',
     navio_final: '',
     viagem_final: '',
     documentos_originais: initialOriginalDocs,
@@ -248,7 +246,7 @@ export default function NovoProcessoPage() {
   const addBl = () => {
     setFormData(prev => ({
         ...prev,
-        bls: [...prev.bls, { id: Date.now(), numero: '', data: '', data_liberacao: '', data_retirada: '', quantidade: '' }]
+        bls: [...prev.bls, { id: Date.now(), numero: '', tipo: 'BL', data_emissao: '', data_liberacao: '', data_retirada: '' }]
     }));
   };
 
@@ -281,7 +279,7 @@ export default function NovoProcessoPage() {
   }
 
   const getStepStatusIcon = (step: number) => {
-        const { status, booking_number, documentos, due_status, mapa_status, bl_master, documentos_originais, awb_courier } = formData;
+        const { status, booking_number, documentos, due_status, mapa_status, bls, documentos_originais, awb_courier } = formData;
         const allDocsApproved = documentos.length > 0 && documentos.every(d => d.status === 'Aprovado');
         const allOriginalDocsDone = documentos_originais.every(d => d.done);
 
@@ -291,22 +289,22 @@ export default function NovoProcessoPage() {
                  return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             case 2: // Drafts
                 if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-                if (allDocsApproved) return <CheckCircle className="h-5 w-5 text-green-500" />;
+                if (allDocsApproved || status.includes('APROVADOS')) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (status.includes('DRAFT')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
             case 3: // Liberação Fiscal e Inspeção
                 if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
-                if (allDocsApproved) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+                if (status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
             case 4: // Embarque
-                if (formData.bls.length > 0 && formData.bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+                if (bls && bls.length > 0 && bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
                 if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                 return <XCircle className="h-5 w-5 text-gray-400" />;
             case 5: // Docs Originais
                 if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (formData.bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+                if (bls && bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
                  return <XCircle className="h-5 w-5 text-gray-400" />;
             case 6: // Encerramento
                 if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -358,6 +356,35 @@ export default function NovoProcessoPage() {
         });
     };
 
+    const generateOriginalDocsPdf = () => {
+        const doc = new jsPDF();
+        
+        doc.setFontSize(18);
+        doc.text(`Documentos Originais - Processo: ${formData.processo_interno || 'N/A'}`, 14, 22);
+
+        doc.setFontSize(14);
+        doc.text('Conhecimentos de Embarque (BLs)', 14, 40);
+        const blBody = formData.bls.map(bl => [
+            bl.numero,
+            bl.data_emissao ? new Date(bl.data_emissao).toLocaleDateString('pt-BR') : '',
+            bl.data_liberacao ? new Date(bl.data_liberacao).toLocaleDateString('pt-BR') : '',
+        ]);
+        (doc as any).autoTable({
+            startY: 45,
+            head: [['Nº do BL', 'Data Emissão', 'Data Liberação']],
+            body: blBody,
+            theme: 'grid',
+            styles: { fontSize: 10 },
+        });
+
+        const finalY = (doc as any).lastAutoTable.finalY;
+        doc.setFontSize(12);
+        doc.text('Outros documentos serão adicionados aqui em futuras implementações.', 14, finalY + 10);
+
+
+        doc.save(`Documentos_Originais_${formData.processo_interno || 'processo'}.pdf`);
+    };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -373,7 +400,7 @@ export default function NovoProcessoPage() {
                 return {
                     ...p,
                     ...formData,
-                    produtoNome: selectedProduct?.nome_fantasia || formData.produtoNome || 'N/A',
+                    produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
                     exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
                     destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
                 }
@@ -386,7 +413,7 @@ export default function NovoProcessoPage() {
          const newProcesso = {
             ...formData,
             id: newId,
-            produtoNome: selectedProduct?.nome_fantasia || 'N/A',
+            produtoNome: selectedProduct?.descricao || 'N/A',
             exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
             destino: selectedPortoDescarga?.name || 'N/A',
         };
@@ -514,7 +541,7 @@ export default function NovoProcessoPage() {
                                     <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o produto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
                             </div>
@@ -632,7 +659,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 2 */}
           <AccordionItem value="item-2" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
@@ -685,7 +711,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-           {/* Etapa 3 */}
           <AccordionItem value="item-3" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
@@ -832,73 +857,45 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 4 */}
             <AccordionItem value="item-4" disabled={!isEditing}>
                 <AccordionTrigger>
                     <div className='flex items-center gap-3'>
                         {getStepStatusIcon(4)}
                         <div className='text-left'>
-                            <h3 className="text-lg font-semibold">Etapa 4: Confirmação de Embarque (BLs)</h3>
-                            <p className='text-sm text-muted-foreground'>Gerencie os detalhes dos Conhecimentos de Embarque (Bills of Lading).</p>
+                            <h3 className="text-lg font-semibold">Etapa 4: Confirmação de Embarque</h3>
+                            <p className='text-sm text-muted-foreground'>Confirme os dados finais do embarque.</p>
                         </div>
                     </div>
                 </AccordionTrigger>
                 <AccordionContent>
                     <Card>
-                        <CardHeader>
-                            <div className="flex justify-between items-center">
-                                <CardTitle className="text-base">Dados do B/L</CardTitle>
-                                <Button type="button" variant="outline" size="sm" onClick={addBl}>
-                                    <PlusCircle className="mr-2 h-4 w-4" />
-                                    Adicionar BL
-                                </Button>
+                        <CardContent className="space-y-4 pt-6">
+                            <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label htmlFor="navio_final">Navio Final</Label>
+                                    <Input id="navio_final" value={formData.navio_final || formData.navio || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Nome final do navio" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="viagem_final">Viagem Final</Label>
+                                    <Input id="viagem_final" value={formData.viagem_final || formData.viagem || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Viagem final" />
+                                </div>
                             </div>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                            {formData.bls.map((bl, index) => (
-                                <Card key={bl.id} className="bg-muted/40">
-                                    <CardHeader>
-                                        <div className="flex justify-between items-center">
-                                            <CardDescription>BL #{index + 1}</CardDescription>
-                                            <Button type="button" variant="ghost" size="icon" onClick={() => removeBl(index)}>
-                                                <Trash2 className="h-4 w-4 text-destructive" />
-                                            </Button>
-                                        </div>
-                                    </CardHeader>
-                                    <CardContent className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`bl_numero_${bl.id}`}>Número do BL</Label>
-                                            <Input id={`bl_numero_${bl.id}`} value={bl.numero || ''} onChange={e => handleBlChange(index, 'numero', e.target.value)} placeholder="Ex: MEDUHI295369" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor={`bl_quantidade_${bl.id}`}>Quantidade no BL</Label>
-                                            <Input id={`bl_quantidade_${bl.id}`} value={bl.quantidade || ''} onChange={e => handleBlChange(index, 'quantidade', e.target.value)} placeholder="Ex: 135,00000 TON" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Data do BL</Label>
-                                            <DatePicker />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label>Data de Liberação do BL</Label>
-                                            <DatePicker />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label>Data de Retirada do BL da Agência</Label>
-                                            <DatePicker />
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
-                            {formData.bls.length === 0 && (
-                                <div className="text-center text-muted-foreground py-4">Nenhum BL adicionado.</div>
-                            )}
+                             <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2">
+                                    <Label>Data de Saída (ETD)</Label>
+                                    <DatePicker showTime />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label>Data de Chegada (ETA)</Label>
+                                    <DatePicker showTime />
+                                </div>
+                            </div>
                         </CardContent>
                     </Card>
                 </AccordionContent>
             </AccordionItem>
 
-           {/* Etapa 5 */}
-          <AccordionItem value="item-5" disabled={!isEditing}>
+           <AccordionItem value="item-5" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
                     {getStepStatusIcon(5)}
@@ -911,6 +908,53 @@ export default function NovoProcessoPage() {
             <AccordionContent>
                 <Card>
                     <CardContent className="space-y-6 pt-6">
+                         <div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-md font-medium">Dados dos Documentos (BL, Fito, etc.)</h3>
+                                <Button type="button" variant="outline" size="sm" onClick={addBl}>
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Adicionar Documento
+                                </Button>
+                            </div>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Número</TableHead>
+                                        <TableHead>Data Emissão</TableHead>
+                                        <TableHead>Data Liberação</TableHead>
+                                        <TableHead>Data Retirada</TableHead>
+                                        <TableHead>Ação</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {formData.bls.map((bl, index) => (
+                                        <TableRow key={bl.id}>
+                                            <TableCell>
+                                                <Select value={bl.tipo || 'BL'} onValueChange={value => handleBlChange(index, 'tipo', value)}>
+                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="BL">BL</SelectItem>
+                                                        <SelectItem value="Fito">Fito</SelectItem>
+                                                        <SelectItem value="COO">COO</SelectItem>
+                                                        <SelectItem value="Outro">Outro</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell><Input value={bl.numero || ''} onChange={e => handleBlChange(index, 'numero', e.target.value)} /></TableCell>
+                                            <TableCell><DatePicker/></TableCell>
+                                            <TableCell><DatePicker/></TableCell>
+                                            <TableCell><DatePicker/></TableCell>
+                                            <TableCell>
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeBl(index)}>
+                                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                                </Button>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                         </div>
                         <div>
                             <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
                             <div className="space-y-3">
@@ -936,7 +980,7 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor="awb_courier">AWB do Courier (Envio)</Label>
                                 <Input id="awb_courier" value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} placeholder="Insira o código de rastreio" />
                             </div>
-                            <Button type="button" variant="outline">
+                            <Button type="button" variant="outline" onClick={generateOriginalDocsPdf}>
                                 <FileDown className="mr-2 h-4 w-4" />
                                 Gerar Pacote PDF
                             </Button>
@@ -946,13 +990,12 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
           
-           {/* Etapa 6 */}
-          <AccordionItem value="item-6" disabled={!isEditing}>
+           <AccordionItem value="item-6" disabled={!isEditing}>
              <AccordionTrigger>
                  <div className='flex items-center gap-3'>
                     {getStepStatusIcon(6)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 6: Envio dos Documentos e Encerramento</h3>
+                        <h3 className="text-lg font-semibold">Etapa 6: Encerramento do Processo</h3>
                         <p className='text-sm text-muted-foreground'>Conclua o processo e arquive todo o histórico.</p>
                     </div>
                 </div>
