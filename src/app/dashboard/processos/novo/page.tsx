@@ -725,7 +725,7 @@ export default function NovoProcessoPage() {
                                 </div>
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="nf_retorno">NF de Retorno (Chave)</Label>
+                                <Label htmlFor="nf_retorno">NF do Produtor</Label>
                                 <div className="flex items-center gap-2">
                                     <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Insira a chave de acesso..." />
                                     <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
