@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -124,7 +123,6 @@ export default function NovoProcessoPage() {
     useEffect(() => {
         try {
             const storedParceiros = JSON.parse(localStorage.getItem('partners') || '[]');
-            const storedProducts = JSON.parse(localStorage.getItem('products') || '[]');
             const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
             const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
             const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
@@ -134,7 +132,10 @@ export default function NovoProcessoPage() {
             setPortos(storedPortos);
             setTerminais(storedTerminais);
             setUsuarios(storedUsers);
-            setProdutos(storedProducts);
+            
+            const productsFromPartners = storedParceiros.filter((p: any) => p.tipo_parceiro === 'Produto');
+            setProdutos(productsFromPartners);
+
 
             if (isEditing && processId) {
                 const processoData = storedProcessos.find((p: any) => p.id === processId);
@@ -400,7 +401,7 @@ export default function NovoProcessoPage() {
                 return {
                     ...p,
                     ...formData,
-                    produtoNome: selectedProduct?.descricao || formData.produtoNome || 'N/A',
+                    produtoNome: selectedProduct?.nome_fantasia || formData.produtoNome || 'N/A',
                     exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
                     destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
                 }
@@ -413,7 +414,7 @@ export default function NovoProcessoPage() {
          const newProcesso = {
             ...formData,
             id: newId,
-            produtoNome: selectedProduct?.descricao || 'N/A',
+            produtoNome: selectedProduct?.nome_fantasia || 'N/A',
             exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
             destino: selectedPortoDescarga?.name || 'N/A',
         };
@@ -541,7 +542,7 @@ export default function NovoProcessoPage() {
                                     <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o produto"} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.descricao}</SelectItem>)}
+                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                 </SelectContent>
                                 </Select>
                             </div>
