@@ -233,7 +233,19 @@ export default function NovoProcessoPage() {
   const addContainer = () => {
     setFormData(prev => ({
         ...prev,
-        containers: [...prev.containers, { id: Date.now(), numero: '', lacre: '', vgm: '', inspecionado: false, novo_lacre: '' }]
+        containers: [...prev.containers, { 
+            id: Date.now(), 
+            numero: '', 
+            lacre: '', 
+            tare: '',
+            qty_especie: '',
+            gross_weight: '',
+            net_weight: '',
+            m3: '',
+            vgm: '', 
+            inspecionado: false, 
+            novo_lacre: '' 
+        }]
     }));
   };
 
@@ -753,30 +765,42 @@ export default function NovoProcessoPage() {
                                     </Button>
                                 </div>
                             </div>
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Nº do Contêiner</TableHead>
-                                        <TableHead>Nº do Lacre</TableHead>
-                                        <TableHead>VGM (kg)</TableHead>
-                                        <TableHead>Ação</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {formData.containers.map((container, index) => (
-                                        <TableRow key={index}>
-                                            <TableCell><Input value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
-                                            <TableCell><Input value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
-                                            <TableCell><Input value={container.vgm || ''} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
-                                            <TableCell>
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeContainer(index)}>
-                                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                                </Button>
-                                            </TableCell>
+                            <div className="overflow-x-auto">
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Nº Contêiner</TableHead>
+                                            <TableHead>Lacre</TableHead>
+                                            <TableHead>TARE</TableHead>
+                                            <TableHead>QTY Espécie</TableHead>
+                                            <TableHead>Gross Weight</TableHead>
+                                            <TableHead>Net Weight</TableHead>
+                                            <TableHead>M³</TableHead>
+                                            <TableHead>VGM (kg)</TableHead>
+                                            <TableHead>Ação</TableHead>
                                         </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {formData.containers.map((container, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell><Input className="min-w-[150px]" value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
+                                                <TableCell><Input className="min-w-[120px]" value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
+                                                <TableCell><Input className="min-w-[100px]" value={container.tare || ''} onChange={e => handleContainerChange(index, 'tare', e.target.value)} /></TableCell>
+                                                <TableCell><Input className="min-w-[120px]" value={container.qty_especie || ''} onChange={e => handleContainerChange(index, 'qty_especie', e.target.value)} /></TableCell>
+                                                <TableCell><Input className="min-w-[120px]" value={container.gross_weight || ''} onChange={e => handleContainerChange(index, 'gross_weight', e.target.value)} /></TableCell>
+                                                <TableCell><Input className="min-w-[120px]" value={container.net_weight || ''} onChange={e => handleContainerChange(index, 'net_weight', e.target.value)} /></TableCell>
+                                                <TableCell><Input className="min-w-[100px]" value={container.m3 || ''} onChange={e => handleContainerChange(index, 'm3', e.target.value)} /></TableCell>
+                                                <TableCell><Input className="min-w-[120px]" value={container.vgm || ''} type="number" onChange={e => handleContainerChange(index, 'vgm', e.target.value)} placeholder="Ex: 25000" /></TableCell>
+                                                <TableCell>
+                                                    <Button type="button" variant="ghost" size="icon" onClick={() => removeContainer(index)}>
+                                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                                    </Button>
+                                                </TableCell>
+                                            </TableRow>
+                                        ))}
+                                    </TableBody>
+                                </Table>
+                            </div>
                         </div>
                         <div className='grid md:grid-cols-2 gap-4'>
                             <div className="space-y-2">
@@ -1013,3 +1037,4 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
