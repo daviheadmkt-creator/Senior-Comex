@@ -84,7 +84,6 @@ export default function NovoProcessoPage() {
     produtoId: '',
     quantidade: '',
     exportadorId: '',
-    terminalEstufagemId: '',
     portoEmbarqueId: '',
     portoDescargaId: '',
     status: 'Iniciado / Aguardando Booking',
@@ -192,7 +191,6 @@ export default function NovoProcessoPage() {
         const filtered = terminais.filter(t => String(t.portoId) === value);
         setFilteredTerminais(filtered);
     }
-    handleInputChange('terminalEstufagemId', null); // Reset terminal selection
   }
   
   const handleContainerChange = (index: number, field: string, value: string | boolean) => {
@@ -685,7 +683,11 @@ export default function NovoProcessoPage() {
                                     <Label htmlFor="draft_bl_notify">Notify Party (Notificar)</Label>
                                     <Textarea id="draft_bl_notify" value={formData.draft_bl_notify} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
                                 </div>
-                                 <div className="space-y-2">
+                                <div className="space-y-2">
+                                    <Label htmlFor="draft_bl_marks">Marks and Numbers</Label>
+                                    <Textarea id="draft_bl_marks" value={formData.draft_bl_marks} onChange={e => handleInputChange('draft_bl_marks', e.target.value)} placeholder="Marcas e números dos pacotes" />
+                                </div>
+                                 <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="draft_bl_description">Description of Goods</Label>
                                     <Textarea id="draft_bl_description" value={formData.draft_bl_description} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
                                 </div>
@@ -1011,5 +1013,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
