@@ -951,8 +951,10 @@ export default function NovoProcessoPage() {
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>
                                                         <SelectItem value="BL">BL</SelectItem>
-                                                        <SelectItem value="Fito">Fito</SelectItem>
-                                                        <SelectItem value="COO">COO</SelectItem>
+                                                        <SelectItem value="Fatura Comercial">Fatura Comercial</SelectItem>
+                                                        <SelectItem value="Packing List">Packing List</SelectItem>
+                                                        <SelectItem value="COO">Certificado de Origem (COO)</SelectItem>
+                                                        <SelectItem value="Fito">Certificado Fitossanitário</SelectItem>
                                                         <SelectItem value="Outro">Outro</SelectItem>
                                                     </SelectContent>
                                                 </Select>
@@ -1038,3 +1040,6 @@ export default function NovoProcessoPage() {
   );
 }
 
+
+
+    
