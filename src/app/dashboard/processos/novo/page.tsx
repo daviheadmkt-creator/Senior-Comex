@@ -52,6 +52,23 @@ const processStatusOptions = [
     "Cancelado",
 ]
 
+const documentTypes = [
+    "INVOICE",
+    "PACKING LIST",
+    "BL",
+    "FITO",
+    "ORIGEM",
+    "WEIGHT",
+    "QUALITY",
+    "HEALTH",
+    "NON GMO",
+    "ANALISE",
+    "FUMIGATION",
+    "SET DOC ENVIADO",
+    "DOC SENT (ALL PDF)"
+];
+
+
 const initialDocuments: any[] = [];
 
 const initialOriginalDocs = [
@@ -950,12 +967,9 @@ export default function NovoProcessoPage() {
                                                 <Select value={bl.tipo || 'BL'} onValueChange={value => handleBlChange(index, 'tipo', value)}>
                                                     <SelectTrigger><SelectValue /></SelectTrigger>
                                                     <SelectContent>
-                                                        <SelectItem value="BL">BL</SelectItem>
-                                                        <SelectItem value="Fatura Comercial">Fatura Comercial</SelectItem>
-                                                        <SelectItem value="Packing List">Packing List</SelectItem>
-                                                        <SelectItem value="COO">Certificado de Origem (COO)</SelectItem>
-                                                        <SelectItem value="Fito">Certificado Fitossanitário</SelectItem>
-                                                        <SelectItem value="Outro">Outro</SelectItem>
+                                                        {documentTypes.map(type => (
+                                                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                                                        ))}
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
