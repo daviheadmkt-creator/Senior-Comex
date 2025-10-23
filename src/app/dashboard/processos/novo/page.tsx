@@ -123,7 +123,6 @@ export default function NovoProcessoPage() {
     documentos_originais: initialOriginalDocs,
     awb_courier: '',
     analistaId: '',
-    // Draft fields
     draft_bl_shipper: '',
     draft_bl_consignee: '',
     draft_bl_notify: '',
@@ -157,6 +156,7 @@ export default function NovoProcessoPage() {
                 const processoData = storedProcessos.find((p: any) => p.id === processId);
                 if (processoData) {
                     setFormData({
+                        ...formData, // Start with default to avoid undefined values
                         ...processoData,
                         documentos: processoData.documentos || initialDocuments,
                         containers: processoData.containers || [],
@@ -192,7 +192,7 @@ export default function NovoProcessoPage() {
     : 'Inicie um novo processo a partir de uma nomeação.';
 
   const handleInputChange = (id: string, value: string | number | null) => {
-    setFormData(prev => ({ ...prev, [id]: value }));
+    setFormData(prev => ({ ...prev, [id]: value ?? '' }));
   };
   
   const handleExportadorChange = (value: string) => {
@@ -702,23 +702,23 @@ export default function NovoProcessoPage() {
                              <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="draft_bl_shipper">Shipper (Exportador)</Label>
-                                    <Textarea id="draft_bl_shipper" value={formData.draft_bl_shipper} onChange={e => handleInputChange('draft_bl_shipper', e.target.value)} placeholder="Nome completo e endereço do exportador" />
+                                    <Textarea id="draft_bl_shipper" value={formData.draft_bl_shipper || ''} onChange={e => handleInputChange('draft_bl_shipper', e.target.value)} placeholder="Nome completo e endereço do exportador" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="draft_bl_consignee">Consignee (Importador)</Label>
-                                    <Textarea id="draft_bl_consignee" value={formData.draft_bl_consignee} onChange={e => handleInputChange('draft_bl_consignee', e.target.value)} placeholder="Nome completo e endereço do importador" />
+                                    <Textarea id="draft_bl_consignee" value={formData.draft_bl_consignee || ''} onChange={e => handleInputChange('draft_bl_consignee', e.target.value)} placeholder="Nome completo e endereço do importador" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="draft_bl_notify">Notify Party (Notificar)</Label>
-                                    <Textarea id="draft_bl_notify" value={formData.draft_bl_notify} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
+                                    <Textarea id="draft_bl_notify" value={formData.draft_bl_notify || ''} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="draft_bl_marks">Marks and Numbers</Label>
-                                    <Textarea id="draft_bl_marks" value={formData.draft_bl_marks} onChange={e => handleInputChange('draft_bl_marks', e.target.value)} placeholder="Marcas e números dos pacotes" />
+                                    <Textarea id="draft_bl_marks" value={formData.draft_bl_marks || ''} onChange={e => handleInputChange('draft_bl_marks', e.target.value)} placeholder="Marcas e números dos pacotes" />
                                 </div>
                                  <div className="space-y-2 md:col-span-2">
                                     <Label htmlFor="draft_bl_description">Description of Goods</Label>
-                                    <Textarea id="draft_bl_description" value={formData.draft_bl_description} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
+                                    <Textarea id="draft_bl_description" value={formData.draft_bl_description || ''} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
                                 </div>
                             </div>
                         </div>
