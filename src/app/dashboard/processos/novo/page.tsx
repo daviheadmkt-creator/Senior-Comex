@@ -552,7 +552,7 @@ export default function NovoProcessoPage() {
                             </div>
                         </div>
                         
-                        <div className="grid md:grid-cols-3 gap-4">
+                        <div className="grid md:grid-cols-2 gap-4">
                         <div className="space-y-2">
                             <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
                             <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
@@ -561,17 +561,6 @@ export default function NovoProcessoPage() {
                                 </SelectTrigger>
                                 <SelectContent>
                                     {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="terminalEstufagemId">Terminal de Estufagem</Label>
-                             <Select value={String(formData.terminalEstufagemId || '')} onValueChange={value => handleInputChange('terminalEstufagemId', value)} disabled={!formData.portoEmbarqueId}>
-                                <SelectTrigger id="terminalEstufagemId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o terminal"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {filteredTerminais.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -1022,3 +1011,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
