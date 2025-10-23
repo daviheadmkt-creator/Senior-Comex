@@ -37,24 +37,26 @@ const partnerTypes = [
     "Representante Local",
 ]
 
+const initialFormData = {
+  razao_social: '',
+  nome_fantasia: '',
+  cnpj: '',
+  tipo_parceiro: '',
+  endereco: '',
+  cidade: '',
+  estado: '',
+  cep: '',
+  pais: '',
+  contatos: [{ nome: '', email: '', telefone: '', cargo: '' }],
+};
+
 export default function NovoParceiroPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const firestore = useFirestore();
   
-  const [formData, setFormData] = useState({
-      razao_social: '',
-      nome_fantasia: '',
-      cnpj: '',
-      tipo_parceiro: '',
-      endereco: '',
-      cidade: '',
-      estado: '',
-      cep: '',
-      pais: '',
-      contatos: [{ nome: '', email: '', telefone: '', cargo: '' }],
-  });
+  const [formData, setFormData] = useState(initialFormData);
   const [isLoadingCnpj, setIsLoadingCnpj] = useState(false);
 
   const isEditing = searchParams.has('edit');
@@ -70,9 +72,17 @@ export default function NovoParceiroPage() {
   useEffect(() => {
     if (isEditing && partnerId && partnerData) {
       setFormData({
-        ...partnerData,
+        razao_social: partnerData.razao_social || '',
+        nome_fantasia: partnerData.nome_fantasia || '',
+        cnpj: partnerData.cnpj || '',
+        tipo_parceiro: partnerData.tipo_parceiro || '',
+        endereco: partnerData.endereco || '',
+        cidade: partnerData.cidade || '',
+        estado: partnerData.estado || '',
+        cep: partnerData.cep || '',
+        pais: partnerData.pais || '',
         contatos: partnerData.contatos && partnerData.contatos.length > 0 ? partnerData.contatos : [{ nome: '', email: '', telefone: '', cargo: '' }]
-      } as any);
+      });
     }
   }, [isEditing, partnerId, partnerData]);
 
@@ -270,10 +280,10 @@ export default function NovoParceiroPage() {
                         <TableBody>
                             {formData.contatos.map((contact, index) => (
                                 <TableRow key={index}>
-                                    <TableCell><Input value={contact.nome} onChange={e => handleContactChange(index, 'nome', e.target.value)} placeholder="Nome do contato" /></TableCell>
-                                    <TableCell><Input value={contact.email} type="email" onChange={e => handleContactChange(index, 'email', e.target.value)} placeholder="email@parceiro.com" /></TableCell>
-                                    <TableCell><Input value={contact.telefone} onChange={e => handleContactChange(index, 'telefone', e.target.value)} placeholder="(00) 00000-0000" /></TableCell>
-                                    <TableCell><Input value={contact.cargo} onChange={e => handleContactChange(index, 'cargo', e.target.value)} placeholder="Cargo do contato" /></TableCell>
+                                    <TableCell><Input value={contact.nome || ''} onChange={e => handleContactChange(index, 'nome', e.target.value)} placeholder="Nome do contato" /></TableCell>
+                                    <TableCell><Input value={contact.email || ''} type="email" onChange={e => handleContactChange(index, 'email', e.target.value)} placeholder="email@parceiro.com" /></TableCell>
+                                    <TableCell><Input value={contact.telefone || ''} onChange={e => handleContactChange(index, 'telefone', e.target.value)} placeholder="(00) 00000-0000" /></TableCell>
+                                    <TableCell><Input value={contact.cargo || ''} onChange={e => handleContactChange(index, 'cargo', e.target.value)} placeholder="Cargo do contato" /></TableCell>
                                     <TableCell>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeContact(index)} disabled={formData.contatos.length === 1}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
