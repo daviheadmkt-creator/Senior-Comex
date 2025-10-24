@@ -174,9 +174,6 @@ export default function NovoProcessoPage() {
                         setFilteredAnalistas(exportador?.contatos || []);
                     }
                 }
-            } else {
-                const productsFromPartners = storedParceiros.filter((p: any) => p.tipo_parceiro === 'Produto');
-                setProdutos(productsFromPartners);
             }
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
@@ -556,7 +553,7 @@ export default function NovoProcessoPage() {
                                     </SelectTrigger>
                                     <SelectContent>
                                         {filteredAnalistas.length > 0 ? (
-                                            filteredAnalistas.map((contato, index) => <SelectItem key={`${contato.nome}-${index}`} value={contato.nome}>{contato.nome} ({contato.cargo})</SelectItem>)
+                                            filteredAnalistas.map((contato, index) => <SelectItem key={`${contato.nome}-${index}`} value={contato.nome}>{contato.nome} ({contato.cargo || 'N/A'})</SelectItem>)
                                         ) : (
                                             <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum contato encontrado.</div>
                                         )}
