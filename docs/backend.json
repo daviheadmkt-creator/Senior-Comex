@@ -4,7 +4,7 @@
     "User": {
       "title": "User",
       "type": "object",
-      "description": "Represents a user of the application.",
+      "description": "Represents a user of the application. User documents can only be read by their owner or an administrator. Only administrators can list all users.",
       "properties": {
         "id": {
           "type": "string",
@@ -21,7 +21,8 @@
         },
         "funcao": {
           "type": "string",
-          "description": "The role or function of the user within the system."
+          "description": "The role or function of the user within the system.",
+          "enum": ["Administrador", "Operador", "Financeiro", "Logística"]
         },
         "status": {
           "type": "string",
@@ -220,7 +221,7 @@
           "schema": {
             "$ref": "#/backend/entities/Partner"
           },
-          "description": "Stores partner information.",
+          "description": "Stores partner information. All authenticated users can read and write to this collection.",
           "params": [
             {
               "name": "partnerId",
