@@ -78,22 +78,7 @@ const initialOriginalDocs = [
     { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true, completionDate: null },
 ]
 
-export default function NovoProcessoPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { toast } = useToast();
-  
-  const isEditing = searchParams.has('edit');
-  const processId = searchParams.get('id');
-
-  const [parceiros, setParceiros] = useState<any[]>([]);
-  const [produtos, setProdutos] = useState<any[]>([]);
-  const [portos, setPortos] = useState<any[]>([]);
-  const [terminais, setTerminais] = useState<any[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-
-  const [formData, setFormData] = useState<any>({
+const initialFormData = {
     id: '',
     processo_interno: '',
     data_nomeacao: '',
@@ -126,11 +111,28 @@ export default function NovoProcessoPage() {
     draft_bl_shipper: '',
     draft_bl_consignee: '',
     draft_bl_notify: '',
+    draft_bl_marks: '',
     draft_bl_port_loading: '',
     draft_bl_port_discharge: '',
-    draft_bl_marks: '',
     draft_bl_description: '',
-  });
+  };
+
+export default function NovoProcessoPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { toast } = useToast();
+  
+  const isEditing = searchParams.has('edit');
+  const processId = searchParams.get('id');
+
+  const [parceiros, setParceiros] = useState<any[]>([]);
+  const [produtos, setProdutos] = useState<any[]>([]);
+  const [portos, setPortos] = useState<any[]>([]);
+  const [terminais, setTerminais] = useState<any[]>([]);
+  const [usuarios, setUsuarios] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const [formData, setFormData] = useState<any>(initialFormData);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
   const [filteredAnalistas, setFilteredAnalistas] = useState<any[]>([]);
@@ -156,7 +158,7 @@ export default function NovoProcessoPage() {
                 const processoData = storedProcessos.find((p: any) => p.id === processId);
                 if (processoData) {
                     setFormData({
-                        ...formData, // Start with default to avoid undefined values
+                        ...initialFormData, 
                         ...processoData,
                         documentos: processoData.documentos || initialDocuments,
                         containers: processoData.containers || [],
@@ -539,7 +541,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o exportador"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                        {parceiros?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -1053,7 +1055,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-
-
-    
