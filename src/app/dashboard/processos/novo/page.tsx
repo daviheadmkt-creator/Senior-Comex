@@ -174,6 +174,9 @@ export default function NovoProcessoPage() {
                         setFilteredAnalistas(exportador?.contatos || []);
                     }
                 }
+            } else {
+                const productsFromPartners = storedParceiros.filter((p: any) => p.tipo_parceiro === 'Produto');
+                setProdutos(productsFromPartners);
             }
         } catch (error) {
             console.error("Failed to load data from localStorage", error);
