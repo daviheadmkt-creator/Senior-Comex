@@ -39,6 +39,8 @@ import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 export default function ListaParceirosPage() {
   const firestore = useFirestore();
+  const [searchTerm, setSearchTerm] = useState('');
+
   const partnersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'partners') : null),
     [firestore]
@@ -50,6 +52,13 @@ export default function ListaParceirosPage() {
     const partnerDoc = doc(firestore, 'partners', id);
     deleteDoc(partnerDoc);
   }
+
+  const filteredPartners = partners?.filter(partner => {
+    const searchTermLower = searchTerm.toLowerCase();
+    const nomeFantasia = partner.nome_fantasia?.toLowerCase() || '';
+    const cnpj = partner.cnpj?.toLowerCase() || '';
+    return nomeFantasia.includes(searchTermLower) || cnpj.includes(searchTermLower);
+  });
 
 
   return (
@@ -74,7 +83,12 @@ export default function ListaParceirosPage() {
         <div className="flex items-center pb-4">
             <div className="relative w-full max-w-sm">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por nome ou CNPJ..." className="pl-8" />
+                <Input 
+                    placeholder="Buscar por nome ou CNPJ..." 
+                    className="pl-8" 
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                />
             </div>
         </div>
         <Table>
@@ -89,7 +103,7 @@ export default function ListaParceirosPage() {
           </TableHeader>
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={5}>Carregando...</TableCell></TableRow>}
-            {partners?.map((partner) => (
+            {filteredPartners?.map((partner) => (
               <TableRow key={partner.id}>
                 <TableCell className="font-medium">{partner.nome_fantasia}</TableCell>
                 <TableCell>{partner.razao_social}</TableCell>
