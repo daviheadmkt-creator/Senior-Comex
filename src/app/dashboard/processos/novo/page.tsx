@@ -135,7 +135,6 @@ export default function NovoProcessoPage() {
   const [formData, setFormData] = useState<any>(initialFormData);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
-  const [filteredAnalistas, setFilteredAnalistas] = useState<any[]>([]);
 
     useEffect(() => {
         try {
@@ -169,10 +168,6 @@ export default function NovoProcessoPage() {
                         const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
                         setFilteredTerminais(filtered);
                     }
-                    if (processoData.exportadorId && storedParceiros) {
-                        const exportador = storedParceiros.find(p => p.id === processoData.exportadorId);
-                        setFilteredAnalistas(exportador?.contatos || []);
-                    }
                 }
             }
         } catch (error) {
@@ -197,13 +192,6 @@ export default function NovoProcessoPage() {
     setFormData(prev => ({ ...prev, [id]: value ?? '' }));
   };
   
-  const handleExportadorChange = (value: string) => {
-    handleInputChange('exportadorId', value);
-    const exportador = parceiros.find(p => p.id === value);
-    setFilteredAnalistas(exportador?.contatos || []);
-    handleInputChange('analistaId', null); // Reset analista selection
-  }
-
   const handlePortChange = (value: string) => {
     handleInputChange('portoEmbarqueId', value);
     if (terminais) {
@@ -536,26 +524,26 @@ export default function NovoProcessoPage() {
                          <div className="grid md:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                                <Select value={String(formData.exportadorId || '')} onValueChange={handleExportadorChange}>
+                                <Select value={String(formData.exportadorId || '')} onValueChange={(value) => handleInputChange('exportadorId', value)}>
                                     <SelectTrigger id="exportadorId">
-                                        <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o exportador"} />
+                                        <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o parceiro"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {parceiros?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="analistaId">Analista Responsável (Cliente)</Label>
-                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)} disabled={!formData.exportadorId}>
+                           <div className="space-y-2">
+                                <Label htmlFor="analistaId">Analista Responsável</Label>
+                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)}>
                                     <SelectTrigger id="analistaId">
-                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o analista"} />
+                                        <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o analista"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {filteredAnalistas.length > 0 ? (
-                                            filteredAnalistas.map((contato, index) => <SelectItem key={`${contato.nome}-${index}`} value={contato.nome}>{contato.nome} ({contato.cargo || 'N/A'})</SelectItem>)
+                                        {usuarios.length > 0 ? (
+                                            usuarios.map((user) => <SelectItem key={user.id} value={user.id}>{user.nome}</SelectItem>)
                                         ) : (
-                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum contato encontrado.</div>
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum usuário encontrado.</div>
                                         )}
                                     </SelectContent>
                                 </Select>
