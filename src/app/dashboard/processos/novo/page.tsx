@@ -86,7 +86,7 @@ const initialFormData = {
     processo_interno: '',
     data_nomeacao: '',
     po_number: '',
-    produtoId: '',
+    produtoNome: '',
     quantidade: '',
     exportadorId: '',
     portoEmbarqueId: '',
@@ -413,33 +413,23 @@ export default function NovoProcessoPage() {
     e.preventDefault();
     
     const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
-    const selectedProduct = produtos?.find(p => String(p.id) === String(formData.produtoId));
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
 
+    const dataToSave = {
+        ...formData,
+        exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+        destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+    };
+
     if (isEditing) {
-        const updatedProcessos = storedProcessos.map((p: any) => {
-            if (p.id === processId) {
-                return {
-                    ...p,
-                    ...formData,
-                    produtoNome: selectedProduct?.nome_fantasia || formData.produtoNome || 'N/A',
-                    exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
-                    destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-                }
-            }
-            return p;
-        });
+        const updatedProcessos = storedProcessos.map((p: any) => 
+            p.id === processId ? dataToSave : p
+        );
         localStorage.setItem('processos', JSON.stringify(updatedProcessos));
     } else {
         const newId = String(Date.now());
-         const newProcesso = {
-            ...formData,
-            id: newId,
-            produtoNome: selectedProduct?.nome_fantasia || 'N/A',
-            exportadorNome: selectedExporter?.nome_fantasia || 'N/A',
-            destino: selectedPortoDescarga?.name || 'N/A',
-        };
+        const newProcesso = { ...dataToSave, id: newId };
         const updatedProcessos = [...storedProcessos, newProcesso];
         localStorage.setItem('processos', JSON.stringify(updatedProcessos));
     }
@@ -558,24 +548,8 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                            
                             <div className="space-y-2">
-                                <Label htmlFor="produtoId">Produto</Label>
-                                <Combobox
-                                    items={produtos.map(p => ({ value: p.id, label: p.nome_fantasia }))}
-                                    value={formData.produtoId}
-                                    onValueChange={value => handleInputChange('produtoId', value)}
-                                    placeholder="Selecione o produto"
-                                    searchPlaceholder="Buscar produto..."
-                                    noResultsContent={
-                                        <Button
-                                            variant="ghost"
-                                            className="w-full justify-start"
-                                            onClick={() => router.push('/dashboard/dados-referencia/produtos/novo')}
-                                        >
-                                            <PlusCircle className="mr-2 h-4 w-4" />
-                                            Registar Novo Produto
-                                        </Button>
-                                    }
-                                />
+                                <Label htmlFor="produtoNome">Produto</Label>
+                                <Input id="produtoNome" value={formData.produtoNome || ''} onChange={e => handleInputChange('produtoNome', e.target.value)} placeholder="Ex: Gergelim" />
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="quantidade">Quantidade</Label>
@@ -1057,3 +1031,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
