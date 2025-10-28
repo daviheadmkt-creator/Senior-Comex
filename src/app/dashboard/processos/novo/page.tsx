@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { Combobox } from '@/components/ui/combobox';
 
 
 const processStatusOptions = [
@@ -558,14 +559,14 @@ export default function NovoProcessoPage() {
                            
                             <div className="space-y-2">
                                 <Label htmlFor="produtoId">Produto</Label>
-                                <Select value={String(formData.produtoId || '')} onValueChange={value => handleInputChange('produtoId', value)}>
-                                <SelectTrigger id="produtoId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o produto"} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {produtos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                                </SelectContent>
-                                </Select>
+                                <Combobox
+                                    items={produtos.map(p => ({ value: p.id, label: p.nome_fantasia }))}
+                                    value={formData.produtoId}
+                                    onValueChange={value => handleInputChange('produtoId', value)}
+                                    placeholder="Selecione o produto"
+                                    searchPlaceholder="Buscar produto..."
+                                    noResultsText="Nenhum produto encontrado."
+                                />
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="quantidade">Quantidade</Label>
