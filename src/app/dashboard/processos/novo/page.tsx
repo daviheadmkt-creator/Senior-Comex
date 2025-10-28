@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Building } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -31,8 +31,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { Combobox } from '@/components/ui/combobox';
 
 
@@ -125,6 +125,7 @@ export default function NovoProcessoPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const { user: currentUser } = useUser();
   
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
@@ -147,9 +148,19 @@ export default function NovoProcessoPage() {
 
   const [formData, setFormData] = useState<any>(initialFormData);
   
-  const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
-  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollection);
+  const userDocRef = useMemoFirebase(
+    () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
+    [firestore, currentUser]
+  );
+  const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
+  const isUserAdmin = currentUserData?.funcao === 'Administrador';
+
+  const usersCollectionQuery = useMemoFirebase(
+    () => (firestore && isUserAdmin ? collection(firestore, 'users') : null),
+    [firestore, isUserAdmin]
+  );
+  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
@@ -450,7 +461,7 @@ export default function NovoProcessoPage() {
     router.push('/dashboard/processos');
   };
   
-  if (isLoading || isLoadingUsers || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais) {
+  if (isLoading || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais) {
       return (
           <div className="flex items-center justify-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -555,12 +566,12 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                            
                             <div className="space-y-2">
-                               <Label htmlFor="produtoId">Produto</Label>
-                                <Input 
-                                    id="produtoNome" 
-                                    value={formData.produtoNome} 
-                                    onChange={e => handleInputChange('produtoNome', e.target.value)} 
-                                    placeholder="Digite para buscar ou inserir um novo produto" 
+                               <Label htmlFor="produtoNome">Produto</Label>
+                               <Input 
+                                    id="produtoNome"
+                                    placeholder='Nome do produto'
+                                    value={formData.produtoNome || ''}
+                                    onChange={(e) => handleInputChange('produtoNome', e.target.value)}
                                 />
                             </div>
                              <div className="space-y-2">
