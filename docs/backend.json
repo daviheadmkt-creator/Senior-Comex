@@ -254,7 +254,7 @@
         "definition": {
             "entityName": "Port",
             "schema": { "$ref": "#/backend/entities/Port" },
-            "description": "Stores port information."
+            "description": "Stores port information. All authenticated users can read and write to this collection."
         }
       },
       {
@@ -262,12 +262,10 @@
           "definition": {
               "entityName": "Terminal",
               "schema": { "$ref": "#/backend/entities/Terminal" },
-              "description": "Stores terminal information."
+              "description": "Stores terminal information. All authenticated users can read and write to this collection."
           }
       }
     ],
     "reasoning": "The Firestore structure is designed to ensure secure and scalable data management for the SeniorComex application. It leverages path-based ownership and denormalization to simplify security rules and enable atomic operations.  The structure includes collections for users, audit logs, and reports. User data is stored in a dedicated collection. Audit logs are stored as subcollections under each user document (`/users/{userId}/auditLogs/{auditLogId}`), ensuring clear ownership and simplifying access control. This structure supports the requirement of logging all changes, including who made them and when, by providing a complete audit trail. Reports are also structured as a subcollection under the user who generated them (`/users/{userId}/reports/{reportId}`), ensuring clear ownership and straightforward access control. This design facilitates role-based access control (Administrator, Operator, Finance, Logistics) as the user's role is stored directly in the user document, which simplifies access control logic in the security rules.  Authorization Independence is achieved by relating AuditLog and Report documents to users using path based ownership (`/users/{userId}/auditLogs/{auditLogId}` and `/users/{userId}/reports/{reportId}`).  This approach avoids the need for `get()` calls to retrieve parent document data during authorization, ensuring atomic operations and easier debugging. QAPs (Rules are not Filters) are supported by the segregation of data into dedicated collections, each with well-defined security requirements, and all documents in a collection share the same security requirements.  This prevents the need for complex filtering logic in the security rules."
   }
 }
-
-    
