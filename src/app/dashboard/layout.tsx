@@ -1,6 +1,6 @@
 
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -44,8 +44,9 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { useAuth, useUser } from '@/firebase';
+import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
+import { doc } from 'firebase/firestore';
 
 
 export default function DashboardLayout({
@@ -55,6 +56,16 @@ export default function DashboardLayout({
 }) {
   const { user, isUserLoading } = useUser();
   const router = useRouter();
+  const firestore = useFirestore();
+
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [user, firestore]
+  );
+  const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+  const isUserAdmin = useMemo(() => currentUserData?.funcao === 'Administrador', [currentUserData]);
+
 
   useEffect(() => {
     if (!isUserLoading && !user) {
@@ -62,7 +73,7 @@ export default function DashboardLayout({
     }
   }, [user, isUserLoading, router]);
 
-  if (isUserLoading || !user) {
+  if (isUserLoading || isUserDocLoading || !user) {
     return (
       <div className="flex h-screen w-full items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -109,11 +120,13 @@ export default function DashboardLayout({
                             Parceiros
                         </SidebarMenuSubButton>
                     </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/cadastros/usuarios">
-                            Usuários
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
+                    {isUserAdmin && (
+                        <SidebarMenuSubItem>
+                            <SidebarMenuSubButton href="/dashboard/cadastros/usuarios">
+                                Usuários
+                            </SidebarMenuSubButton>
+                        </SidebarMenuSubItem>
+                    )}
                 </SidebarMenuSub>
             </SidebarMenuItem>
              <SidebarMenuItem>
