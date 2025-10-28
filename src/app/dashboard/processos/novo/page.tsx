@@ -138,9 +138,12 @@ export default function NovoProcessoPage() {
   }, [firestore]);
   const { data: produtos, isLoading: isLoadingProdutos } = useCollection(productsQuery);
   
-  const [portos, setPortos] = useState<any[]>([]);
-  const [terminais, setTerminais] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
+  const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
+
+  const terminalsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
+  const { data: terminais, isLoading: isLoadingTerminais } = useCollection(terminalsCollection);
+
 
   const [formData, setFormData] = useState<any>(initialFormData);
   
@@ -151,16 +154,16 @@ export default function NovoProcessoPage() {
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
     useEffect(() => {
-        try {
-            const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
-            const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
-            const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
-            
-            setPortos(storedPortos);
-            setTerminais(storedTerminais);
-            
-            if (isEditing && processId) {
+        if (!isEditing || !processId) {
+             setIsLoading(false);
+             return;
+        };
+
+        const loadProcessData = async () => {
+            try {
+                const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
                 const processoData = storedProcessos.find((p: any) => p.id === processId);
+                
                 if (processoData) {
                     setFormData({
                         ...initialFormData, 
@@ -170,24 +173,27 @@ export default function NovoProcessoPage() {
                         bls: processoData.bls || [],
                         documentos_originais: processoData.documentos_originais || initialOriginalDocs,
                     });
-                     if (processoData.portoEmbarqueId && storedTerminais) {
-                        const filtered = storedTerminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+                     if (processoData.portoEmbarqueId && terminais) {
+                        const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
                         setFilteredTerminais(filtered);
                     }
                 }
+            } catch (error) {
+                console.error("Failed to load process data from localStorage", error);
+                toast({
+                    title: "Erro ao Carregar Dados",
+                    description: "Não foi possível carregar os dados do processo.",
+                    variant: "destructive"
+                });
+            } finally {
+                 setIsLoading(false);
             }
-        } catch (error) {
-            console.error("Failed to load data from localStorage", error);
-            toast({
-                title: "Erro ao Carregar Dados",
-                description: "Não foi possível carregar dados do armazenamento local.",
-                variant: "destructive"
-            });
-        } finally {
-            setIsLoading(false);
         }
-  }, [isEditing, processId, toast]);
+
+        loadProcessData();
+  }, [isEditing, processId, toast, terminais]);
   
+  const [isLoading, setIsLoading] = useState(true);
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
@@ -444,7 +450,7 @@ export default function NovoProcessoPage() {
     router.push('/dashboard/processos');
   };
   
-  if (isLoading || isLoadingUsers || isLoadingParceiros || isLoadingProdutos) {
+  if (isLoading || isLoadingUsers || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais) {
       return (
           <div className="flex items-center justify-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -549,8 +555,13 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                            
                             <div className="space-y-2">
-                                <Label htmlFor="produtoNome">Produto</Label>
-                                <Input id="produtoNome" value={formData.produtoNome || ''} onChange={e => handleInputChange('produtoNome', e.target.value)} placeholder="Ex: Gergelim" />
+                               <Label htmlFor="produtoId">Produto</Label>
+                                <Input 
+                                    id="produtoNome" 
+                                    value={formData.produtoNome} 
+                                    onChange={e => handleInputChange('produtoNome', e.target.value)} 
+                                    placeholder="Digite para buscar ou inserir um novo produto" 
+                                />
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="quantidade">Quantidade</Label>
@@ -563,7 +574,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
                             <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
                                 <SelectTrigger id="portoEmbarqueId">
-                                    <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o porto"} />
+                                    <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                                 </SelectTrigger>
                                 <SelectContent>
                                     {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
@@ -574,7 +585,7 @@ export default function NovoProcessoPage() {
                             <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
                             <Select value={String(formData.portoDescargaId || '')} onValueChange={value => handleInputChange('portoDescargaId', value)}>
                             <SelectTrigger id="portoDescargaId">
-                                <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o porto"} />
+                                <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                             </SelectTrigger>
                             <SelectContent>
                                 {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
@@ -1032,3 +1043,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    

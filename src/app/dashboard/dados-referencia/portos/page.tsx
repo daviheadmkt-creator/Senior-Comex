@@ -19,43 +19,29 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit, PlusCircle, Trash2 } from 'lucide-react';
+import { Edit, PlusCircle, Trash2, Loader2 } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { useToast } from '@/hooks/use-toast';
+import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
-const initialPorts: any[] = [];
 
 export default function PortosPage() {
     const { toast } = useToast();
-    const [ports, setPorts] = useState(initialPorts);
+    const firestore = useFirestore();
+    
+    const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
+    const { data: ports, isLoading } = useCollection(portsCollection);
+
     const [formData, setFormData] = useState({ name: '', un_locode: '', country: '' });
     const [editingId, setEditingId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(true);
-
-    useEffect(() => {
-        try {
-            const storedPorts = localStorage.getItem('ports');
-            if (storedPorts) {
-                setPorts(JSON.parse(storedPorts));
-            } else {
-                localStorage.setItem('ports', JSON.stringify(initialPorts));
-            }
-        } catch (error) {
-            console.error("Failed to load ports from localStorage", error);
-        } finally {
-            setIsLoading(false);
-        }
-    }, []);
-
-    const updateLocalStorage = (updatedPorts: any[]) => {
-        localStorage.setItem('ports', JSON.stringify(updatedPorts));
-    }
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({...prev, [field]: value}));
     }
 
     const handleSave = () => {
+        if (!firestore) return;
         if (!formData.name || !formData.un_locode || !formData.country) {
             toast({
                 title: "Erro",
@@ -65,16 +51,10 @@ export default function PortosPage() {
             return;
         }
 
-        let updatedPorts;
-        if (editingId) {
-            updatedPorts = ports.map(p => p.id === editingId ? { ...p, ...formData } : p);
-        } else {
-            const newId = String(Date.now());
-            updatedPorts = [...ports, { id: newId, ...formData }];
-        }
-        
-        setPorts(updatedPorts);
-        updateLocalStorage(updatedPorts);
+        const docId = editingId || doc(collection(firestore, 'ports')).id;
+        const portRef = doc(firestore, 'ports', docId);
+
+        setDocumentNonBlocking(portRef, { ...formData, id: docId }, { merge: true });
         
         toast({
             title: "Sucesso!",
@@ -91,9 +71,8 @@ export default function PortosPage() {
     };
 
     const handleDelete = (id: string) => {
-        const updatedPorts = ports.filter(p => p.id !== id);
-        setPorts(updatedPorts);
-        updateLocalStorage(updatedPorts);
+        if (!firestore) return;
+        deleteDocumentNonBlocking(doc(firestore, 'ports', id));
         toast({
             title: "Sucesso!",
             description: "Porto excluído.",
@@ -126,8 +105,8 @@ export default function PortosPage() {
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {isLoading && <TableRow><TableCell colSpan={4} className="text-center">Carregando...</TableCell></TableRow>}
-                            {!isLoading && ports.map((port) => (
+                            {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>}
+                            {!isLoading && ports?.map((port) => (
                                 <TableRow key={port.id}>
                                     <TableCell className="font-medium">{port.name}</TableCell>
                                     <TableCell>{port.un_locode}</TableCell>
@@ -140,7 +119,7 @@ export default function PortosPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                             {!isLoading && ports.length === 0 && (
+                             {!isLoading && ports?.length === 0 && (
                                  <TableRow>
                                      <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum porto cadastrado.</TableCell>
                                  </TableRow>
@@ -190,3 +169,5 @@ export default function PortosPage() {
     </div>
   );
 }
+
+    
