@@ -66,12 +66,15 @@ export function Combobox({
                 <CommandGroup>
                 {items.map((item) => (
                     <CommandItem
-                    key={item.value}
-                    value={item.label}
-                    onSelect={() => {
-                        onValueChange(item.value === value ? "" : item.value)
-                        setOpen(false)
-                    }}
+                        key={item.value}
+                        value={item.label}
+                        onSelect={(currentValue) => {
+                            const selectedItem = items.find(i => i.label.toLowerCase() === currentValue.toLowerCase());
+                            if (selectedItem) {
+                                onValueChange(selectedItem.value === value ? "" : selectedItem.value)
+                            }
+                            setOpen(false)
+                        }}
                     >
                     <Check
                         className={cn(
