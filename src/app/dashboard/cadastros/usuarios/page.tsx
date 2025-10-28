@@ -10,7 +10,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Pencil, Trash2 } from 'lucide-react';
+import { PlusCircle, Search, Pencil, Trash2, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -51,9 +51,11 @@ export default function ListaUsuariosPage() {
     () => (firestore && isUserAdmin ? collection(firestore, 'users') : null),
     [firestore, isUserAdmin]
   );
-  const { data: users, isLoading: isUsersListLoading, error: usersListError } = useCollection(usersCollection);
 
-  const isLoading = isAuthLoading || isUserDocLoading || (isUserAdmin && isUsersListLoading);
+  // Only run the useCollection hook if the user is confirmed to be an admin
+  const { data: users, isLoading: isUsersListLoading, error: usersListError } = useCollection(isUserAdmin ? usersCollection : null);
+
+  const isLoading = isAuthLoading || isUserDocLoading;
 
   const getStatusVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -76,7 +78,10 @@ export default function ListaUsuariosPage() {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center">
-              Carregando...
+              <div className='flex items-center justify-center gap-2'>
+                <Loader2 className='h-5 w-5 animate-spin' />
+                <span>Verificando permissões...</span>
+              </div>
             </TableCell>
           </TableRow>
        );
@@ -87,6 +92,19 @@ export default function ListaUsuariosPage() {
           <TableRow>
             <TableCell colSpan={5} className="text-center text-muted-foreground">
               Você não tem permissão para visualizar os usuários.
+            </TableCell>
+          </TableRow>
+       );
+    }
+
+    if (isUsersListLoading) {
+        return (
+          <TableRow>
+            <TableCell colSpan={5} className="text-center">
+               <div className='flex items-center justify-center gap-2'>
+                <Loader2 className='h-5 w-5 animate-spin' />
+                <span>Carregando usuários...</span>
+              </div>
             </TableCell>
           </TableRow>
        );
