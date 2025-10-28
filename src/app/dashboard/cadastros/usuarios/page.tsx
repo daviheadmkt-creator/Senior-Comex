@@ -39,14 +39,12 @@ export default function ListaUsuariosPage() {
   const firestore = useFirestore();
   const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
 
-  // 1. Get the current user's document to check their role
   const userDocRef = useMemoFirebase(
     () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
     [firestore, currentUser]
   );
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  // 2. Conditionally fetch all users only if the current user is an admin
   const isUserAdmin = currentUserData?.funcao === 'Administrador';
 
   const usersCollection = useMemoFirebase(
@@ -191,12 +189,14 @@ export default function ListaUsuariosPage() {
             <CardTitle>Usuários</CardTitle>
             <CardDescription>Gerencie os usuários do sistema.</CardDescription>
           </div>
-          <Link href="/dashboard/cadastros/usuarios/novo" passHref>
-            <Button>
-              <PlusCircle className="mr-2 h-4 w-4" />
-              Novo Usuário
-            </Button>
-          </Link>
+          {isUserAdmin && (
+            <Link href="/dashboard/cadastros/usuarios/novo" passHref>
+                <Button>
+                <PlusCircle className="mr-2 h-4 w-4" />
+                Novo Usuário
+                </Button>
+            </Link>
+          )}
         </div>
       </CardHeader>
       <CardContent>
