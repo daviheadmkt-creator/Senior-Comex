@@ -565,7 +565,16 @@ export default function NovoProcessoPage() {
                                     onValueChange={value => handleInputChange('produtoId', value)}
                                     placeholder="Selecione o produto"
                                     searchPlaceholder="Buscar produto..."
-                                    noResultsText="Nenhum produto encontrado."
+                                    noResultsContent={
+                                        <Button
+                                            variant="ghost"
+                                            className="w-full justify-start"
+                                            onClick={() => router.push('/dashboard/dados-referencia/produtos/novo')}
+                                        >
+                                            <PlusCircle className="mr-2 h-4 w-4" />
+                                            Registar Novo Produto
+                                        </Button>
+                                    }
                                 />
                             </div>
                              <div className="space-y-2">
@@ -1048,5 +1057,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    

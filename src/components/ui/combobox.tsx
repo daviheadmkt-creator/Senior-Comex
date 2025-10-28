@@ -27,6 +27,7 @@ interface ComboboxProps {
     placeholder?: string;
     searchPlaceholder?: string;
     noResultsText?: string;
+    noResultsContent?: React.ReactNode;
 }
 
 export function Combobox({ 
@@ -35,7 +36,8 @@ export function Combobox({
     onValueChange,
     placeholder = "Selecione um item...",
     searchPlaceholder = "Buscar item...",
-    noResultsText = "Nenhum item encontrado."
+    noResultsText = "Nenhum item encontrado.",
+    noResultsContent,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -57,29 +59,31 @@ export function Combobox({
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-          <CommandEmpty>{noResultsText}</CommandEmpty>
-          <CommandList>
-            <CommandGroup>
-              {items.map((item) => (
-                <CommandItem
-                  key={item.value}
-                  value={item.label}
-                  onSelect={() => {
-                    onValueChange(item.value === value ? "" : item.value)
-                    setOpen(false)
-                  }}
-                >
-                  <Check
-                    className={cn(
-                      "mr-2 h-4 w-4",
-                      value === item.value ? "opacity-100" : "opacity-0"
-                    )}
-                  />
-                  {item.label}
-                </CommandItem>
-              ))}
-            </CommandGroup>
-          </CommandList>
+            <CommandList>
+                <CommandEmpty>
+                    {noResultsContent || noResultsText}
+                </CommandEmpty>
+                <CommandGroup>
+                {items.map((item) => (
+                    <CommandItem
+                    key={item.value}
+                    value={item.label}
+                    onSelect={() => {
+                        onValueChange(item.value === value ? "" : item.value)
+                        setOpen(false)
+                    }}
+                    >
+                    <Check
+                        className={cn(
+                        "mr-2 h-4 w-4",
+                        value === item.value ? "opacity-100" : "opacity-0"
+                        )}
+                    />
+                    {item.label}
+                    </CommandItem>
+                ))}
+                </CommandGroup>
+            </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
