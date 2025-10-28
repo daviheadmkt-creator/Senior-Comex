@@ -31,6 +31,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
 
 const processStatusOptions = [
@@ -121,6 +123,7 @@ export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const firestore = useFirestore();
   
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
@@ -129,10 +132,13 @@ export default function NovoProcessoPage() {
   const [produtos, setProdutos] = useState<any[]>([]);
   const [portos, setPortos] = useState<any[]>([]);
   const [terminais, setTerminais] = useState<any[]>([]);
-  const [usuarios, setUsuarios] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [formData, setFormData] = useState<any>(initialFormData);
+  
+  const usersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'users') : null, [firestore]);
+  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollection);
+
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
@@ -142,12 +148,10 @@ export default function NovoProcessoPage() {
             const storedPortos = JSON.parse(localStorage.getItem('ports') || '[]');
             const storedTerminais = JSON.parse(localStorage.getItem('terminals') || '[]');
             const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
-            const storedUsers = JSON.parse(localStorage.getItem('users') || '[]');
             
             setParceiros(storedParceiros);
             setPortos(storedPortos);
             setTerminais(storedTerminais);
-            setUsuarios(storedUsers);
             
             const productsFromPartners = storedParceiros.filter((p: any) => p.tipo_parceiro === 'Produto');
             setProdutos(productsFromPartners);
@@ -448,7 +452,7 @@ export default function NovoProcessoPage() {
     router.push('/dashboard/processos');
   };
   
-  if (isLoading) {
+  if (isLoading || isLoadingUsers) {
       return (
           <div className="flex items-center justify-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -537,10 +541,10 @@ export default function NovoProcessoPage() {
                                 <Label htmlFor="analistaId">Analista Responsável</Label>
                                 <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)}>
                                     <SelectTrigger id="analistaId">
-                                        <SelectValue placeholder={isLoading ? "Carregando..." : "Selecione o analista"} />
+                                        <SelectValue placeholder={isLoadingUsers ? "Carregando..." : "Selecione o analista"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {usuarios.length > 0 ? (
+                                        {usuarios && usuarios.length > 0 ? (
                                             usuarios.map((user) => <SelectItem key={user.id} value={user.id}>{user.nome}</SelectItem>)
                                         ) : (
                                             <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum usuário encontrado.</div>
@@ -1043,3 +1047,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
