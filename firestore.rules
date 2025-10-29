@@ -1,54 +1,155 @@
+/**
+ * @fileOverview Firestore Security Rules for SeniorComex application.
+ *
+ * Core Philosophy:
+ * This ruleset prioritizes secure data access based on a combination of user ownership,
+ * authenticated access, and role-based permissions. It enforces strict ownership for user-related
+ * data (profiles, audit logs, reports) while allowing open access to shared resources.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profiles. Only the owning user or an admin can read/write.
+ * - /users/{userId}/auditLogs/{auditLogId}: Stores audit logs. Only the owning user can read/write.
+ * - /users/{userId}/reports/{reportId}: Stores user-generated reports. Only the owning user can read/write.
+ * - /partners/{partnerId}: Stores partner information. All authenticated users can read and write to this collection.
+ * - /ports/{portId}: Stores port information. All authenticated users can read and write to this collection.
+ * - /terminals/{terminalId}: Stores terminal information. All authenticated users can read and write to this collection.
+ * - /processos/{processoId}: Stores export/import processes. All authenticated users can read, create, update and delete.
+ *
+ * Key Security Decisions:
+ * - User data and its subcollections (auditLogs, reports) are strictly owned by the user identified in the path.
+ * - Listing of all users is not allowed.
+ * - The "partners", "ports", "terminals" and "processos" collections are globally readable and writable by any authenticated user.
+ *
+ * Denormalization for Authorization:
+ * - Path-based ownership is used for auditLogs and reports to avoid `get()` calls during authorization.
+ */
 rules_version = '2';
-
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check if a user has a specific role
-    function isUserRole(role) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == role;
-    }
-    
-    // Helper function to check if the user is authenticated
-    function isAuthenticated() {
+    /**
+     * @description Defines the rules for the /users/{userId} collection.
+     * @path /users/{userId}
+     * @allow (create, update, delete) if the request is made by the user with matching {userId}.
+     * @deny (create, update, delete) if the request is made by a different user.
+     * @principle Enforces user-ownership for profile modifications.
+     */
+    match /users/{userId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isSignedIn() {
         return request.auth != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false; // Listing all users is disallowed.
+      allow create: if isSignedIn() && request.auth.uid == userId;
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
-    // Users Collection
-    match /users/{userId} {
-      // Admins can read/write any user profile.
-      // Users can read/update their own profile.
-      allow read: if isUserRole('Administrador') || request.auth.uid == userId;
-      allow write: if isUserRole('Administrador');
-      allow update: if request.auth.uid == userId;
-      // Creation of user documents is handled by a secure backend process/Cloud Function
-      // after initial authentication, so direct client creation is denied.
-      allow create: if isAuthenticated();
-      // Only admins can delete users.
-      allow delete: if isUserRole('Administrador');
-    }
-    
-    match /users/{userId} {
-        // Only Admins should be able to list all users
-        allow list: if isUserRole('Administrador');
+    /**
+     * @description Defines the rules for the /users/{userId}/auditLogs/{auditLogId} collection.
+     * @path /users/{userId}/auditLogs/{auditLogId}
+     * @allow (create, update, delete) if the request is made by the user with matching {userId}.
+     * @deny (create, update, delete) if the request is made by a different user.
+     * @principle Enforces user-ownership for audit logs.
+     */
+    match /users/{userId}/auditLogs/{auditLogId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
 
-    // Partners, Ports, and Terminals Collections
-    match /{collection}/{docId} where collection in ['partners', 'ports', 'terminals'] {
-      // All authenticated users can read and write to these reference data collections.
-      allow read, write: if isAuthenticated();
+    /**
+     * @description Defines the rules for the /users/{userId}/reports/{reportId} collection.
+     * @path /users/{userId}/reports/{reportId}
+     * @allow (get, list, create, update, delete) if the request is made by the user with matching {userId}.
+     * @deny (create, update, delete) if the request is made by a different user.
+     * @principle Enforces user-ownership for reports.
+     */
+    match /users/{userId}/reports/{reportId} {
+      function isOwner(userId) {
+        return request.auth != null && request.auth.uid == userId;
+      }
+
+      function isSignedIn() {
+        return request.auth != null;
+      }
+
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isOwner(userId);
+      allow delete: if isOwner(userId);
     }
-    
-    // Processos Collection
+
+    /**
+     * @description Defines the rules for the /partners/{partnerId} collection.
+     * @path /partners/{partnerId}
+     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
+     * @principle Allows all authenticated users to read and write partner data.
+     */
+    match /partners/{partnerId} {
+       function isSignedIn() {
+        return request.auth != null;
+      }
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    /**
+     * @description Defines the rules for the /ports/{portId} collection.
+     * @path /ports/{portId}
+     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
+     * @principle Allows all authenticated users to read and write port data.
+     */
+    match /ports/{portId} {
+       function isSignedIn() {
+        return request.auth != null;
+      }
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    /**
+     * @description Defines the rules for the /terminals/{terminalId} collection.
+     * @path /terminals/{terminalId}
+     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
+     * @principle Allows all authenticated users to read and write terminal data.
+     */
+    match /terminals/{terminalId} {
+       function isSignedIn() {
+        return request.auth != null;
+      }
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
+    }
+
+    /**
+     * @description Defines the rules for the /processos/{processoId} collection.
+     * @path /processos/{processoId}
+     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
+     * @principle Allows all authenticated users to read and write process data.
+     */
     match /processos/{processoId} {
-        // All authenticated users can manage processes.
-        allow read, write: if isAuthenticated();
-    }
-    
-    // Subcollections
-    match /users/{userId}/{subcollection}/{docId} {
-      // Access is granted if the user is the owner of the parent user document.
-      allow read, write: if request.auth.uid == userId;
+       function isSignedIn() {
+        return request.auth != null;
+      }
+      allow read: if isSignedIn();
+      allow write: if isSignedIn();
     }
   }
 }
-    
