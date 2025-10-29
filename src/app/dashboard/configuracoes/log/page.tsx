@@ -9,7 +9,6 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
 import {
   Table,
   TableBody,
@@ -18,17 +17,33 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { ArrowLeft, Search } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { collection, doc } from 'firebase/firestore';
 
 const logs: any[] = [];
 
-const usuarios: any[] = []
-
 export default function LogPage() {
+  const firestore = useFirestore();
+  const { user: currentUser } = useUser();
+
+  const userDocRef = useMemoFirebase(
+    () => (currentUser ? doc(firestore, 'users', currentUser.uid) : null),
+    [firestore, currentUser]
+  );
+  const { data: currentUserData } = useDoc(userDocRef);
+  const isUserAdmin = currentUserData?.funcao === 'Administrador';
+
+  const usersCollectionQuery = useMemoFirebase(
+    () => (isUserAdmin ? collection(firestore, 'users') : null),
+    [firestore, isUserAdmin]
+  );
+  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
+
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4">
@@ -63,15 +78,19 @@ export default function LogPage() {
             </div>
              <div className="space-y-2">
               <Label htmlFor="usuario-filter">Usuário</Label>
-              <Select>
+              <Select disabled={!isUserAdmin || isLoadingUsers}>
                 <SelectTrigger id="usuario-filter">
-                  <SelectValue placeholder="Todos os usuários" />
+                  <SelectValue placeholder={isLoadingUsers ? 'Carregando...' : (isUserAdmin ? 'Todos os usuários' : 'Acesso restrito')} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="todos">Todos os usuários</SelectItem>
-                  {usuarios.map((u) => (
-                    <SelectItem key={u.id} value={String(u.id)}>{u.nome}</SelectItem>
-                  ))}
+                  {isUserAdmin && (
+                    <>
+                      <SelectItem value="todos">Todos os usuários</SelectItem>
+                      {usuarios?.map((u) => (
+                        <SelectItem key={u.id} value={String(u.id)}>{u.nome}</SelectItem>
+                      ))}
+                    </>
+                  )}
                 </SelectContent>
               </Select>
             </div>
@@ -97,6 +116,11 @@ export default function LogPage() {
                   <TableCell>{log.details}</TableCell>
                 </TableRow>
               ))}
+               {logs.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum log encontrado.</TableCell>
+                </TableRow>
+            )}
             </TableBody>
           </Table>
         </CardContent>
