@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import {
@@ -33,7 +32,9 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
+import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -45,42 +46,25 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     return 'default';
 }
 
-const initialProcessos: any[] = [];
-
 export default function GestaoProcessosPage() {
   const [searchTerm, setSearchTerm] = useState('');
-  const [processos, setProcessos] = useState(initialProcessos);
-  const [isLoading, setIsLoading] = useState(true);
+  const firestore = useFirestore();
 
-  useEffect(() => {
-    try {
-        const storedProcessos = localStorage.getItem('processos');
-        if (storedProcessos) {
-            setProcessos(JSON.parse(storedProcessos));
-        } else {
-            localStorage.setItem('processos', JSON.stringify(initialProcessos));
-        }
-    } catch (error) {
-        console.error("Failed to load data from localStorage", error);
-    } finally {
-        setIsLoading(false);
-    }
-  }, []);
-
-  const updateLocalStorage = (updatedProcessos: any[]) => {
-      localStorage.setItem('processos', JSON.stringify(updatedProcessos));
-  }
+  const processosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'processos') : null, [firestore]);
+  const { data: processos, isLoading } = useCollection(processosCollection);
 
   const handleDelete = (id: string) => {
-    const updatedProcessos = processos.filter(p => p.id !== id);
-    setProcessos(updatedProcessos);
-    updateLocalStorage(updatedProcessos);
+    if(!firestore) return;
+    deleteDocumentNonBlocking(doc(firestore, 'processos', id));
   };
   
-  const filteredProcessos = processos.filter(processo => 
+  const filteredProcessos = useMemo(() => {
+    if (!processos) return [];
+    return processos.filter(processo => 
       (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
       (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
-  );
+    );
+  }, [processos, searchTerm]);
 
   return (
     <Card>

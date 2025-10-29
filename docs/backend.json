@@ -168,6 +168,34 @@
             "name": { "type": "string" },
             "portoId": { "type": "string" }
         }
+    },
+    "Processo": {
+        "title": "Processo",
+        "type": "object",
+        "description": "Represents an export/import process.",
+        "properties": {
+            "id": { "type": "string" },
+            "processo_interno": { "type": "string" },
+            "data_nomeacao": { "type": "string", "format": "date-time" },
+            "po_number": { "type": "string" },
+            "produtoNome": { "type": "string" },
+            "quantidade": { "type": "string" },
+            "exportadorId": { "type": "string" },
+            "portoEmbarqueId": { "type": "string" },
+            "portoDescargaId": { "type": "string" },
+            "destino": { "type": "string" },
+            "exportadorNome": { "type": "string" },
+            "status": { "type": "string" },
+            "booking_number": { "type": "string" },
+            "armadorId": { "type": "string" },
+            "navio": { "type": "string" },
+            "viagem": { "type": "string" },
+            "analistaId": { "type": "string" },
+            "containers": { "type": "array", "items": {"type": "object"} },
+            "bls": { "type": "array", "items": {"type": "object"} },
+            "documentos": { "type": "array", "items": {"type": "object"} },
+            "documentos_originais": { "type": "array", "items": {"type": "object"} }
+        }
     }
   },
   "auth": {
@@ -264,8 +292,24 @@
               "schema": { "$ref": "#/backend/entities/Terminal" },
               "description": "Stores terminal information. All authenticated users can read and write to this collection."
           }
+      },
+      {
+        "path": "/processos/{processoId}",
+        "definition": {
+          "entityName": "Processo",
+          "schema": { "$ref": "#/backend/entities/Processo" },
+          "description": "Stores all export/import processes. All authenticated users can read, create, update and delete.",
+          "params": [
+            {
+              "name": "processoId",
+              "description": "The unique identifier for the process."
+            }
+          ]
+        }
       }
     ],
     "reasoning": "The Firestore structure is designed to ensure secure and scalable data management for the SeniorComex application. It leverages path-based ownership and denormalization to simplify security rules and enable atomic operations.  The structure includes collections for users, audit logs, and reports. User data is stored in a dedicated collection. Audit logs are stored as subcollections under each user document (`/users/{userId}/auditLogs/{auditLogId}`), ensuring clear ownership and simplifying access control. This structure supports the requirement of logging all changes, including who made them and when, by providing a complete audit trail. Reports are also structured as a subcollection under the user who generated them (`/users/{userId}/reports/{reportId}`), ensuring clear ownership and straightforward access control. This design facilitates role-based access control (Administrator, Operator, Finance, Logistics) as the user's role is stored directly in the user document, which simplifies access control logic in the security rules.  Authorization Independence is achieved by relating AuditLog and Report documents to users using path based ownership (`/users/{userId}/auditLogs/{auditLogId}` and `/users/{userId}/reports/{reportId}`).  This approach avoids the need for `get()` calls to retrieve parent document data during authorization, ensuring atomic operations and easier debugging. QAPs (Rules are not Filters) are supported by the segregation of data into dedicated collections, each with well-defined security requirements, and all documents in a collection share the same security requirements.  This prevents the need for complex filtering logic in the security rules."
   }
 }
+
+    

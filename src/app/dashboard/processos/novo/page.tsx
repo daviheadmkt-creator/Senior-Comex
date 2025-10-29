@@ -31,7 +31,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Combobox } from '@/components/ui/combobox';
 
@@ -130,6 +130,13 @@ export default function NovoProcessoPage() {
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
 
+  const processoDocRef = useMemoFirebase(() => {
+    if (!firestore || !processId) return null;
+    return doc(firestore, 'processos', processId);
+  }, [firestore, processId]);
+  
+  const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
+
   const partnersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'partners') : null, [firestore]);
   const { data: parceiros, isLoading: isLoadingParceiros } = useCollection(partnersCollection);
   
@@ -140,7 +147,7 @@ export default function NovoProcessoPage() {
   const { data: produtos, isLoading: isLoadingProdutos } = useCollection(productsQuery);
   
   const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
-  const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
+    const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
 
   const terminalsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
   const { data: terminais, isLoading: isLoadingTerminais } = useCollection(terminalsCollection);
@@ -165,46 +172,23 @@ export default function NovoProcessoPage() {
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
     useEffect(() => {
-        if (!isEditing || !processId) {
-             setIsLoading(false);
-             return;
-        };
-
-        const loadProcessData = async () => {
-            try {
-                const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
-                const processoData = storedProcessos.find((p: any) => p.id === processId);
-                
-                if (processoData) {
-                    setFormData({
-                        ...initialFormData, 
-                        ...processoData,
-                        documentos: processoData.documentos || initialDocuments,
-                        containers: processoData.containers || [],
-                        bls: processoData.bls || [],
-                        documentos_originais: processoData.documentos_originais || initialOriginalDocs,
-                    });
-                     if (processoData.portoEmbarqueId && terminais) {
-                        const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
-                        setFilteredTerminais(filtered);
-                    }
-                }
-            } catch (error) {
-                console.error("Failed to load process data from localStorage", error);
-                toast({
-                    title: "Erro ao Carregar Dados",
-                    description: "Não foi possível carregar os dados do processo.",
-                    variant: "destructive"
-                });
-            } finally {
-                 setIsLoading(false);
-            }
-        }
-
-        loadProcessData();
-  }, [isEditing, processId, toast, terminais]);
+    if (isEditing && processoData) {
+      setFormData({
+        ...initialFormData,
+        ...processoData,
+        documentos: processoData.documentos || initialDocuments,
+        containers: processoData.containers || [],
+        bls: processoData.bls || [],
+        documentos_originais: processoData.documentos_originais || initialOriginalDocs,
+      });
+      if (processoData.portoEmbarqueId && terminais) {
+        const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
+        setFilteredTerminais(filtered);
+      }
+    }
+  }, [isEditing, processoData, terminais]);
   
-  const [isLoading, setIsLoading] = useState(true);
+  const isLoading = isLoadingProcesso || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais || isLoadingUsers;
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
@@ -434,29 +418,23 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    const storedProcessos = JSON.parse(localStorage.getItem('processos') || '[]');
+    if (!firestore) return;
+
+    const docId = processId || doc(collection(firestore, 'processos')).id;
+    const processoRef = doc(firestore, 'processos', docId);
+
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
 
     const dataToSave = {
         ...formData,
+        id: docId,
         exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
     };
-
-    if (isEditing) {
-        const updatedProcessos = storedProcessos.map((p: any) => 
-            p.id === processId ? dataToSave : p
-        );
-        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
-    } else {
-        const newId = String(Date.now());
-        const newProcesso = { ...dataToSave, id: newId };
-        const updatedProcessos = [...storedProcessos, newProcesso];
-        localStorage.setItem('processos', JSON.stringify(updatedProcessos));
-    }
     
+    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
+
     toast({
         title: "Sucesso!",
         description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
@@ -466,7 +444,7 @@ export default function NovoProcessoPage() {
     router.push('/dashboard/processos');
   };
   
-  if (isLoading || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais || isLoadingUsers) {
+  if (isLoading) {
       return (
           <div className="flex items-center justify-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
