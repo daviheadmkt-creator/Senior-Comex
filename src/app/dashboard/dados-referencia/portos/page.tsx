@@ -31,10 +31,22 @@ export default function PortosPage() {
     const firestore = useFirestore();
     
     const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
-    const { data: ports, isLoading } = useCollection(portsCollection);
+    const { data: portsFromDb, isLoading } = useCollection(portsCollection);
 
     const [formData, setFormData] = useState({ name: '', un_locode: '', country: '' });
     const [editingId, setEditingId] = useState<string | null>(null);
+
+    const initialPorts = [
+      { id: 'AEAJM', name: 'AJMAN', un_locode: 'AEAJM', country: 'United Arab Emirates' }
+    ];
+
+    const combinedPorts = useMemo(() => {
+        if (!portsFromDb) return initialPorts;
+        const dbIds = new Set(portsFromDb.map(p => p.id));
+        const uniqueInitialPorts = initialPorts.filter(p => !dbIds.has(p.id));
+        return [...uniqueInitialPorts, ...portsFromDb];
+    }, [portsFromDb]);
+
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({...prev, [field]: value}));
@@ -72,6 +84,15 @@ export default function PortosPage() {
 
     const handleDelete = (id: string) => {
         if (!firestore) return;
+        // Do not allow deleting the hardcoded initial port from the UI logic
+        if (initialPorts.some(p => p.id === id)) {
+             toast({
+                title: "Ação não permitida",
+                description: "Não é possível excluir um registo de amostra.",
+                variant: "destructive",
+            });
+            return;
+        }
         deleteDocumentNonBlocking(doc(firestore, 'ports', id));
         toast({
             title: "Sucesso!",
@@ -106,7 +127,7 @@ export default function PortosPage() {
                         </TableHeader>
                         <TableBody>
                             {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="h-6 w-6 animate-spin mx-auto" /></TableCell></TableRow>}
-                            {!isLoading && ports?.map((port) => (
+                            {!isLoading && combinedPorts?.map((port) => (
                                 <TableRow key={port.id}>
                                     <TableCell className="font-medium">{port.name}</TableCell>
                                     <TableCell>{port.un_locode}</TableCell>
@@ -119,7 +140,7 @@ export default function PortosPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                             {!isLoading && ports?.length === 0 && (
+                             {!isLoading && combinedPorts?.length === 0 && (
                                  <TableRow>
                                      <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum porto cadastrado.</TableCell>
                                  </TableRow>
@@ -169,5 +190,3 @@ export default function PortosPage() {
     </div>
   );
 }
-
-    
