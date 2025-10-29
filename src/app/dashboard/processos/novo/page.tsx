@@ -159,7 +159,7 @@ export default function NovoProcessoPage() {
     () => (firestore && isUserAdmin ? collection(firestore, 'users') : null),
     [firestore, isUserAdmin]
   );
-  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
+  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(isUserAdmin ? usersCollectionQuery : null);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
@@ -460,7 +460,7 @@ export default function NovoProcessoPage() {
     router.push('/dashboard/processos');
   };
   
-  if (isLoading || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais) {
+  if (isLoading || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais || isLoadingUsers) {
       return (
           <div className="flex items-center justify-center h-96">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -587,7 +587,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                                        {portos?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -598,7 +598,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name}</SelectItem>)}
+                                        {portos?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
