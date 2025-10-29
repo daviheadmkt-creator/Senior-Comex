@@ -35,21 +35,34 @@ export default function TerminaisPage() {
     const { data: terminals, isLoading: isLoadingTerminals } = useCollection(terminalsCollection);
     
     const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
-    const { data: ports, isLoading: isLoadingPorts } = useCollection(portsCollection);
+    const { data: portsFromDb, isLoading: isLoadingPorts } = useCollection(portsCollection);
 
     const [formData, setFormData] = useState({ name: '', portoId: '' });
     const [editingId, setEditingId] = useState<string | null>(null);
 
+    const initialPorts: any[] = [
+        { id: 'AEAJM', name: 'AJMAN', un_locode: 'AEAJM', country: 'United Arab Emirates' },
+        { id: 'AEAUH', name: 'ABU DHABI', un_locode: 'AEAUH', country: 'United Arab Emirates' },
+    ];
+    
+    const combinedPorts = useMemo(() => {
+        if (!portsFromDb) return initialPorts;
+        const dbIds = new Set(portsFromDb.map(p => p.id));
+        const uniqueInitialPorts = initialPorts.filter(p => !dbIds.has(p.id));
+        return [...uniqueInitialPorts, ...portsFromDb];
+    }, [portsFromDb]);
+
+
     const terminalsWithPortNames = useMemo(() => {
-        if (!terminals || !ports) return [];
+        if (!terminals || !combinedPorts) return [];
         return terminals.map(terminal => {
-            const port = ports.find(p => p.id === terminal.portoId);
+            const port = combinedPorts.find(p => p.id === terminal.portoId);
             return {
                 ...terminal,
                 portName: port ? port.name : 'N/A'
             };
         });
-    }, [terminals, ports]);
+    }, [terminals, combinedPorts]);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({...prev, [field]: value}));
@@ -161,12 +174,12 @@ export default function TerminaisPage() {
                                     <SelectValue placeholder={isLoadingPorts ? 'Carregando...' : 'Selecione o porto'} />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    {ports?.map((port) => (
+                                    {combinedPorts?.map((port) => (
                                         <SelectItem key={port.id} value={String(port.id)}>
                                             {port.name}
                                         </SelectItem>
                                     ))}
-                                    {ports?.length === 0 && <p className="p-2 text-sm text-muted-foreground">Nenhum porto cadastrado</p>}
+                                    {combinedPorts?.length === 0 && <p className="p-2 text-sm text-muted-foreground">Nenhum porto cadastrado</p>}
                                 </SelectContent>
                             </Select>
                         </div>
@@ -190,5 +203,3 @@ export default function TerminaisPage() {
     </div>
   );
 }
-
-    
