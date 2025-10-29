@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
+import { Combobox } from '@/components/ui/combobox';
 
 
 const processStatusOptions = [
@@ -425,6 +426,11 @@ export default function NovoProcessoPage() {
         doc.save(`Documentos_Originais_${formData.processo_interno || 'processo'}.pdf`);
     };
 
+  const portOptions = useMemo(() => {
+    if (!portos) return [];
+    return portos.map(p => ({ value: p.id, label: `${p.name} - ${p.country}` }));
+  }, [portos]);
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -582,25 +588,25 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                                <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
-                                    <SelectTrigger id="portoEmbarqueId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                    items={portOptions}
+                                    value={String(formData.portoEmbarqueId || '')}
+                                    onValueChange={handlePortChange}
+                                    placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                    searchPlaceholder='Buscar porto...'
+                                    noResultsText='Nenhum porto encontrado.'
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
-                                 <Select value={String(formData.portoDescargaId || '')} onValueChange={(value) => handleInputChange('portoDescargaId', value)}>
-                                    <SelectTrigger id="portoDescargaId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                    items={portOptions}
+                                    value={String(formData.portoDescargaId || '')}
+                                    onValueChange={(value) => handleInputChange('portoDescargaId', value)}
+                                    placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                    searchPlaceholder='Buscar porto...'
+                                    noResultsText='Nenhum porto encontrado.'
+                                />
                             </div>
                         </div>
 
@@ -1053,3 +1059,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
