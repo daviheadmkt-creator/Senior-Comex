@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -9,7 +10,6 @@ import {
   QuerySnapshot,
   CollectionReference,
 } from 'firebase/firestore';
-// Estes são caminhos internos do seu projeto, assumidos como existentes:
 import { errorEmitter } from '@/firebase/error-emitter'; 
 import { FirestorePermissionError } from '@/firebase/errors';
 
@@ -56,7 +56,7 @@ export function useCollection<T = any>(
   type StateDataType = ResultItemType[] | null;
 
   const [data, setData] = useState<StateDataType>(null);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<FirestoreError | Error | null>(null);
 
   useEffect(() => {
@@ -70,7 +70,6 @@ export function useCollection<T = any>(
     setIsLoading(true);
     setError(null);
 
-    // Directly use memoizedTargetRefOrQuery as it's assumed to be the final query
     const unsubscribe = onSnapshot(
       memoizedTargetRefOrQuery,
       (snapshot: QuerySnapshot<DocumentData>) => {
@@ -83,17 +82,11 @@ export function useCollection<T = any>(
         setIsLoading(false);
       },
       (error: FirestoreError) => {
-        // Log the actual Firebase error for debugging
-        console.error("Firestore Error in useCollection:", error);
-        
-        // This logic extracts the path from either a ref or a query
         const path: string =
           memoizedTargetRefOrQuery.type === 'collection'
             ? (memoizedTargetRefOrQuery as CollectionReference).path
             : (memoizedTargetRefOrQuery as unknown as InternalQuery)._query.path.canonicalString()
 
-        // CORREÇÃO: Usamos 'list' pois 'onSnapshot' em uma coleção/query é uma operação
-        // de leitura de coleção (list) nas regras de segurança, mesmo que o log mostre 'get'.
         const contextualError = new FirestorePermissionError({
           operation: 'list', 
           path,
@@ -103,18 +96,15 @@ export function useCollection<T = any>(
         setData(null)
         setIsLoading(false)
 
-        // trigger global error propagation
         errorEmitter.emit('permission-error', contextualError);
       }
     );
 
     return () => unsubscribe();
-  }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
+  }, [memoizedTargetRefOrQuery]);
   
-  // Custom check for memoization (keep this logic as it seems critical for your setup)
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    // Better error message for debugging
-    throw new Error(`The query/reference provided to useCollection was not properly memoized. Reference: ${memoizedTargetRefOrQuery.toString()}`);
+    throw new Error(`The query/reference provided to useCollection was not properly memoized. Reference: ${(memoizedTargetRefOrQuery as any).path}`);
   }
   
   return { data, isLoading, error };
