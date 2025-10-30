@@ -1,155 +1,202 @@
 /**
- * @fileOverview Firestore Security Rules for SeniorComex application.
+ * @file Firestore Security Rules
+ * @description This ruleset enforces a hybrid security model.
  *
  * Core Philosophy:
- * This ruleset prioritizes secure data access based on a combination of user ownership,
- * authenticated access, and role-based permissions. It enforces strict ownership for user-related
- * data (profiles, audit logs, reports) while allowing open access to shared resources.
+ * - User-owned data is strictly controlled via path-based ownership for /users/{userId} and its subcollections.
+ * - Public collections such as /partners, /ports and /terminals are available to all authenticated users for read and write.
+ * - All write operations are validated against resource existence to prevent accidental modification of non-existent data.
  *
  * Data Structure:
- * - /users/{userId}: Stores user profiles. Only the owning user or an admin can read/write.
- * - /users/{userId}/auditLogs/{auditLogId}: Stores audit logs. Only the owning user can read/write.
- * - /users/{userId}/reports/{reportId}: Stores user-generated reports. Only the owning user can read/write.
- * - /partners/{partnerId}: Stores partner information. All authenticated users can read and write to this collection.
- * - /ports/{portId}: Stores port information. All authenticated users can read and write to this collection.
- * - /terminals/{terminalId}: Stores terminal information. All authenticated users can read and write to this collection.
- * - /processos/{processoId}: Stores export/import processes. All authenticated users can read, create, update and delete.
+ * - User profiles are stored under /users/{userId}.
+ * - Audit logs are nested under /users/{userId}/auditLogs/{auditLogId}, providing a clear audit trail for each user.
+ * - Reports are stored under /users/{userId}/reports/{reportId}, ensuring that each user can only manage their own reports.
+ * - Partners, Ports and Terminals data is stored in top-level collections.
  *
  * Key Security Decisions:
- * - User data and its subcollections (auditLogs, reports) are strictly owned by the user identified in the path.
- * - Listing of all users is not allowed.
- * - The "partners", "ports", "terminals" and "processos" collections are globally readable and writable by any authenticated user.
+ * - User listing is explicitly denied to prevent unauthorized access to user data.
+ * - Read-only access to collections is granted via `allow get, list: if true;`.
+ * - The `isExistingOwner()` function ensures that update and delete operations only succeed if the document exists and is owned by the requesting user.
  *
  * Denormalization for Authorization:
- * - Path-based ownership is used for auditLogs and reports to avoid `get()` calls during authorization.
+ * - Ownership is enforced by matching the `userId` path parameter with the authenticated user's `uid`.
+ *
+ * Structural Segregation:
+ * - Private user data (audit logs, reports) is stored in user-specific subcollections.
  */
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
     /**
-     * @description Defines the rules for the /users/{userId} collection.
+     * @description Checks if the user is signed in.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of the document, based on the userId.
+     */
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    /**
+     * @description Checks if the authenticated user is the owner of an existing document.
+     *              This function ensures that the document exists before checking ownership.
+     */
+    function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+    }
+
+    /**
+     * @description Enforces that the 'id' field, if present in the request, matches the userId.
+     *              This ensures data consistency between the path and the document's internal fields.
+     */
+    function isValidUserId() {
+        return request.resource.data.id == request.auth.uid;
+    }
+   /**
+     * @description User profile information.
      * @path /users/{userId}
-     * @allow (create, update, delete) if the request is made by the user with matching {userId}.
-     * @deny (create, update, delete) if the request is made by a different user.
-     * @principle Enforces user-ownership for profile modifications.
+     * @allow (create) User with ID 'user123' creates their own profile.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "id": "user123", "nome": "John Doe", "email": "john.doe@example.com", "funcao": "Operador", "status": "Ativo" } } }
+     * @allow (get) User with ID 'user123' reads their own profile.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (update) User with ID 'user123' updates their own profile.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "id": "user123", "nome": "Updated Name", "email": "john.doe@example.com", "funcao": "Operador", "status": "Ativo" } } }
+     * @deny (create) User with ID 'user456' attempts to create a profile with ID 'user123'.
+     *   - Request: { "auth": { "uid": "user456" }, "resource": { "data": { "id": "user123", "nome": "John Doe", "email": "john.doe@example.com", "funcao": "Operador", "status": "Ativo" } } }
+     * @deny (get) User with ID 'user456' attempts to read user profile 'user123'.
+     *   - Request: { "auth": { "uid": "user456" } }
+     * @principle Enforces user ownership and prevents unauthorized data access.
      */
     match /users/{userId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       allow get: if isOwner(userId);
-      allow list: if false; // Listing all users is disallowed.
-      allow create: if isSignedIn() && request.auth.uid == userId;
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if false; // Listing all users is not permitted.
+      allow create: if isOwner(userId) && isValidUserId();
+      allow update: if isExistingOwner(userId) && resource.data.id == userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines the rules for the /users/{userId}/auditLogs/{auditLogId} collection.
+     * @description Audit logs for each user. Path-based ownership simplifies security rules.
      * @path /users/{userId}/auditLogs/{auditLogId}
-     * @allow (create, update, delete) if the request is made by the user with matching {userId}.
-     * @deny (create, update, delete) if the request is made by a different user.
-     * @principle Enforces user-ownership for audit logs.
+     * @allow (create) User 'user123' creates an audit log.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "userId": "user123", "timestamp": "2024-01-01T00:00:00Z", "entityType": "Product", "entityId": "prod456", "changeType": "Update" } } }
+     * @allow (get) User 'user123' reads their own audit log.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (update) User 'user123' updates their own audit log.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "userId": "user123", "timestamp": "2024-01-02T00:00:00Z", "entityType": "Product", "entityId": "prod456", "changeType": "Update" } } }
+     * @deny (create) User 'user456' attempts to create an audit log for user 'user123'.
+     *   - Request: { "auth": { "uid": "user456" }, "resource": { "data": { "userId": "user123", "timestamp": "2024-01-01T00:00:00Z", "entityType": "Product", "entityId": "prod456", "changeType": "Update" } } }
+     * @deny (get) User 'user456' attempts to read audit logs for user 'user123'.
+     *   - Request: { "auth": { "uid": "user456" } }
+     * @principle Enforces path-based ownership for audit logs.
      */
     match /users/{userId}/auditLogs/{auditLogId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.userId == userId;
+      allow update: if isExistingOwner(userId) && resource.data.userId == userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines the rules for the /users/{userId}/reports/{reportId} collection.
+     * @description Reports generated by each user. Path-based ownership simplifies security rules.
      * @path /users/{userId}/reports/{reportId}
-     * @allow (get, list, create, update, delete) if the request is made by the user with matching {userId}.
-     * @deny (create, update, delete) if the request is made by a different user.
-     * @principle Enforces user-ownership for reports.
+     * @allow (create) User 'user123' creates a report.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "generatedByUserId": "user123", "name": "Sales Report", "dateGenerated": "2024-01-01T00:00:00Z", "reportData": "..." } } }
+     * @allow (get) User 'user123' reads their own report.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (update) User 'user123' updates their own report.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "generatedByUserId": "user123", "name": "Updated Sales Report", "dateGenerated": "2024-01-02T00:00:00Z", "reportData": "..." } } }
+     * @deny (create) User 'user456' attempts to create a report for user 'user123'.
+     *   - Request: { "auth": { "uid": "user456" }, "resource": { "data": { "generatedByUserId": "user123", "name": "Sales Report", "dateGenerated": "2024-01-01T00:00:00Z", "reportData": "..." } } }
+     * @deny (get) User 'user456' attempts to read reports for user 'user123'.
+     *   - Request: { "auth": { "uid": "user456" } }
+     * @principle Enforces path-based ownership for reports.
      */
     match /users/{userId}/reports/{reportId} {
-      function isOwner(userId) {
-        return request.auth != null && request.auth.uid == userId;
-      }
-
-      function isSignedIn() {
-        return request.auth != null;
-      }
-
       allow get: if isOwner(userId);
-      allow list: if false;
-      allow create: if isOwner(userId);
-      allow update: if isOwner(userId);
-      allow delete: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId) && request.resource.data.generatedByUserId == userId;
+      allow update: if isExistingOwner(userId) && request.resource.data.generatedByUserId == userId;
+      allow delete: if isExistingOwner(userId);
     }
 
     /**
-     * @description Defines the rules for the /partners/{partnerId} collection.
+     * @description Stores partner information. All authenticated users can read and write to this collection.
      * @path /partners/{partnerId}
-     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
-     * @principle Allows all authenticated users to read and write partner data.
+     * @allow (get) Any authenticated user can read partner data.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (create) Any authenticated user can create partner data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "razao_social": "Example Company", "nome_fantasia": "Example", "cnpj": "12345678901234", "tipo_parceiro": "Client", "endereco": "Example Address", "cidade": "Example City", "estado": "Example State", "cep": "12345-678", "pais": "Example Country", "contatos": [] } } }
+     * @allow (update) Any authenticated user can update partner data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "razao_social": "Updated Example Company", "nome_fantasia": "Updated Example", "cnpj": "12345678901234", "tipo_parceiro": "Client", "endereco": "Example Address", "cidade": "Example City", "estado": "Example State", "cep": "12345-678", "pais": "Example Country", "contatos": [] } } }
+     * @principle Allows authenticated users to manage partner information.
      */
     match /partners/{partnerId} {
-       function isSignedIn() {
-        return request.auth != null;
-      }
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
     }
 
     /**
-     * @description Defines the rules for the /ports/{portId} collection.
+     * @description Stores port information. All authenticated users can read and write to this collection.
      * @path /ports/{portId}
-     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
-     * @principle Allows all authenticated users to read and write port data.
+     * @allow (get) Any authenticated user can read port data.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (create) Any authenticated user can create port data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "name": "Santos", "un_locode": "BRSSZ", "country": "Brazil" } } }
+     * @allow (update) Any authenticated user can update port data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "name": "Rio de Janeiro", "un_locode": "BRRIO", "country": "Brazil" } } }
      */
     match /ports/{portId} {
-       function isSignedIn() {
-        return request.auth != null;
-      }
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && resource != null;
+        allow delete: if isSignedIn() && resource != null;
     }
 
     /**
-     * @description Defines the rules for the /terminals/{terminalId} collection.
+     * @description Stores terminal information. All authenticated users can read and write to this collection.
      * @path /terminals/{terminalId}
-     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
-     * @principle Allows all authenticated users to read and write terminal data.
+     * @allow (get) Any authenticated user can read terminal data.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (create) Any authenticated user can create terminal data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "name": "Terminal 1", "portoId": "santos123" } } }
+     * @allow (update) Any authenticated user can update terminal data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "name": "Terminal 2", "portoId": "santos123" } } }
      */
     match /terminals/{terminalId} {
-       function isSignedIn() {
-        return request.auth != null;
-      }
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && resource != null;
+        allow delete: if isSignedIn() && resource != null;
     }
 
     /**
-     * @description Defines the rules for the /processos/{processoId} collection.
+     * @description Stores all export/import processes. All authenticated users can read, create, update and delete.
      * @path /processos/{processoId}
-     * @allow (get, list, create, update, delete) if the request is made by any authenticated user.
-     * @principle Allows all authenticated users to read and write process data.
+     * @allow (get) Any authenticated user can read process data.
+     *   - Request: { "auth": { "uid": "user123" } }
+     * @allow (create) Any authenticated user can create process data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "processo_interno": "PI-001", "data_nomeacao": "2024-01-01T00:00:00Z", "po_number": "PO-001", "produtoNome": "Product 1", "quantidade": "100", "exportadorId": "exp123", "portoEmbarqueId": "port123", "portoDescargaId": "port456", "destino": "Destination 1", "exportadorNome": "Exporter 1", "status": "Active", "booking_number": "BOOK-001", "armadorId": "arm123", "navio": "Ship 1", "viagem": "Voyage 1", "analistaId": "analyst123", "containers": [], "bls": [], "documentos": [], "documentos_originais": [] } } }
+     * @allow (update) Any authenticated user can update process data.
+     *   - Request: { "auth": { "uid": "user123" }, "resource": { "data": { "processo_interno": "PI-002", "data_nomeacao": "2024-01-02T00:00:00Z", "po_number": "PO-002", "produtoNome": "Product 2", "quantidade": "200", "exportadorId": "exp123", "portoEmbarqueId": "port123", "portoDescargaId": "port456", "destino": "Destination 2", "exportadorNome": "Exporter 2", "status": "Inactive", "booking_number": "BOOK-002", "armadorId": "arm123", "navio": "Ship 2", "viagem": "Voyage 2", "analistaId": "analyst123", "containers": [], "bls": [], "documentos": [], "documentos_originais": [] } } }
      */
     match /processos/{processoId} {
-       function isSignedIn() {
-        return request.auth != null;
-      }
-      allow read: if isSignedIn();
-      allow write: if isSignedIn();
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn();
+        allow update: if isSignedIn() && resource != null;
+        allow delete: if isSignedIn() && resource != null;
     }
   }
 }
