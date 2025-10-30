@@ -161,13 +161,13 @@ export default function NovoProcessoPage() {
   );
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  const isUserAdmin = currentUserData?.funcao === 'Administrador';
+  const isUserAdmin = useMemo(() => currentUserData?.funcao === 'Administrador', [currentUserData]);
 
   const usersCollectionQuery = useMemoFirebase(
     () => (firestore && isUserAdmin ? collection(firestore, 'users') : null),
     [firestore, isUserAdmin]
   );
-  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(isUserAdmin ? usersCollectionQuery : null);
+  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
@@ -188,7 +188,7 @@ export default function NovoProcessoPage() {
     }
   }, [isEditing, processoData, terminais]);
   
-  const isLoading = isLoadingProcesso || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais || isLoadingUsers;
+  const isLoading = isLoadingProcesso || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais || (isUserAdmin && isLoadingUsers);
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
@@ -531,15 +531,17 @@ export default function NovoProcessoPage() {
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Analista Responsável</Label>
-                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)}>
+                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)} disabled={isLoadingUsers}>
                                     <SelectTrigger id="analistaId">
                                         <SelectValue placeholder={isLoadingUsers ? "Carregando..." : "Selecione o analista"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {usuarios && usuarios.length > 0 ? (
+                                        {isUserAdmin && usuarios ? (
                                             usuarios.map((user) => <SelectItem key={user.id} value={user.id}>{user.nome}</SelectItem>)
+                                        ) : currentUserData ? (
+                                            <SelectItem value={currentUserData.id}>{currentUserData.nome}</SelectItem>
                                         ) : (
-                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum usuário encontrado.</div>
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum usuário disponível.</div>
                                         )}
                                     </SelectContent>
                                 </Select>
@@ -1037,5 +1039,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
