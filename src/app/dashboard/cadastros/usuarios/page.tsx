@@ -34,12 +34,13 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 export default function ListaUsuariosPage() {
   const firestore = useFirestore();
   const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
-  const [hasAdminCheckCompleted, setHasAdminCheckCompleted] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isAdminVerified, setIsAdminVerified] = useState(false);
 
   const userDocRef = useMemoFirebase(
     () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
@@ -47,24 +48,25 @@ export default function ListaUsuariosPage() {
   );
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  const isUserAdmin = currentUserData?.funcao === 'Administrador';
+  useEffect(() => {
+    if (!isUserDocLoading && currentUserData) {
+      setIsAdmin(currentUserData.funcao === 'Administrador');
+      setIsAdminVerified(true);
+    } else if (!isUserDocLoading && !currentUserData) {
+      // User doc doesn't exist or failed to load, they are not an admin.
+      setIsAdminVerified(true);
+    }
+  }, [currentUserData, isUserDocLoading]);
 
-  // This will only create the query if the admin check is complete AND the user is an admin.
+
   const usersCollection = useMemoFirebase(
-    () => (firestore && hasAdminCheckCompleted && isUserAdmin ? collection(firestore, 'users') : null),
-    [firestore, hasAdminCheckCompleted, isUserAdmin]
+    () => (firestore && isAdminVerified && isAdmin ? collection(firestore, 'users') : null),
+    [firestore, isAdminVerified, isAdmin]
   );
   
-  // This hook will now only run when the query is not null.
   const { data: users, isLoading: isUsersListLoading, error: usersListError } = useCollection(usersCollection);
 
-  // Once the user data has loaded, we know whether they are an admin or not.
-  // We can then update the state to allow the usersCollection query to run.
-  if (!isUserDocLoading && !hasAdminCheckCompleted) {
-    setHasAdminCheckCompleted(true);
-  }
-
-  const isLoading = isAuthLoading || isUserDocLoading;
+  const isLoading = isAuthLoading || isUserDocLoading || (isAdmin && !users && !usersListError);
 
   const getStatusVariant = (status: string) => {
     switch (status?.toLowerCase()) {
@@ -83,8 +85,7 @@ export default function ListaUsuariosPage() {
   };
 
   const renderContent = () => {
-    // Show initial loading state while checking user's role
-    if (isLoading || !hasAdminCheckCompleted) {
+    if (!isAdminVerified) {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center">
@@ -97,8 +98,7 @@ export default function ListaUsuariosPage() {
        );
     }
     
-    // After checking, if the user is not an admin, show permission error
-    if (!isUserAdmin) {
+    if (!isAdmin) {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center text-muted-foreground">
@@ -108,7 +108,6 @@ export default function ListaUsuariosPage() {
        );
     }
 
-    // If the user is an admin, but the user list is still loading
     if (isUsersListLoading) {
         return (
           <TableRow>
@@ -122,7 +121,6 @@ export default function ListaUsuariosPage() {
        );
     }
 
-    // If there was an error fetching the user list
     if (usersListError) {
         return (
             <TableRow>
@@ -133,7 +131,6 @@ export default function ListaUsuariosPage() {
         );
     }
     
-    // If the user is an admin and the list is empty
     if (!users || users.length === 0) {
         return (
              <TableRow>
@@ -144,7 +141,6 @@ export default function ListaUsuariosPage() {
         );
     }
 
-    // If everything is fine, render the user list
     return users.map((user) => (
           <TableRow key={user.id}>
             <TableCell className="font-medium">{user.nome}</TableCell>
@@ -222,7 +218,7 @@ export default function ListaUsuariosPage() {
             <CardTitle>Usuários</CardTitle>
             <CardDescription>Gerencie os usuários do sistema.</CardDescription>
           </div>
-          {isUserAdmin && (
+          {isAdminVerified && isAdmin && (
             <Link href="/dashboard/cadastros/usuarios/novo" passHref>
                 <Button>
                 <PlusCircle className="mr-2 h-4 w-4" />
