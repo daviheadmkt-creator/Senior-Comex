@@ -44,7 +44,7 @@ import {
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
-import { useAuth, useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
+import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 
@@ -65,11 +65,8 @@ export default function DashboardLayout({
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
   const isUserAdmin = useMemo(() => {
-    if (isUserDocLoading || !currentUserData) {
-      return false;
-    }
-    return currentUserData.funcao === 'Administrador';
-  }, [currentUserData, isUserDocLoading]);
+    return currentUserData?.funcao === 'Administrador';
+  }, [currentUserData]);
 
 
   useEffect(() => {
