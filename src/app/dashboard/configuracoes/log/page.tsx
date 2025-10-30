@@ -24,25 +24,40 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import { useState, useEffect } from 'react';
+
 
 const logs: any[] = [];
 
 export default function LogPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const [isAdminVerified, setIsAdminVerified] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
 
   const userDocRef = useMemoFirebase(
     () => (currentUser ? doc(firestore, 'users', currentUser.uid) : null),
     [firestore, currentUser]
   );
-  const { data: currentUserData } = useDoc(userDocRef);
-  const isUserAdmin = currentUserData?.funcao === 'Administrador';
+  const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+
+  useEffect(() => {
+    if (!isUserDocLoading) {
+      setIsAdmin(currentUserData?.funcao === 'Administrador');
+      setIsAdminVerified(true);
+    }
+  }, [currentUserData, isUserDocLoading]);
+
 
   const usersCollectionQuery = useMemoFirebase(
-    () => (isUserAdmin ? collection(firestore, 'users') : null),
-    [firestore, isUserAdmin]
+    () => (isAdminVerified && isAdmin ? collection(firestore, 'users') : null),
+    [firestore, isAdminVerified, isAdmin]
   );
   const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
+
+  const isLoading = isUserDocLoading || (isAdmin && !usuarios);
 
   return (
     <div className="space-y-6">
@@ -78,12 +93,12 @@ export default function LogPage() {
             </div>
              <div className="space-y-2">
               <Label htmlFor="usuario-filter">Usuário</Label>
-              <Select disabled={!isUserAdmin || isLoadingUsers}>
+              <Select disabled={!isAdminVerified || !isAdmin || isLoadingUsers}>
                 <SelectTrigger id="usuario-filter">
-                  <SelectValue placeholder={isLoadingUsers ? 'Carregando...' : (isUserAdmin ? 'Todos os usuários' : 'Acesso restrito')} />
+                  <SelectValue placeholder={isLoading ? 'Verificando...' : (isAdmin ? 'Todos os usuários' : 'Acesso restrito')} />
                 </SelectTrigger>
                 <SelectContent>
-                  {isUserAdmin && (
+                  {isAdmin && (
                     <>
                       <SelectItem value="todos">Todos os usuários</SelectItem>
                       {usuarios?.map((u) => (
