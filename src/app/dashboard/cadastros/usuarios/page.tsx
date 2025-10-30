@@ -34,10 +34,12 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { useState } from 'react';
 
 export default function ListaUsuariosPage() {
   const firestore = useFirestore();
   const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
+  const [hasAdminCheckCompleted, setHasAdminCheckCompleted] = useState(false);
 
   const userDocRef = useMemoFirebase(
     () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
@@ -47,13 +49,20 @@ export default function ListaUsuariosPage() {
 
   const isUserAdmin = currentUserData?.funcao === 'Administrador';
 
+  // This will only create the query if the admin check is complete AND the user is an admin.
   const usersCollection = useMemoFirebase(
-    () => (firestore && isUserAdmin ? collection(firestore, 'users') : null),
-    [firestore, isUserAdmin]
+    () => (firestore && hasAdminCheckCompleted && isUserAdmin ? collection(firestore, 'users') : null),
+    [firestore, hasAdminCheckCompleted, isUserAdmin]
   );
+  
+  // This hook will now only run when the query is not null.
+  const { data: users, isLoading: isUsersListLoading, error: usersListError } = useCollection(usersCollection);
 
-  // Only run the useCollection hook if the user is confirmed to be an admin
-  const { data: users, isLoading: isUsersListLoading, error: usersListError } = useCollection(isUserAdmin ? usersCollection : null);
+  // Once the user data has loaded, we know whether they are an admin or not.
+  // We can then update the state to allow the usersCollection query to run.
+  if (!isUserDocLoading && !hasAdminCheckCompleted) {
+    setHasAdminCheckCompleted(true);
+  }
 
   const isLoading = isAuthLoading || isUserDocLoading;
 
@@ -74,7 +83,8 @@ export default function ListaUsuariosPage() {
   };
 
   const renderContent = () => {
-    if (isLoading) {
+    // Show initial loading state while checking user's role
+    if (isLoading || !hasAdminCheckCompleted) {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center">
@@ -87,6 +97,7 @@ export default function ListaUsuariosPage() {
        );
     }
     
+    // After checking, if the user is not an admin, show permission error
     if (!isUserAdmin) {
        return (
           <TableRow>
@@ -97,6 +108,7 @@ export default function ListaUsuariosPage() {
        );
     }
 
+    // If the user is an admin, but the user list is still loading
     if (isUsersListLoading) {
         return (
           <TableRow>
@@ -110,6 +122,7 @@ export default function ListaUsuariosPage() {
        );
     }
 
+    // If there was an error fetching the user list
     if (usersListError) {
         return (
             <TableRow>
@@ -119,7 +132,8 @@ export default function ListaUsuariosPage() {
             </TableRow>
         );
     }
-
+    
+    // If the user is an admin and the list is empty
     if (!users || users.length === 0) {
         return (
              <TableRow>
@@ -130,6 +144,7 @@ export default function ListaUsuariosPage() {
         );
     }
 
+    // If everything is fine, render the user list
     return users.map((user) => (
           <TableRow key={user.id}>
             <TableCell className="font-medium">{user.nome}</TableCell>
