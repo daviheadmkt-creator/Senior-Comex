@@ -64,7 +64,12 @@ export default function DashboardLayout({
   );
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
 
-  const isUserAdmin = useMemo(() => currentUserData?.funcao === 'Administrador', [currentUserData]);
+  const isUserAdmin = useMemo(() => {
+    if (isUserDocLoading || !currentUserData) {
+      return false;
+    }
+    return currentUserData.funcao === 'Administrador';
+  }, [currentUserData, isUserDocLoading]);
 
 
   useEffect(() => {
