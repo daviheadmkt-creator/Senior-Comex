@@ -34,7 +34,7 @@ const embarques = [
     referencia: 'SEN2378-25',
     po: '3426B',
     analista: 'Ana Silva',
-    cliente: 'Agrícola Exemplo',
+    cliente: 'Agrícola Exemplo LTDA',
     produto: 'Soja em Grãos',
     navio: 'MSC CARMEN',
     origem: 'Santos',
@@ -47,42 +47,6 @@ const embarques = [
         {date: '27/07/2024', event: 'Embarque previsto'},
         {date: '31/07/2024', event: 'Carga embarcada'},
         {date: '08/09/2024', event: 'Previsão de chegada'},
-    ]
-  },
-   {
-    id: 2,
-    referencia: 'SEN2378-26',
-    po: '3427A',
-    analista: 'Carlos Dias',
-    cliente: 'Grãos Brasil S.A.',
-    produto: 'Milho em Grãos',
-    navio: 'MAERSK LINE',
-    origem: 'Paranaguá',
-    destino: 'Roterdã',
-    eta: '15/08/2024',
-    deadline: '05/08/2024',
-    status: 'Aguardando embarque',
-    timeline: [
-        {date: '10/07/2024', event: 'Reserva feita'},
-        {date: '05/08/2024', event: 'Previsão de embarque'},
-    ]
-  },
-  {
-    id: 4,
-    referencia: 'SEN2378-28',
-    po: '3428C',
-    analista: 'Daniela Lima',
-    cliente: 'Produtores Associados',
-    produto: 'Gergelim Branco',
-    navio: 'HAPAG-LLOYD',
-    origem: 'Santos',
-    destino: 'Dubai',
-    eta: '10/08/2024',
-    deadline: '25/07/2024',
-    status: 'Atrasado',
-    timeline: [
-        {date: '15/07/2024', event: 'Reserva feita'},
-        {date: '25/07/2024', event: 'Atraso na liberação da carga'},
     ]
   },
 ];
