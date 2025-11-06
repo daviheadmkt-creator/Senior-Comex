@@ -32,10 +32,15 @@ const embarques = [
   {
     id: 1,
     referencia: 'SEN2378-25',
+    po: '3426B',
+    analista: 'Ana Silva',
+    cliente: 'Agrícola Exemplo',
     produto: 'Soja em Grãos',
     navio: 'MSC CARMEN',
-    origemDestino: 'Santos / Xangai',
-    previsaoChegada: '08/09/2024',
+    origem: 'Santos',
+    destino: 'Xangai',
+    eta: '08/09/2024',
+    deadline: '31/07/2024',
     status: 'Em trânsito',
      timeline: [
         {date: '03/07/2024', event: 'Reserva feita no CMA CGM BUZIOS'},
@@ -47,10 +52,15 @@ const embarques = [
    {
     id: 2,
     referencia: 'SEN2378-26',
+    po: '3427A',
+    analista: 'Carlos Dias',
+    cliente: 'Grãos Brasil S.A.',
     produto: 'Milho em Grãos',
     navio: 'MAERSK LINE',
-    origemDestino: 'Paranaguá / Roterdã',
-    previsaoChegada: '15/08/2024',
+    origem: 'Paranaguá',
+    destino: 'Roterdã',
+    eta: '15/08/2024',
+    deadline: '05/08/2024',
     status: 'Aguardando embarque',
     timeline: [
         {date: '10/07/2024', event: 'Reserva feita'},
@@ -60,10 +70,15 @@ const embarques = [
   {
     id: 4,
     referencia: 'SEN2378-28',
+    po: '3428C',
+    analista: 'Daniela Lima',
+    cliente: 'Produtores Associados',
     produto: 'Gergelim Branco',
     navio: 'HAPAG-LLOYD',
-    origemDestino: 'Santos / Dubai',
-    previsaoChegada: '10/08/2024',
+    origem: 'Santos',
+    destino: 'Dubai',
+    eta: '10/08/2024',
+    deadline: '25/07/2024',
     status: 'Atrasado',
     timeline: [
         {date: '15/07/2024', event: 'Reserva feita'},
@@ -124,11 +139,13 @@ export default function ClientEmbarquesPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Referência</TableHead>
+              <TableHead>PO</TableHead>
+              <TableHead>Analista (Cliente)</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Navio</TableHead>
-              <TableHead>Origem/Destino</TableHead>
-               <TableHead>Previsão de Chegada</TableHead>
+              <TableHead>Origem / Destino</TableHead>
+              <TableHead>ETA</TableHead>
+              <TableHead>Deadline</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Timeline</TableHead>
             </TableRow>
@@ -136,11 +153,16 @@ export default function ClientEmbarquesPage() {
           <TableBody>
             {embarques.map((embarque) => (
               <TableRow key={embarque.id}>
-                <TableCell className="font-medium">{embarque.referencia}</TableCell>
+                <TableCell className="font-medium">{embarque.po}</TableCell>
+                 <TableCell>
+                    <div>{embarque.analista}</div>
+                    <div className="text-xs text-muted-foreground">{embarque.cliente}</div>
+                </TableCell>
                 <TableCell>{embarque.produto}</TableCell>
                 <TableCell>{embarque.navio}</TableCell>
-                <TableCell>{embarque.origemDestino}</TableCell>
-                <TableCell>{embarque.previsaoChegada}</TableCell>
+                <TableCell>{embarque.origem} / {embarque.destino}</TableCell>
+                <TableCell>{embarque.eta}</TableCell>
+                <TableCell>{embarque.deadline}</TableCell>
                 <TableCell>
                     <Badge variant={getStatusVariant(embarque.status)} className={
                         embarque.status === 'Em trânsito' ? 'bg-blue-100 text-blue-800' :
