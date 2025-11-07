@@ -148,5 +148,4 @@ export default function NovoProdutoPage() {
     </div>
   );
 }
-
     
