@@ -412,7 +412,7 @@ export default function NovoProcessoPage() {
 
   const portOptions = useMemo(() => {
     if (!portos) return [];
-    return portos.map(p => ({ value: p.id, label: `${p.name} - ${p.country}` }));
+    return portos.map(p => ({ value: String(p.id), label: `${p.name} - ${p.country}` }));
   }, [portos]);
 
 
@@ -568,25 +568,23 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                                 <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
-                                    <SelectTrigger id="portoEmbarqueId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{`${p.name} - ${p.country}`}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                    items={portOptions}
+                                    value={String(formData.portoEmbarqueId || '')}
+                                    onValueChange={handlePortChange}
+                                    placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                    searchPlaceholder="Buscar porto..."
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
-                                <Select value={String(formData.portoDescargaId || '')} onValueChange={(value) => handleInputChange('portoDescargaId', value)}>
-                                    <SelectTrigger id="portoDescargaId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{`${p.name} - ${p.country}`}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                    items={portOptions}
+                                    value={String(formData.portoDescargaId || '')}
+                                    onValueChange={(value) => handleInputChange('portoDescargaId', value)}
+                                    placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                    searchPlaceholder="Buscar porto..."
+                                />
                             </div>
                         </div>
 
@@ -1039,3 +1037,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
