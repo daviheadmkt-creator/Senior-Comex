@@ -581,7 +581,7 @@ export default function PortosPage() {
         <div className="lg:col-span-2">
             <Card>
                 <CardHeader>
-                    <CardTitle>Portos Cadastrados</CardTitle>
+                    <CardTitle>Portos Cadastrados (Total: {isLoading ? '...' : combinedPorts?.length ?? 0})</CardTitle>
                     <CardDescription>Gerencie os portos de embarque e descarga.</CardDescription>
                 </CardHeader>
                 <CardContent>
