@@ -37,7 +37,7 @@ export default function DashboardPage() {
   
   const processosQuery = useMemoFirebase(() => {
     if (!firestore) return null;
-    return query(collection(firestore, 'processos'), where('status', '!=', 'Concluído'), where('status', '!=', 'Cancelado'));
+    return query(collection(firestore, 'processos'), where('status', 'not-in', ['Concluído', 'Cancelado']));
   }, [firestore]);
 
   const { data: processosAtivos, isLoading } = useCollection(processosQuery);
