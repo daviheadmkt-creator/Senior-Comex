@@ -22,13 +22,14 @@ import { LogOut, User, Settings, Bell, CheckCircle, CalendarClock, FileWarning, 
 import { ThemeToggle } from "./theme-toggle";
 import { Badge } from "./ui/badge";
 import { useEffect, useState, useMemo } from "react";
-import { useCollection, useFirestore, useMemoFirebase } from "@/firebase";
+import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
 import { collection, query, where } from "firebase/firestore";
 import { differenceInDays, parseISO } from 'date-fns';
 
 
 export function UserNav() {
   const router = useRouter();
+  const { user } = useUser();
   const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const firestore = useFirestore();
 
@@ -84,12 +85,13 @@ export function UserNav() {
   }, [processosAtivos]);
 
   useEffect(() => {
-    if (notifications.length > 0) {
+    if (notifications.length > 0 && !isLoading) {
       setIsNotificationOpen(true);
     }
-  }, [notifications]);
+  }, [notifications, isLoading]);
 
   const handleLogout = () => {
+    // Implementar lógica de logout do Firebase se necessário
     router.push('/');
   };
 
@@ -162,17 +164,17 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-10 w-10">
-              <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="@user" />
-              <AvatarFallback>OP</AvatarFallback>
+              <AvatarImage src={user?.photoURL || "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="@user" />
+              <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">Operador</p>
+              <p className="text-sm font-medium leading-none">{user?.displayName || "Usuário"}</p>
               <p className="text-xs leading-none text-muted-foreground">
-                operador@senior.com
+                {user?.email}
               </p>
             </div>
           </DropdownMenuLabel>
