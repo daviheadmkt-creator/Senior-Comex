@@ -12,7 +12,6 @@ service cloud.firestore {
 
     /**
      * @description Controls access to user profile data.
-     * @path /users/{userId}
      */
     match /users/{userId} {
       function isOwner() {
@@ -20,7 +19,8 @@ service cloud.firestore {
       }
 
       function isAdmin() {
-          return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
+          // Allow reading own document to check for the 'funcao' field.
+          return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
       }
 
       // Allow a user to create their own profile.
@@ -36,13 +36,15 @@ service cloud.firestore {
     }
     
     /**
-     * @description Generic rule for collections accessible by any authenticated user.
-     * @paths /partners/{partnerId}, /ports/{portId}, /terminals/{terminalId}, /processos/{processoId}
+     * @description Generic rules for business data collections.
+     * Grants access to any authenticated user.
      */
-    match /{collection}/{docId} 
-      where collection in ['partners', 'ports', 'terminals', 'processos'] {
-      // Any authenticated user can read, write, create, and delete documents in these collections.
-      allow read, write, create, delete: if isSignedIn();
+    match /{collection}/{docId} where collection in ['partners', 'ports', 'terminals', 'processos'] {
+      // Allow any authenticated user to read, write, create, and delete individual documents.
+      allow get, create, update, delete: if isSignedIn();
+      
+      // Explicitly allow any authenticated user to list documents in these collections.
+      allow list: if isSignedIn();
     }
   }
 }
