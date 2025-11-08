@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -15,12 +16,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-
-const alerts = [
-    { id: 1, icon: <CalendarClock className="h-5 w-5 text-yellow-600" />, message: "Deadline de Draft para o processo SEN2378-26 se aproxima (2 dias).", link: "/dashboard/processos" },
-    { id: 2, icon: <FileWarning className="h-5 w-5 text-orange-500" />, message: "Faltando Packing List para o processo SEN2378-26.", link: "/dashboard/processos" },
-    { id: 3, icon: <AlertTriangle className="h-5 w-5 text-red-600" />, message: "Processo SEN2378-28 com status 'Atrasado'.", link: "/dashboard/processos" },
-]
+import { differenceInDays, parseISO } from 'date-fns';
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
@@ -41,6 +37,44 @@ export default function DashboardPage() {
   }, [firestore]);
 
   const { data: processosAtivos, isLoading } = useCollection(processosQuery);
+  
+  const alerts = useMemo(() => {
+    if (!processosAtivos) return [];
+
+    const generatedAlerts: any[] = [];
+    const today = new Date();
+
+    processosAtivos.forEach(processo => {
+      // Alerta de Processo Atrasado
+      if (processo.status && processo.status.toLowerCase().includes('atrasado')) {
+        generatedAlerts.push({
+          id: `${processo.id}-atrasado`,
+          icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
+          message: `Processo ${processo.processo_interno || ''} com status 'Atrasado'.`,
+          link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+        });
+      }
+
+      // Alerta de Deadlines (Exemplo com deadline_draft)
+      // Nota: Assumindo que o deadline é salvo como uma string ISO 8601 no Firestore
+      if (processo.deadline_draft) {
+        const deadlineDate = parseISO(processo.deadline_draft);
+        const daysRemaining = differenceInDays(deadlineDate, today);
+        
+        if (daysRemaining >= 0 && daysRemaining <= 3) {
+          generatedAlerts.push({
+            id: `${processo.id}-deadline`,
+            icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
+            message: `Deadline de Draft para o processo ${processo.processo_interno || ''} se aproxima (${daysRemaining + 1} dias).`,
+            link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+          });
+        }
+      }
+    });
+
+    return generatedAlerts;
+  }, [processosAtivos]);
+
 
   return (
     <div className="space-y-6">
@@ -100,7 +134,12 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
                  <div className="space-y-4">
-                    {alerts.map(alert => (
+                    {isLoading && (
+                        <div className="flex justify-center items-center py-4">
+                            <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                        </div>
+                    )}
+                    {!isLoading && alerts.map(alert => (
                         <Link href={alert.link} key={alert.id} passHref>
                              <div className="flex items-center p-3 rounded-lg border hover:bg-accent cursor-pointer">
                                 <div className="mr-4">
@@ -113,7 +152,7 @@ export default function DashboardPage() {
                             </div>
                         </Link>
                     ))}
-                    {alerts.length === 0 && (
+                    {!isLoading && alerts.length === 0 && (
                         <div className="text-center text-muted-foreground py-4">
                             Nenhum alerta no momento.
                         </div>

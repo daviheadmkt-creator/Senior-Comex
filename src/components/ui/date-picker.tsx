@@ -18,23 +18,37 @@ import {
 
 interface DatePickerProps {
     showTime?: boolean;
+    date?: Date;
+    onDateChange?: (date: Date | null) => void;
 }
 
-export function DatePicker({ showTime = false }: DatePickerProps) {
-  const [date, setDate] = React.useState<Date>()
+export function DatePicker({ showTime = false, date: propDate, onDateChange }: DatePickerProps) {
+  const [date, setDate] = React.useState<Date | undefined>(propDate);
   const [time, setTime] = React.useState("00:00");
-  const popoverRef = React.useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = React.useState(false);
 
+  React.useEffect(() => {
+    setDate(propDate);
+    if (propDate) {
+        setTime(format(propDate, 'HH:mm'));
+    }
+  }, [propDate]);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) {
         setDate(undefined);
+        if (onDateChange) onDateChange(null);
         return;
     }
     const [hours, minutes] = time.split(':').map(Number);
     let newDate = setHours(selectedDate, hours);
     newDate = setMinutes(newDate, minutes);
     setDate(newDate);
+    if (onDateChange) onDateChange(newDate);
+
+    if (!showTime) {
+      setIsOpen(false);
+    }
   }
 
   const handleTimeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -46,6 +60,7 @@ export function DatePicker({ showTime = false }: DatePickerProps) {
             let newDate = setHours(date, hours);
             newDate = setMinutes(newDate, minutes);
             setDate(newDate);
+             if (onDateChange) onDateChange(newDate);
         }
     }
   }
@@ -53,7 +68,7 @@ export function DatePicker({ showTime = false }: DatePickerProps) {
   const displayFormat = showTime ? "PPP HH:mm" : "PPP";
 
   return (
-    <Popover>
+    <Popover open={isOpen} onOpenChange={setIsOpen}>
       <PopoverTrigger asChild>
         <Button
           variant={"outline"}
@@ -66,7 +81,7 @@ export function DatePicker({ showTime = false }: DatePickerProps) {
           {date ? format(date, displayFormat, { locale: ptBR }) : <span>Selecione uma data</span>}
         </Button>
       </PopoverTrigger>
-      <PopoverContent ref={popoverRef} className="w-auto p-0">
+      <PopoverContent className="w-auto p-0">
         <Calendar
           mode="single"
           selected={date}
