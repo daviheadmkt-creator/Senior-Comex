@@ -14,17 +14,6 @@ import { useAuth } from '@/firebase';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { useToast } from '@/hooks/use-toast';
 
-const GoogleIcon = () => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24">
-      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"/>
-      <path fill="#EA4335" d="M12 5.16c1.63 0 3.06.56 4.19 1.62l3.14-3.14C17.45 1.99 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
-      <path fill="none" d="M1 1h22v22H1z"/>
-    </svg>
-);
-
-
 export default function LoginPage() {
   const router = useRouter();
   const auth = useAuth();
@@ -141,46 +130,22 @@ export default function LoginPage() {
                   </Button>
                 </div>
               </form>
-
-              <div className="mt-6">
-                <div className="relative">
-                  <div className="absolute inset-0 flex items-center">
-                    <div className="w-full border-t border-border" />
-                  </div>
-                  <div className="relative flex justify-center text-sm">
-                    <span className="bg-background px-2 text-muted-foreground">Ou entre com</span>
-                  </div>
-                </div>
-
-                <div className="mt-6 grid grid-cols-2 gap-3">
-                  <div>
-                    <Button variant="outline" className="w-full">
-                       <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="#1877F2" className="mr-2"><path d="M12 2.04c-5.52 0-10 4.48-10 10s4.48 10 10 10s10-4.48 10-10s-4.48-10-10-10zm2.25 10.5h-2v6h-3v-6h-1.5v-3h1.5v-2.25c0-1.25.75-2.75 2.75-2.75h2.5v3h-1.5c-.25 0-.5.25-.5.5v1.5h2l-.25 3z"></path></svg>
-                      Facebook
-                    </Button>
-                  </div>
-                  <div>
-                    <Button variant="outline" className="w-full">
-                       <GoogleIcon />
-                      <span className="ml-2">Google</span>
-                    </Button>
-                  </div>
-                </div>
-                 <div className="mt-8 text-center text-sm">
-                    <p className="text-muted-foreground">
-                        É um cliente?{' '}
-                        <Link href="/portal/login" className="font-medium text-primary hover:text-primary/80">
-                            Acesse o portal aqui
-                        </Link>
-                    </p>
-                    <p className="mt-4 text-muted-foreground">
-                        Não tem uma conta?{' '}
-                        <Link href="/signup" className="font-medium text-primary hover:text-primary/80">
-                            Cadastre-se
-                        </Link>
-                    </p>
-                 </div>
+              
+              <div className="mt-8 text-center text-sm">
+                  <p className="text-muted-foreground">
+                      É um cliente?{' '}
+                      <Link href="/portal/login" className="font-medium text-primary hover:text-primary/80">
+                          Acesse o portal aqui
+                      </Link>
+                  </p>
+                  <p className="mt-4 text-muted-foreground">
+                      Não tem uma conta?{' '}
+                      <Link href="/signup" className="font-medium text-primary hover:text-primary/80">
+                          Cadastre-se
+                      </Link>
+                  </p>
               </div>
+
             </div>
           </div>
         </div>
