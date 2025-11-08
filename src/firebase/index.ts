@@ -1,10 +1,9 @@
-
 'use client';
 
 import { firebaseConfig } from '@/firebase/config';
 import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
-import { getFirestore, setDoc, doc, getDoc } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore'
 
 // IMPORTANT: DO NOT MODIFY THIS FUNCTION
 export function initializeFirebase() {
@@ -25,42 +24,6 @@ export function initializeFirebase() {
       }
       firebaseApp = initializeApp(firebaseConfig);
     }
-    
-    // Create a default user for easy login during development
-    if (process.env.NODE_ENV === 'development') {
-        const auth = getAuth(firebaseApp);
-        const firestore = getFirestore(firebaseApp);
-        const email = 'davi@dftarget.com.br';
-        const password = 'Brasil142536@';
-
-        const upsertUserDocument = async (user: any) => {
-            const userDocRef = doc(firestore, 'users', user.uid);
-            const userDocSnap = await getDoc(userDocRef);
-            if (!userDocSnap.exists()) {
-                await setDoc(userDocRef, {
-                    id: user.uid,
-                    nome: 'Admin Dev',
-                    email: user.email,
-                    funcao: 'Administrador', // Make the dev user an admin
-                    status: 'Ativo',
-                });
-            }
-        };
-
-        signInWithEmailAndPassword(auth, email, password)
-            .then(userCredential => {
-                upsertUserDocument(userCredential.user);
-            })
-            .catch((error) => {
-                if (error.code === 'auth/user-not-found') {
-                    createUserWithEmailAndPassword(auth, email, password)
-                        .then(userCredential => {
-                            upsertUserDocument(userCredential.user);
-                        });
-                }
-        });
-    }
-
 
     return getSdks(firebaseApp);
   }
