@@ -9,10 +9,12 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileWarning, CalendarClock, MoreHorizontal } from 'lucide-react';
+import { AlertTriangle, FileWarning, CalendarClock, MoreHorizontal, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
 
 const alerts = [
     { id: 1, icon: <CalendarClock className="h-5 w-5 text-yellow-600" />, message: "Deadline de Draft para o processo SEN2378-26 se aproxima (2 dias).", link: "/dashboard/processos" },
@@ -20,56 +22,25 @@ const alerts = [
     { id: 3, icon: <AlertTriangle className="h-5 w-5 text-red-600" />, message: "Processo SEN2378-28 com status 'Atrasado'.", link: "/dashboard/processos" },
 ]
 
-const processosAtivos = [
-    {
-        po: '3426B',
-        analista: 'Ana Silva',
-        cliente: 'Agrícola Exemplo',
-        produto: 'Soja em Grãos',
-        navio: 'MSC CARMEN',
-        origem: 'Santos',
-        destino: 'Xangai',
-        eta: '08/09/2024',
-        deadline: '31/07/2024',
-        status: 'Em trânsito',
-    },
-    {
-        po: '3427A',
-        analista: 'Carlos Dias',
-        cliente: 'Grãos Brasil S.A.',
-        produto: 'Milho em Grãos',
-        navio: 'MAERSK LINE',
-        origem: 'Paranaguá',
-        destino: 'Roterdã',
-        eta: '15/08/2024',
-        deadline: '05/08/2024',
-        status: 'Aguardando embarque',
-    },
-    {
-        po: '3428C',
-        analista: 'Daniela Lima',
-        cliente: 'Produtores Associados',
-        produto: 'Gergelim Branco',
-        navio: 'HAPAG-LLOYD',
-        origem: 'Santos',
-        destino: 'Dubai',
-        eta: '10/08/2024',
-        deadline: '25/07/2024',
-        status: 'Atrasado',
-    }
-];
-
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
     const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('em trânsito')) return 'default';
-    if (lowerStatus.includes('concluído')) return 'default';
-    if (lowerStatus.includes('aguardando')) return 'secondary';
-    if (lowerStatus.includes('atrasado')) return 'destructive';
+    if (lowerStatus.includes('trânsito') || lowerStatus.includes('confirmado') || lowerStatus.includes('aprovados') || lowerStatus.includes('desembaraçada') || lowerStatus.includes('deferido') || lowerStatus.includes('realizada')) return 'default';
+    if (lowerStatus.includes('concluído') || lowerStatus.includes('pronto')) return 'outline';
+    if (lowerStatus.includes('aguardando') || lowerStatus.includes('iniciado')) return 'secondary';
+    if (lowerStatus.includes('atrasado') || lowerStatus.includes('cancelado') || lowerStatus.includes('correcao')) return 'destructive';
     return 'outline';
 };
 
 export default function DashboardPage() {
+  const firestore = useFirestore();
+  
+  const processosQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'processos'), where('status', '!=', 'Concluído'), where('status', '!=', 'Cancelado'));
+  }, [firestore]);
+
+  const { data: processosAtivos, isLoading } = useCollection(processosQuery);
 
   return (
     <div className="space-y-6">
@@ -83,33 +54,40 @@ export default function DashboardPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>PO</TableHead>
-                            <TableHead>Analista (Cliente)</TableHead>
+                            <TableHead>Cliente</TableHead>
                             <TableHead>Produto</TableHead>
                             <TableHead>Navio</TableHead>
-                            <TableHead>Origem / Destino</TableHead>
-                            <TableHead>ETA</TableHead>
-                            <TableHead>Deadline</TableHead>
+                            <TableHead>Destino</TableHead>
                             <TableHead>Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {processosAtivos.map((processo) => (
-                            <TableRow key={processo.po}>
-                                <TableCell className="font-medium">{processo.po}</TableCell>
-                                <TableCell>
-                                    <div>{processo.analista}</div>
-                                    <div className="text-xs text-muted-foreground">{processo.cliente}</div>
+                        {isLoading && (
+                             <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                                 </TableCell>
-                                <TableCell>{processo.produto}</TableCell>
+                            </TableRow>
+                        )}
+                        {!isLoading && processosAtivos && processosAtivos.map((processo) => (
+                            <TableRow key={processo.id}>
+                                <TableCell className="font-medium">{processo.po_number}</TableCell>
+                                <TableCell>{processo.exportadorNome}</TableCell>
+                                <TableCell>{processo.produtoNome}</TableCell>
                                 <TableCell>{processo.navio}</TableCell>
-                                <TableCell>{processo.origem} / {processo.destino}</TableCell>
-                                <TableCell>{processo.eta}</TableCell>
-                                <TableCell>{processo.deadline}</TableCell>
+                                <TableCell>{processo.destino}</TableCell>
                                 <TableCell>
                                     <Badge variant={getStatusVariant(processo.status)}>{processo.status}</Badge>
                                 </TableCell>
                             </TableRow>
                         ))}
+                         {!isLoading && (!processosAtivos || processosAtivos.length === 0) && (
+                            <TableRow>
+                                <TableCell colSpan={6} className="h-24 text-center">
+                                    Nenhum processo ativo no momento.
+                                </TableCell>
+                            </TableRow>
+                        )}
                     </TableBody>
                 </Table>
             </CardContent>
