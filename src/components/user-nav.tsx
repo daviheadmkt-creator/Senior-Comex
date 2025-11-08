@@ -59,6 +59,18 @@ export function UserNav() {
         });
       }
 
+      // Alerta de Processo Pendente (Aguardando)
+      if (processo.status && processo.status.toLowerCase().includes('aguardando')) {
+        generatedAlerts.push({
+          id: `${processo.id}-pendente`,
+          icon: <FileWarning className="h-5 w-5 text-orange-500" />,
+          title: "Processo Pendente",
+          description: `Processo ${processo.processo_interno || ''} está pendente: ${processo.status}.`,
+          time: 'Agora',
+          link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+        });
+      }
+
       // Alerta de Deadlines
       if (processo.deadline_draft) {
         try {
@@ -85,6 +97,7 @@ export function UserNav() {
   }, [processosAtivos]);
 
   useEffect(() => {
+    // Abre o sino de notificação se houver notificações e o carregamento estiver concluído
     if (notifications.length > 0 && !isLoading) {
       setIsNotificationOpen(true);
     }

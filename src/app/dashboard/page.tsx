@@ -54,20 +54,35 @@ export default function DashboardPage() {
           link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
         });
       }
+      
+      // Alerta de Processo Pendente (Aguardando)
+      if (processo.status && processo.status.toLowerCase().includes('aguardando')) {
+        generatedAlerts.push({
+          id: `${processo.id}-pendente`,
+          icon: <FileWarning className="h-5 w-5 text-orange-500" />,
+          message: `Processo ${processo.processo_interno || ''} está pendente: ${processo.status}.`,
+          link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+        });
+      }
+
 
       // Alerta de Deadlines (Exemplo com deadline_draft)
       // Nota: Assumindo que o deadline é salvo como uma string ISO 8601 no Firestore
       if (processo.deadline_draft) {
-        const deadlineDate = parseISO(processo.deadline_draft);
-        const daysRemaining = differenceInDays(deadlineDate, today);
-        
-        if (daysRemaining >= 0 && daysRemaining <= 3) {
-          generatedAlerts.push({
-            id: `${processo.id}-deadline`,
-            icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
-            message: `Deadline de Draft para o processo ${processo.processo_interno || ''} se aproxima (${daysRemaining + 1} dias).`,
-            link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
-          });
+        try {
+            const deadlineDate = parseISO(processo.deadline_draft);
+            const daysRemaining = differenceInDays(deadlineDate, today);
+            
+            if (daysRemaining >= 0 && daysRemaining <= 3) {
+              generatedAlerts.push({
+                id: `${processo.id}-deadline`,
+                icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
+                message: `Deadline de Draft para o processo ${processo.processo_interno || ''} se aproxima (${daysRemaining + 1} dias).`,
+                link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+              });
+            }
+        } catch(e) {
+             console.error("Invalid date format for deadline_draft:", processo.deadline_draft);
         }
       }
     });
