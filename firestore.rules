@@ -19,32 +19,42 @@ service cloud.firestore {
       }
 
       function isAdmin() {
-          // Allow reading own document to check for the 'funcao' field.
           return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.funcao == 'Administrador';
       }
 
-      // Allow a user to create their own profile.
-      allow create: if isSignedIn() && isOwner();
-      // Allow a user to read their own profile.
-      allow get: if isSignedIn() && isOwner();
-      // Allow an admin to list users, otherwise deny.
+      // Allow a user to create/read/update/delete their own profile.
+      allow read, write: if isSignedIn() && isOwner();
+      
+      // Allow an admin to list all users.
       allow list: if isSignedIn() && isAdmin();
-      // Allow a user to update their own profile.
-      allow update: if isSignedIn() && isOwner();
-      // Allow a user to delete their own profile.
-      allow delete: if isSignedIn() && isOwner();
     }
     
     /**
-     * @description Generic rules for business data collections.
-     * Grants access to any authenticated user.
+     * @description Grants access to the 'partners' collection for any authenticated user.
      */
-    match /{collection}/{docId} where collection in ['partners', 'ports', 'terminals', 'processos'] {
-      // Allow any authenticated user to read, write, create, and delete individual documents.
-      allow get, create, update, delete: if isSignedIn();
-      
-      // Explicitly allow any authenticated user to list documents in these collections.
-      allow list: if isSignedIn();
+    match /partners/{partnerId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Grants access to the 'ports' collection for any authenticated user.
+     */
+    match /ports/{portId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Grants access to the 'terminals' collection for any authenticated user.
+     */
+    match /terminals/{terminalId} {
+      allow read, write: if isSignedIn();
+    }
+
+    /**
+     * @description Grants access to the 'processos' collection for any authenticated user.
+     */
+    match /processos/{processoId} {
+      allow read, write: if isSignedIn();
     }
   }
 }
