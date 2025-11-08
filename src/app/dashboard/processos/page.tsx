@@ -34,7 +34,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useState, useEffect, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { collection, deleteDoc, doc, query, where } from 'firebase/firestore';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
