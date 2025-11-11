@@ -23,16 +23,6 @@ export interface UserRecord {
 export const listUsersFlow = ai.defineFlow(
   {
     name: 'listUsersFlow',
-    // This policy grants the necessary IAM permission to the deployed flow
-    // to list users from Firebase Authentication.
-    policy: {
-      read: {
-        rules: [{
-          role: 'firebaseauth.users.list',
-          principals: 'allUsers'
-        }]
-      }
-    }
   },
   async (): Promise<UserRecord[]> => {
     try {
