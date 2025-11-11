@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow to securely list Firebase Authentication users.
@@ -8,12 +9,8 @@
 import { ai } from '@/ai/genkit';
 import { getAuth } from 'firebase-admin/auth';
 import { initializeAdminApp } from '@/firebase/firebase-admin';
-import { defineFlow, run, startFlow } from 'genkit';
-import { onFlow } from '@genkit-ai/firebase/functions';
 
-// Initialize the Firebase Admin SDK
-initializeAdminApp();
-
+// This interface must match the one in the calling component
 export interface UserRecord {
   uid: string;
   email: string | undefined;
@@ -22,10 +19,12 @@ export interface UserRecord {
   disabled: boolean;
 }
 
+// The main flow definition
 export const listUsersFlow = ai.defineFlow(
   {
     name: 'listUsersFlow',
-    // Add the required policy to allow listing users
+    // This policy grants the necessary IAM permission to the deployed flow
+    // to list users from Firebase Authentication.
     policy: {
       read: {
         rules: [{
@@ -37,7 +36,13 @@ export const listUsersFlow = ai.defineFlow(
   },
   async (): Promise<UserRecord[]> => {
     try {
+      // Ensure the Firebase Admin SDK is initialized within the flow's execution context.
+      initializeAdminApp();
+      
+      // Retrieve all users from Firebase Auth
       const userRecords = await getAuth().listUsers();
+
+      // Map the full user records to the simplified UserRecord interface
       return userRecords.users.map((user) => ({
         uid: user.uid,
         email: user.email,
@@ -45,15 +50,16 @@ export const listUsersFlow = ai.defineFlow(
         photoURL: user.photoURL,
         disabled: user.disabled,
       }));
-    } catch (error) {
-      console.error('Error listing users:', error);
-      // In a real app, you might want to handle this more gracefully
-      throw new Error('Failed to list users from Firebase Auth.');
+    } catch (error: any) {
+      console.error('Error listing users within listUsersFlow:', error);
+      // Re-throw the error with a more specific message to aid debugging.
+      throw new Error(`Failed to list users from Firebase Auth: ${error.message}`);
     }
   }
 );
 
-
+// This is the exported wrapper function that the client-side code will call.
 export async function listUsers(): Promise<UserRecord[]> {
+    // This invokes the Genkit flow.
     return await listUsersFlow();
 }
