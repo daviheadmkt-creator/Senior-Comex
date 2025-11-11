@@ -10,6 +10,8 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Senior Assessoria',
   description: 'Painel de Controle',
+  manifest: '/manifest.json',
+  themeColor: '#4DB6AC'
 };
 
 export default function RootLayout({

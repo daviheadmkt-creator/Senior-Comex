@@ -1,0 +1,21 @@
+{
+  "name": "SeniorComex",
+  "short_name": "SeniorComex",
+  "description": "Sistema de Gestão para Comércio Exterior",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#E0F2F1",
+  "theme_color": "#4DB6AC",
+  "icons": [
+    {
+      "src": "/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
