@@ -497,14 +497,7 @@ export default function NovoProcessoPage() {
                     <CardContent className="grid gap-6 pt-6">
                         <div className="space-y-2">
                             <Label htmlFor="status">Status Geral do Processo</Label>
-                            <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
-                                <SelectTrigger id="status">
-                                    <SelectValue placeholder="Selecione o status" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                            <Input id="status" value={formData.status || ''} readOnly disabled />
                         </div>
                          
                         <div className="grid md:grid-cols-3 gap-4">
