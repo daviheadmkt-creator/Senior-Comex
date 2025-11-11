@@ -47,6 +47,7 @@ import { Search } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 export default function DashboardLayout({
@@ -111,77 +112,95 @@ export default function DashboardLayout({
                     <span>Gestão de Processos</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton>
-                    <ClipboardList />
-                    <span>Cadastros</span>
-                </SidebarMenuButton>
-                 <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/cadastros/parceiros">
-                            Parceiros
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    {isUserAdmin && (
+            <Collapsible asChild>
+              <SidebarMenuItem>
+                <CollapsibleTrigger asChild>
+                    <SidebarMenuButton>
+                        <ClipboardList />
+                        <span>Cadastros</span>
+                    </SidebarMenuButton>
+                </CollapsibleTrigger>
+                <CollapsibleContent asChild>
+                    <SidebarMenuSub>
                         <SidebarMenuSubItem>
-                            <SidebarMenuSubButton href="/dashboard/cadastros/usuarios">
-                                Usuários
+                            <SidebarMenuSubButton href="/dashboard/cadastros/parceiros">
+                                Parceiros
                             </SidebarMenuSubButton>
                         </SidebarMenuSubItem>
-                    )}
-                </SidebarMenuSub>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-                <SidebarMenuButton>
-                    <DollarSign />
-                    <span>Financeiro</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/lancamentos">
-                            Lançamentos
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/projecao-caixa">
-                            Fluxo de Caixa
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/kpis">
-                            KPIs
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/financeiro/relatorios">
-                            Relatórios
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                </SidebarMenuSub>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton>
-                    <ClipboardList />
-                    <span>Dados de Referência</span>
-                </SidebarMenuButton>
-                <SidebarMenuSub>
-                    <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/dados-referencia/produtos">
-                            Produtos
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/dados-referencia/portos">
-                            Portos
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                     <SidebarMenuSubItem>
-                        <SidebarMenuSubButton href="/dashboard/dados-referencia/terminais">
-                            Terminais
-                        </SidebarMenuSubButton>
-                    </SidebarMenuSubItem>
-                </SidebarMenuSub>
-            </SidebarMenuItem>
+                        {isUserAdmin && (
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/cadastros/usuarios">
+                                    Usuários
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                        )}
+                    </SidebarMenuSub>
+                </CollapsibleContent>
+              </SidebarMenuItem>
+            </Collapsible>
+            <Collapsible asChild>
+                <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <DollarSign />
+                            <span>Financeiro</span>
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/financeiro/lancamentos">
+                                    Lançamentos
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/financeiro/projecao-caixa">
+                                    Fluxo de Caixa
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/financeiro/kpis">
+                                    KPIs
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/financeiro/relatorios">
+                                    Relatórios
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </CollapsibleContent>
+                </SidebarMenuItem>
+            </Collapsible>
+            <Collapsible asChild>
+                <SidebarMenuItem>
+                    <CollapsibleTrigger asChild>
+                        <SidebarMenuButton>
+                            <ClipboardList />
+                            <span>Dados de Referência</span>
+                        </SidebarMenuButton>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent asChild>
+                        <SidebarMenuSub>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/dados-referencia/produtos">
+                                    Produtos
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/dados-referencia/portos">
+                                    Portos
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                            <SidebarMenuSubItem>
+                                <SidebarMenuSubButton href="/dashboard/dados-referencia/terminais">
+                                    Terminais
+                                </SidebarMenuSubButton>
+                            </SidebarMenuSubItem>
+                        </SidebarMenuSub>
+                    </CollapsibleContent>
+                </SidebarMenuItem>
+            </Collapsible>
             <SidebarMenuItem>
                 <SidebarMenuButton href="/dashboard/configuracoes">
                     <Settings />
