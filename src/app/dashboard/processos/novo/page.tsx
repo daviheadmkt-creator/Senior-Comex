@@ -125,6 +125,16 @@ const initialFormData = {
     eta: null,
   };
 
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (!status) return 'outline';
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('trânsito') || lowerStatus.includes('confirmado') || lowerStatus.includes('aprovados') || lowerStatus.includes('desembaraçada') || lowerStatus.includes('deferido') || lowerStatus.includes('realizada') || lowerStatus.includes('concluído')) return 'default';
+    if (lowerStatus.includes('pronto')) return 'outline';
+    if (lowerStatus.includes('aguardando') || lowerStatus.includes('iniciado') || lowerStatus.includes('em aprovação') || lowerStatus.includes('submetido')) return 'secondary';
+    if (lowerStatus.includes('atrasado') || lowerStatus.includes('cancelado') || lowerStatus.includes('correcao') || lowerStatus.includes('rejeitado')) return 'destructive';
+    return 'outline';
+};
+
 export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -293,7 +303,7 @@ export default function NovoProcessoPage() {
       toast({ title: `Status do documento "${updatedDocuments[index].name}" atualizado para ${newStatus}!` });
   }
 
-  const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  const getDocStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     switch (status) {
         case 'Aprovado':
             return 'default';
@@ -460,7 +470,7 @@ export default function NovoProcessoPage() {
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex justify-between items-center">
+        <div className="flex justify-between items-start">
             <div className='flex items-center gap-4'>
             <Link href="/dashboard/processos" passHref>
                 <Button variant="outline" size="icon" type="button">
@@ -470,6 +480,11 @@ export default function NovoProcessoPage() {
             <div>
                 <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
                 <p className="text-muted-foreground">{pageDescription}</p>
+                {isEditing && (
+                    <div className='mt-2'>
+                        <Badge variant={getStatusVariant(formData.status)}>{formData.status}</Badge>
+                    </div>
+                )}
             </div>
             </div>
              <div className="flex justify-end gap-2">
@@ -495,11 +510,6 @@ export default function NovoProcessoPage() {
             <AccordionContent>
                 <Card>
                     <CardContent className="grid gap-6 pt-6">
-                        <div className="space-y-2">
-                            <Label htmlFor="status">Status Geral do Processo</Label>
-                            <Input id="status" value={formData.status || ''} readOnly disabled />
-                        </div>
-                         
                         <div className="grid md:grid-cols-3 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="processo_interno">Número do Processo Interno</Label>
