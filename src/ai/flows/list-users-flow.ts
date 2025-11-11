@@ -8,6 +8,8 @@
 import { ai } from '@/ai/genkit';
 import { getAuth } from 'firebase-admin/auth';
 import { initializeAdminApp } from '@/firebase/firebase-admin';
+import { defineFlow, run, startFlow } from 'genkit';
+import { onFlow } from '@genkit-ai/firebase/functions';
 
 // Initialize the Firebase Admin SDK
 initializeAdminApp();
@@ -20,9 +22,18 @@ export interface UserRecord {
   disabled: boolean;
 }
 
-const listUsersFlow = ai.defineFlow(
+export const listUsersFlow = ai.defineFlow(
   {
     name: 'listUsersFlow',
+    // Add the required policy to allow listing users
+    policy: {
+      read: {
+        rules: [{
+          role: 'firebase.auth.user.list',
+          principals: 'allUsers'
+        }]
+      }
+    }
   },
   async (): Promise<UserRecord[]> => {
     try {
