@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { format, setHours, setMinutes, parse } from "date-fns"
+import { format, setHours, setMinutes, parseISO } from "date-fns"
 import { Calendar as CalendarIcon } from "lucide-react"
 import { ptBR } from 'date-fns/locale';
 
@@ -18,19 +18,27 @@ import {
 
 interface DatePickerProps {
     showTime?: boolean;
-    date?: Date;
-    onDateChange?: (date: Date | null) => void;
+    date?: Date | string | null;
+    onDateChange?: (date: string | null) => void;
 }
 
 export function DatePicker({ showTime = false, date: propDate, onDateChange }: DatePickerProps) {
-  const [date, setDate] = React.useState<Date | undefined>(propDate);
+  const [date, setDate] = React.useState<Date | undefined>();
   const [time, setTime] = React.useState("00:00");
   const [isOpen, setIsOpen] = React.useState(false);
 
   React.useEffect(() => {
-    setDate(propDate);
     if (propDate) {
-        setTime(format(propDate, 'HH:mm'));
+        // Check if propDate is a string and parse it, otherwise assume it's a Date object.
+        const parsedDate = typeof propDate === 'string' ? parseISO(propDate) : propDate;
+        if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
+            setDate(parsedDate);
+            setTime(format(parsedDate, 'HH:mm'));
+        } else {
+             setDate(undefined);
+        }
+    } else {
+        setDate(undefined);
     }
   }, [propDate]);
 
@@ -44,7 +52,7 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
     let newDate = setHours(selectedDate, hours);
     newDate = setMinutes(newDate, minutes);
     setDate(newDate);
-    if (onDateChange) onDateChange(newDate);
+    if (onDateChange) onDateChange(newDate.toISOString());
 
     if (!showTime) {
       setIsOpen(false);
@@ -60,7 +68,7 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
             let newDate = setHours(date, hours);
             newDate = setMinutes(newDate, minutes);
             setDate(newDate);
-             if (onDateChange) onDateChange(newDate);
+             if (onDateChange) onDateChange(newDate.toISOString());
         }
     }
   }
