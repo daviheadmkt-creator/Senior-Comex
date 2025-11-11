@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import {
   Card,
   CardContent,
@@ -11,11 +12,69 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Upload } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
+import { useUser, useFirestore, useDoc, useMemoFirebase, setDocumentNonBlocking } from '@/firebase';
+import { doc } from 'firebase/firestore';
+import { useToast } from '@/hooks/use-toast';
 
 export default function PerfilPage() {
+  const { user } = useUser();
+  const firestore = useFirestore();
+  const { toast } = useToast();
+  
+  const userDocRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const { data: userData, isLoading: isUserLoading } = useDoc(userDocRef);
+  
+  const [formData, setFormData] = useState({ nome: '', email: '', photoURL: '' });
+  const [isSaving, setIsSaving] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (userData) {
+      setFormData({
+        nome: userData.nome || '',
+        email: userData.email || '',
+        photoURL: userData.photoURL || '',
+      });
+    }
+  }, [userData]);
+
+  const handleAvatarClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setFormData(prev => ({ ...prev, photoURL: reader.result as string }));
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleInputChange = (id: string, value: string) => {
+    setFormData(prev => ({ ...prev, [id]: value }));
+  };
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!userDocRef) return;
+    setIsSaving(true);
+    
+    setDocumentNonBlocking(userDocRef, { nome: formData.nome, photoURL: formData.photoURL }, { merge: true });
+
+    setTimeout(() => {
+        toast({
+            title: 'Sucesso!',
+            description: 'Seu perfil foi atualizado.',
+        });
+        setIsSaving(false);
+    }, 1000); // Simulate save time
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -33,23 +92,36 @@ export default function PerfilPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form className="space-y-6">
+           {isUserLoading ? (
+            <div className="flex justify-center items-center h-48">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+            </div>
+           ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
             <div className="flex items-center gap-6">
-                <Avatar className="h-20 w-20">
-                    <AvatarImage src="https://i.pravatar.cc/150?u=a042581f4e29026704d" alt="@user" />
-                    <AvatarFallback>OP</AvatarFallback>
+                <Avatar className="h-20 w-20 cursor-pointer" onClick={handleAvatarClick}>
+                    <AvatarImage src={formData.photoURL || undefined} alt="@user" />
+                    <AvatarFallback>{formData.nome?.charAt(0) || formData.email?.charAt(0)}</AvatarFallback>
                 </Avatar>
-                <Button variant="outline">
+                <Input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                    accept="image/png, image/jpeg, image/gif"
+                />
+                <Button type="button" variant="outline" onClick={handleAvatarClick}>
                     <Upload className="mr-2 h-4 w-4" />
                     Alterar Foto
                 </Button>
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="nome-completo">Nome Completo</Label>
+                <Label htmlFor="nome">Nome Completo</Label>
                 <Input
-                  id="nome-completo"
-                  defaultValue="Operador"
+                  id="nome"
+                  value={formData.nome}
+                  onChange={(e) => handleInputChange('nome', e.target.value)}
                 />
               </div>
               <div className="space-y-2">
@@ -57,15 +129,19 @@ export default function PerfilPage() {
                 <Input
                   id="email"
                   type="email"
-                  defaultValue="operador@senior.com"
+                  value={formData.email}
                   disabled
                 />
               </div>
             </div>
             <div className="flex justify-end">
-              <Button>Salvar Alterações</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Salvar Alterações
+              </Button>
             </div>
           </form>
+          )}
         </CardContent>
       </Card>
 

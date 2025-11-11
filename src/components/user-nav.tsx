@@ -22,16 +22,19 @@ import { LogOut, User, Settings, Bell, CheckCircle, CalendarClock, FileWarning, 
 import { ThemeToggle } from "./theme-toggle";
 import { Badge } from "./ui/badge";
 import { useEffect, useState, useMemo } from "react";
-import { useCollection, useFirestore, useMemoFirebase, useUser } from "@/firebase";
-import { collection, query, where } from "firebase/firestore";
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from "@/firebase";
+import { collection, query, where, doc } from "firebase/firestore";
 import { differenceInDays, parseISO } from 'date-fns';
 
 
 export function UserNav() {
   const router = useRouter();
   const { user } = useUser();
-  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
   const firestore = useFirestore();
+  const [isNotificationOpen, setIsNotificationOpen] = useState(false);
+
+  const userDocRef = useMemoFirebase(() => (user ? doc(firestore, 'users', user.uid) : null), [user, firestore]);
+  const { data: userData } = useDoc(userDocRef);
 
   const processosQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -177,15 +180,15 @@ export function UserNav() {
         <DropdownMenuTrigger asChild>
           <Button variant="ghost" className="relative h-10 w-10 rounded-full">
             <Avatar className="h-10 w-10">
-              <AvatarImage src={user?.photoURL || "https://i.pravatar.cc/150?u=a042581f4e29026704d"} alt="@user" />
-              <AvatarFallback>{user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
+              <AvatarImage src={userData?.photoURL || user?.photoURL || undefined} alt="@user" />
+              <AvatarFallback>{userData?.nome?.charAt(0) || user?.email?.charAt(0).toUpperCase()}</AvatarFallback>
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              <p className="text-sm font-medium leading-none">{user?.displayName || "Usuário"}</p>
+              <p className="text-sm font-medium leading-none">{userData?.nome || user?.displayName || "Usuário"}</p>
               <p className="text-xs leading-none text-muted-foreground">
                 {user?.email}
               </p>
