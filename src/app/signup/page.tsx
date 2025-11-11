@@ -10,8 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Loader2, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import Image from 'next/image';
 import { useAuth, useFirestore } from '@/firebase';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
-import { setDoc, doc, getCountFromServer, collection } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
+import { setDoc, doc, getCountFromServer, collection, getDoc } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 
 export default function SignupPage() {
@@ -80,17 +80,55 @@ export default function SignupPage() {
 
       router.push('/dashboard');
     } catch (error: any) {
-        let description = 'Ocorreu um erro ao criar a sua conta.';
         if (error.code === 'auth/email-already-in-use') {
-            description = 'Este endereço de e-mail já está a ser utilizado.';
-        } else if (error.code === 'auth/weak-password') {
-            description = 'A sua palavra-passe é demasiado fraca. Por favor, escolha uma mais forte.';
+            // Se o e-mail já existe na autenticação, tente fazer o login.
+            // Isso trata o caso em que a criação do usuário na autenticação foi bem-sucedida, mas a criação do documento no Firestore falhou.
+            try {
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const user = userCredential.user;
+                const userDocRef = doc(firestore, 'users', user.uid);
+                const userDoc = await getDoc(userDocRef);
+
+                if (!userDoc.exists()) {
+                    // O usuário existe na autenticação, mas não no Firestore. Crie o documento.
+                    const usersCollectionRef = collection(firestore, 'users');
+                    const snapshot = await getCountFromServer(usersCollectionRef);
+                    const isFirstUser = snapshot.data().count === 0;
+
+                    await setDoc(userDocRef, {
+                        id: user.uid,
+                        nome: name,
+                        email: user.email,
+                        funcao: isFirstUser ? 'Administrador' : 'Operador',
+                        status: 'Ativo',
+                    });
+                     toast({
+                        title: 'Perfil Recuperado!',
+                        description: 'A sua conta foi recuperada e o perfil criado. A fazer login...',
+                    });
+                }
+                
+                router.push('/dashboard');
+
+            } catch (loginError: any) {
+                // Se o login falhar (por exemplo, senha incorreta), então o e-mail está realmente em uso por outra pessoa.
+                 toast({
+                    title: 'Erro de Registo',
+                    description: 'Este endereço de e-mail já está a ser utilizado por outra conta.',
+                    variant: 'destructive',
+                });
+            }
+        } else {
+            let description = 'Ocorreu um erro ao criar a sua conta.';
+            if (error.code === 'auth/weak-password') {
+                description = 'A sua palavra-passe é demasiado fraca. Por favor, escolha uma mais forte.';
+            }
+            toast({
+                title: 'Erro de Registo',
+                description: description,
+                variant: 'destructive',
+            });
         }
-        toast({
-            title: 'Erro de Registo',
-            description: description,
-            variant: 'destructive',
-        });
     } finally {
         setIsLoading(false);
     }
@@ -244,3 +282,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+    
