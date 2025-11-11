@@ -91,6 +91,10 @@ const initialFormData = {
     exportadorId: '',
     portoEmbarqueId: '',
     portoDescargaId: '',
+    exportadorNome: '',
+    portoEmbarqueNome: '',
+    portoDescargaNome: '',
+    destino: '',
     status: 'Iniciado / Aguardando Booking',
     booking_number: '',
     armadorId: '',
@@ -439,12 +443,15 @@ export default function NovoProcessoPage() {
     const processoRef = doc(firestore, 'processos', docId);
 
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
+    const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
 
     const dataToSave = {
         ...formData,
         id: docId,
         exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+        portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
+        portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
     };
     
@@ -522,7 +529,7 @@ export default function NovoProcessoPage() {
                              <div className="space-y-2">
                                 <Label>Data da Nomeação</Label>
                                 <DatePicker 
-                                    date={formData.data_nomeacao ? new Date(formData.data_nomeacao) : undefined}
+                                    date={formData.data_nomeacao || undefined}
                                     onDateChange={(date) => handleInputChange('data_nomeacao', date)} 
                                 />
                             </div>
@@ -629,18 +636,18 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Previsão de Embarque (ETD)</Label>
-                                <DatePicker date={formData.etd ? new Date(formData.etd) : undefined} onDateChange={date => handleInputChange('etd', date)} showTime />
+                                <DatePicker date={formData.etd || undefined} onDateChange={date => handleInputChange('etd', date)} showTime />
                             </div>
                             <div className="space-y-2">
                                 <Label>Previsão de Chegada (ETA)</Label>
-                                <DatePicker date={formData.eta ? new Date(formData.eta) : undefined} onDateChange={date => handleInputChange('eta', date)} showTime />
+                                <DatePicker date={formData.eta || undefined} onDateChange={date => handleInputChange('eta', date)} showTime />
                             </div>
                         </div>
                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label>Deadline Draft</Label>
                                 <div className="flex items-center gap-2">
-                                <DatePicker date={formData.deadline_draft ? new Date(formData.deadline_draft) : undefined} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
+                                <DatePicker date={formData.deadline_draft || undefined} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
                                     <Upload className="h-4 w-4" />
                                 </Button>
@@ -649,7 +656,7 @@ export default function NovoProcessoPage() {
                             <div className="space-y-2">
                                 <Label>Deadline VGM</Label>
                                 <div className="flex items-center gap-2">
-                                <DatePicker date={formData.deadline_vgm ? new Date(formData.deadline_vgm) : undefined} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
+                                <DatePicker date={formData.deadline_vgm || undefined} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                 <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
                                     <Upload className="h-4 w-4" />
                                 </Button>
@@ -658,7 +665,7 @@ export default function NovoProcessoPage() {
                             <div className="space-y-2">
                                 <Label>Deadline Carga</Label>
                                 <div className="flex items-center gap-2">
-                                <DatePicker date={formData.deadline_carga ? new Date(formData.deadline_carga) : undefined} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
+                                <DatePicker date={formData.deadline_carga || undefined} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                 <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
                                     <Upload className="h-4 w-4" />
                                 </Button>
