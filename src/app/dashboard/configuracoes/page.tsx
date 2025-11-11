@@ -8,9 +8,15 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog, History, ClipboardList } from 'lucide-react';
+import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog, History, ClipboardList, Image as ImageIcon } from 'lucide-react';
 
 const configOptions = [
+    {
+        title: 'Logo do Sistema',
+        description: 'Altere o logo exibido no sistema.',
+        href: '/dashboard/configuracoes/logo',
+        icon: ImageIcon,
+    },
     {
         title: 'Ambiente de Cadastro',
         description: 'Gerencie os tipos de cadastros do sistema.',
