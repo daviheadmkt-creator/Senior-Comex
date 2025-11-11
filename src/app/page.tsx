@@ -19,8 +19,8 @@ export default function LoginPage() {
   const auth = useAuth();
   const { toast } = useToast();
   
-  const [email, setEmail] = useState('davi@dftarget.com.br');
-  const [password, setPassword] = useState('Brasil142536@');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
@@ -36,6 +36,9 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
+      if (!auth) {
+        throw new Error("Authentication service is not available.");
+      }
       await signInWithEmailAndPassword(auth, email, password);
       router.push('/dashboard');
     } catch (error: any) {
