@@ -8,7 +8,7 @@
  */
 import { ai } from '@/ai/genkit';
 import { getAuth } from 'firebase-admin/auth';
-import { initializeAdminApp } from '@/firebase/firebase-admin';
+import { adminApp } from '@/firebase/firebase-admin';
 
 // This interface must match the one in the calling component
 export interface UserRecord {
@@ -28,7 +28,7 @@ export const listUsersFlow = ai.defineFlow(
     policy: {
       read: {
         rules: [{
-          role: 'firebase.auth.user.list',
+          role: 'firebaseauth.users.list',
           principals: 'allUsers'
         }]
       }
@@ -36,11 +36,8 @@ export const listUsersFlow = ai.defineFlow(
   },
   async (): Promise<UserRecord[]> => {
     try {
-      // Ensure the Firebase Admin SDK is initialized within the flow's execution context.
-      initializeAdminApp();
-      
-      // Retrieve all users from Firebase Auth
-      const userRecords = await getAuth().listUsers();
+      // Retrieve all users from Firebase Auth using the initialized admin app
+      const userRecords = await getAuth(adminApp).listUsers();
 
       // Map the full user records to the simplified UserRecord interface
       return userRecords.users.map((user) => ({
