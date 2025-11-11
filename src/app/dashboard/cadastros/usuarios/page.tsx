@@ -32,93 +32,60 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase, useAuth } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
-import { listUsers, type UserRecord } from '@/ai/flows/list-users-flow';
-import { deleteUser } from 'firebase/auth';
 
 
 export default function ListaUsuariosPage() {
   const firestore = useFirestore();
-  const auth = useAuth();
   const { user: currentUser } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
 
-  const [users, setUsers] = useState<UserRecord[]>([]);
-  const [isUsersListLoading, setIsUsersListLoading] = useState(true);
-  const [usersListError, setUsersListError] = useState<Error | null>(null);
-
   const userDocRef = useMemoFirebase(
-    () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
+    () => (currentUser ? doc(firestore, 'users', currentUser.uid) : null),
     [firestore, currentUser]
   );
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+  
+  const usersCollectionQuery = useMemoFirebase(
+    () => (isAdminVerified && isAdmin ? collection(firestore, 'users') : null),
+    [firestore, isAdminVerified, isAdmin]
+  );
+  const { data: users, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
 
   useEffect(() => {
-    if (!isUserDocLoading && currentUserData) {
-      setIsAdmin(currentUserData.funcao === 'Administrador');
-      setIsAdminVerified(true);
-    } else if (!isUserDocLoading && !currentUserData) {
+    if (!isUserDocLoading) {
+      setIsAdmin(currentUserData?.funcao === 'Administrador');
       setIsAdminVerified(true);
     }
   }, [currentUserData, isUserDocLoading]);
 
 
-  useEffect(() => {
-    async function fetchUsers() {
-      if (!isAdmin) {
-          setIsUsersListLoading(false);
-          return;
-      };
-
-      setIsUsersListLoading(true);
-      try {
-        const userList = await listUsers();
-        // Here you could merge with Firestore data if needed
-        // For now, just display auth users
-        setUsers(userList);
-        setUsersListError(null);
-      } catch (error: any) {
-        console.error("Failed to fetch users:", error);
-        setUsersListError(error);
-      } finally {
-        setIsUsersListLoading(false);
-      }
-    }
-
-    if (isAdminVerified) {
-        fetchUsers();
-    }
-  }, [isAdmin, isAdminVerified]);
-
-
-  const getStatusVariant = (disabled: boolean): "destructive" | "default" => {
-    return disabled ? 'destructive' : 'default';
+  const getStatusVariant = (status: string): "destructive" | "default" => {
+    return status === 'Inativo' ? 'destructive' : 'default';
   };
 
   const handleDelete = async (uid: string) => {
-    if (!firestore || !auth) return;
-     // NOTE: Deleting a user from Auth requires Admin privileges, which we can't do from the client.
-     // This will only delete the Firestore record.
-     // A cloud function triggered on document deletion would be needed for full cleanup.
+    if (!firestore) return;
     try {
         await deleteDoc(doc(firestore, 'users', uid));
-        setUsers(prevUsers => prevUsers.filter(u => u.uid !== uid));
     } catch(error) {
         console.error("Error deleting user document:", error);
     }
   };
 
   const renderContent = () => {
-    if (!isAdminVerified || isUserDocLoading) {
+    const isLoading = isUserDocLoading || (isAdmin && isLoadingUsers);
+
+    if (isLoading) {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center">
               <div className='flex items-center justify-center gap-2'>
                 <Loader2 className='h-5 w-5 animate-spin' />
-                <span>Verificando permissões...</span>
+                <span>Verificando permissões e carregando usuários...</span>
               </div>
             </TableCell>
           </TableRow>
@@ -134,56 +101,33 @@ export default function ListaUsuariosPage() {
           </TableRow>
        );
     }
-
-    if (isUsersListLoading) {
-        return (
-          <TableRow>
-            <TableCell colSpan={5} className="text-center">
-               <div className='flex items-center justify-center gap-2'>
-                <Loader2 className='h-5 w-5 animate-spin' />
-                <span>Carregando usuários...</span>
-              </div>
-            </TableCell>
-          </TableRow>
-       );
-    }
-
-    if (usersListError) {
-        return (
-            <TableRow>
-                <TableCell colSpan={5} className="text-center text-destructive">
-                    Erro ao carregar usuários: {usersListError.message}
-                </TableCell>
-            </TableRow>
-        );
-    }
     
     if (!users || users.length === 0) {
         return (
              <TableRow>
                 <TableCell colSpan={5} className="text-center text-muted-foreground">
-                    Nenhum usuário encontrado.
+                    Nenhum usuário encontrado na base de dados.
                 </TableCell>
             </TableRow>
         );
     }
 
     return users.map((user) => (
-          <TableRow key={user.uid}>
-            <TableCell className="font-medium">{user.displayName || 'N/A'}</TableCell>
+          <TableRow key={user.id}>
+            <TableCell className="font-medium">{user.nome || 'N/A'}</TableCell>
             <TableCell>{user.email}</TableCell>
-            <TableCell>N/A</TableCell>
+            <TableCell>{user.funcao || 'N/A'}</TableCell>
             <TableCell>
               <Badge
-                variant={getStatusVariant(user.disabled)}
+                variant={getStatusVariant(user.status)}
               >
-                {user.disabled ? 'Inativo' : 'Ativo'}
+                {user.status || 'N/A'}
               </Badge>
             </TableCell>
             <TableCell>
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard/cadastros/usuarios/novo?id=${user.uid}&edit=true`}
+                  href={`/dashboard/cadastros/usuarios/novo?id=${user.id}&edit=true`}
                   passHref
                 >
                   <Button
@@ -200,7 +144,7 @@ export default function ListaUsuariosPage() {
                       variant="outline"
                       size="icon"
                       className="text-red-600 hover:text-red-700"
-                       disabled={user.uid === currentUser?.uid}
+                       disabled={user.id === currentUser?.uid}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -211,13 +155,13 @@ export default function ListaUsuariosPage() {
                         Você tem certeza?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Esta ação removerá o perfil do usuário da base de dados, mas não da autenticação. Para uma remoção completa, utilize o Console do Firebase.
+                        Esta ação removerá o perfil do usuário da base de dados. Esta ação não pode ser desfeita.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleDelete(user.uid)}
+                        onClick={() => handleDelete(user.id)}
                       >
                         Excluir Perfil
                       </AlertDialogAction>
