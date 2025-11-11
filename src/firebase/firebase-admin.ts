@@ -18,7 +18,7 @@ export const adminApp =
   );
 
 export function initializeAdminApp(): App {
-    const adminApps = getApps().filter(app => app.name.includes('firebase-admin-app'));
+    const adminApps = getApps().filter(app => app.name === 'firebase-admin-app');
     if (adminApps.length > 0) {
         return adminApps[0]!;
     }

@@ -35,12 +35,21 @@ import {
 import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
+import { listUsers, type UserRecord } from '@/ai/flows/list-users-flow';
+import { getAuth } from 'firebase/auth';
+import { deleteUser } from 'firebase/auth';
+
 
 export default function ListaUsuariosPage() {
   const firestore = useFirestore();
-  const { user: currentUser, isUserLoading: isAuthLoading } = useUser();
+  const auth = useAuth();
+  const { user: currentUser } = useUser();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
+
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [isUsersListLoading, setIsUsersListLoading] = useState(true);
+  const [usersListError, setUsersListError] = useState<Error | null>(null);
 
   const userDocRef = useMemoFirebase(
     () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
@@ -53,39 +62,58 @@ export default function ListaUsuariosPage() {
       setIsAdmin(currentUserData.funcao === 'Administrador');
       setIsAdminVerified(true);
     } else if (!isUserDocLoading && !currentUserData) {
-      // User doc doesn't exist or failed to load, they are not an admin.
       setIsAdminVerified(true);
     }
   }, [currentUserData, isUserDocLoading]);
 
 
-  const usersCollection = useMemoFirebase(
-    () => (firestore && isAdminVerified && isAdmin ? collection(firestore, 'users') : null),
-    [firestore, isAdminVerified, isAdmin]
-  );
-  
-  const { data: users, isLoading: isUsersListLoading, error: usersListError } = useCollection(usersCollection);
+  useEffect(() => {
+    async function fetchUsers() {
+      if (!isAdmin) {
+          setIsUsersListLoading(false);
+          return;
+      };
 
-  const isLoading = isAuthLoading || isUserDocLoading || (isAdmin && !users && !usersListError);
+      setIsUsersListLoading(true);
+      try {
+        const userList = await listUsers();
+        // Here you could merge with Firestore data if needed
+        // For now, just display auth users
+        setUsers(userList);
+        setUsersListError(null);
+      } catch (error: any) {
+        console.error("Failed to fetch users:", error);
+        setUsersListError(error);
+      } finally {
+        setIsUsersListLoading(false);
+      }
+    }
 
-  const getStatusVariant = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'ativo':
-        return 'default';
-      case 'inativo':
-        return 'secondary';
-      default:
-        return 'outline';
+    if (isAdminVerified) {
+        fetchUsers();
+    }
+  }, [isAdmin, isAdminVerified]);
+
+
+  const getStatusVariant = (disabled: boolean): "destructive" | "default" => {
+    return disabled ? 'destructive' : 'default';
+  };
+
+  const handleDelete = async (uid: string) => {
+    if (!firestore || !auth) return;
+     // NOTE: Deleting a user from Auth requires Admin privileges, which we can't do from the client.
+     // This will only delete the Firestore record.
+     // A cloud function triggered on document deletion would be needed for full cleanup.
+    try {
+        await deleteDoc(doc(firestore, 'users', uid));
+        setUsers(prevUsers => prevUsers.filter(u => u.uid !== uid));
+    } catch(error) {
+        console.error("Error deleting user document:", error);
     }
   };
 
-  const handleDelete = (id: string) => {
-    if (!firestore) return;
-    deleteDoc(doc(firestore, 'users', id));
-  };
-
   const renderContent = () => {
-    if (!isAdminVerified) {
+    if (!isAdminVerified || isUserDocLoading) {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center">
@@ -142,26 +170,21 @@ export default function ListaUsuariosPage() {
     }
 
     return users.map((user) => (
-          <TableRow key={user.id}>
-            <TableCell className="font-medium">{user.nome}</TableCell>
+          <TableRow key={user.uid}>
+            <TableCell className="font-medium">{user.displayName || 'N/A'}</TableCell>
             <TableCell>{user.email}</TableCell>
-            <TableCell>{user.funcao}</TableCell>
+            <TableCell>N/A</TableCell>
             <TableCell>
               <Badge
-                variant={getStatusVariant(user.status)}
-                className={
-                  user.status === 'Ativo'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-800'
-                }
+                variant={getStatusVariant(user.disabled)}
               >
-                {user.status}
+                {user.disabled ? 'Inativo' : 'Ativo'}
               </Badge>
             </TableCell>
             <TableCell>
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard/cadastros/usuarios/novo?id=${user.id}&edit=true`}
+                  href={`/dashboard/cadastros/usuarios/novo?id=${user.uid}&edit=true`}
                   passHref
                 >
                   <Button
@@ -178,7 +201,7 @@ export default function ListaUsuariosPage() {
                       variant="outline"
                       size="icon"
                       className="text-red-600 hover:text-red-700"
-                       disabled={user.id === currentUser?.uid}
+                       disabled={user.uid === currentUser?.uid}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -189,17 +212,15 @@ export default function ListaUsuariosPage() {
                         Você tem certeza?
                       </AlertDialogTitle>
                       <AlertDialogDescription>
-                        Essa ação não pode ser desfeita. Isso excluirá
-                        permanentemente o usuário e removerá seus dados de
-                        nossos servidores.
+                        Esta ação removerá o perfil do usuário da base de dados, mas não da autenticação. Para uma remoção completa, utilize o Console do Firebase.
                       </AlertDialogDescription>
                     </AlertDialogHeader>
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDelete(user.uid)}
                       >
-                        Excluir
+                        Excluir Perfil
                       </AlertDialogAction>
                     </AlertDialogFooter>
                   </AlertDialogContent>
