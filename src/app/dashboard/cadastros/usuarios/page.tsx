@@ -32,11 +32,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase, useAuth } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
 import { listUsers, type UserRecord } from '@/ai/flows/list-users-flow';
-import { getAuth } from 'firebase/auth';
 import { deleteUser } from 'firebase/auth';
 
 
