@@ -30,7 +30,7 @@ import {
   useUser,
   setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, getCountFromServer, setDoc } from 'firebase/firestore';
+import { collection, doc, getCountFromServer } from 'firebase/firestore';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
 const userStatus = ['Ativo', 'Inativo'];
@@ -109,7 +109,7 @@ export default function NovoUsuarioPage() {
       funcao: isFirstUser ? 'Administrador' : (formData.funcao || 'Operador'),
     };
     
-    await setDoc(userRef, dataToSave, { merge: true });
+    setDocumentNonBlocking(userRef, dataToSave, { merge: true });
 
     toast({
         title: 'Sucesso!',
