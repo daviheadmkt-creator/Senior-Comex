@@ -69,7 +69,7 @@ export function Combobox({
                         key={item.value}
                         value={item.label}
                         onSelect={(currentValue) => {
-                            const selectedItem = items.find(i => i.label.toLowerCase() === currentValue.toLowerCase());
+                            const selectedItem = items.find(i => i.label.toLowerCase() === currentValue);
                             if (selectedItem) {
                                 onValueChange(selectedItem.value === value ? "" : selectedItem.value)
                             }
