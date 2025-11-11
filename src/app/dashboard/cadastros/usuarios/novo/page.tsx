@@ -29,8 +29,9 @@ import {
   useMemoFirebase,
   useUser,
   useAuth,
+  setDocumentNonBlocking,
 } from '@/firebase';
-import { collection, doc, getCountFromServer, setDoc } from 'firebase/firestore';
+import { collection, doc, getCountFromServer } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
@@ -89,32 +90,24 @@ export default function NovoUsuarioPage() {
     if (isEditing && userId) {
         // --- LOGICA DE EDIÇÃO ---
         const userRef = doc(firestore, 'users', userId);
-        try {
-            await setDoc(userRef, formData, { merge: true });
-            toast({
-                title: 'Sucesso!',
-                description: 'O usuário foi atualizado.',
-            });
-            router.push('/dashboard/cadastros/usuarios');
-        } catch (error: any) {
-            toast({ title: 'Erro ao Atualizar', description: error.message, variant: 'destructive'});
-        } finally {
-            setIsSaving(false);
-        }
+        setDocumentNonBlocking(userRef, formData, { merge: true });
+        toast({
+            title: 'Sucesso!',
+            description: 'O usuário foi atualizado.',
+        });
+        router.push('/dashboard/cadastros/usuarios');
+        setIsSaving(false);
 
     } else {
         // --- LOGICA DE CRIAÇÃO ---
         try {
-            // 1. Criar usuário na Autenticação com uma senha temporária
-            // A senha é forte o suficiente para os padrões do Firebase, mas não deve ser usada pelo usuário.
             const tempPassword = `Seni0r_${Date.now()}`;
             const userCredential = await createUserWithEmailAndPassword(auth, formData.email, tempPassword);
             const user = userCredential.user;
             
-            // 2. Criar documento no Firestore
             const usersCollectionRef = collection(firestore, 'users');
             const snapshot = await getCountFromServer(usersCollectionRef);
-            const isFirstUser = snapshot.data().count <= 1; // <= 1 porque o usuário já foi criado na auth
+            const isFirstUser = snapshot.data().count <= 1;
 
             const userRef = doc(firestore, 'users', user.uid);
             const dataToSave = { 
@@ -125,16 +118,13 @@ export default function NovoUsuarioPage() {
                 status: 'Ativo',
             };
 
-            await setDoc(userRef, dataToSave, { merge: true });
+            setDocumentNonBlocking(userRef, dataToSave, { merge: true });
 
             toast({
                 title: 'Sucesso!',
                 description: `Usuário criado. O próximo passo é enviar um e-mail de redefinição de senha.`,
             });
             
-            // Idealmente, aqui você chamaria uma função para enviar o e-mail de redefinição de senha.
-            // await sendPasswordResetEmail(auth, formData.email);
-
             router.push('/dashboard/cadastros/usuarios');
 
         } catch (error: any) {
