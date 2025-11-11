@@ -38,8 +38,8 @@ export default function SignupPage() {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) {
-        toast({ title: 'Erro', description: 'O serviço de base de dados não está disponível.', variant: 'destructive'});
+    if (!firestore || !auth) {
+        toast({ title: 'Erro', description: 'Serviços de autenticação ou base de dados indisponíveis.', variant: 'destructive'});
         return;
     }
     if (password !== confirmPassword) {
@@ -52,16 +52,18 @@ export default function SignupPage() {
     }
     setIsLoading(true);
     try {
+      // 1. Criar usuário no Firebase Auth
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const user = userCredential.user;
 
-      // Now that the user is created in Auth, create the Firestore document.
+      // 2. Verificar se é o primeiro usuário para atribuir a função de Administrador
       const usersCollectionRef = collection(firestore, 'users');
-      
-      // We check the count *after* user creation in auth, but *before* creating the doc.
       const snapshot = await getCountFromServer(usersCollectionRef);
+      // A contagem é feita *antes* de adicionar o novo documento.
+      // Se a contagem for 0, este é o primeiro usuário.
       const isFirstUser = snapshot.data().count === 0;
 
+      // 3. Criar o documento do usuário no Firestore
       const userDocRef = doc(firestore, 'users', user.uid);
       await setDoc(userDocRef, {
         id: user.uid,

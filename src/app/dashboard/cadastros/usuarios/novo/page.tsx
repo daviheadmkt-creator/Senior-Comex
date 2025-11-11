@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
@@ -28,9 +28,10 @@ import {
   useDoc,
   useMemoFirebase,
   useUser,
-  setDocumentNonBlocking,
+  useAuth,
 } from '@/firebase';
-import { collection, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 
 const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
 const userStatus = ['Ativo', 'Inativo'];
@@ -40,6 +41,7 @@ export default function NovoUsuarioPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const auth = useAuth();
   const { user: currentUser } = useUser();
 
   const [formData, setFormData] = useState({
@@ -48,6 +50,7 @@ export default function NovoUsuarioPage() {
     funcao: '',
     status: 'Ativo',
   });
+  const [isSaving, setIsSaving] = useState(false);
 
   const isEditing = searchParams.has('edit');
   const userId = searchParams.get('id');
@@ -76,48 +79,86 @@ export default function NovoUsuarioPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
-
-    let docId = userId;
-    let isFirstUser = false;
-    
-    // Fallback to creating a new ID if for some reason currentUser isn't available
-    if(!isEditing && !docId) {
-      docId = doc(collection(firestore, 'users')).id;
-    }
-    
-    // The first user created becomes an admin. Use their auth UID if available.
-    if (!isEditing && currentUser && !userId) {
-        const usersCollectionRef = collection(firestore, 'users');
-        const snapshot = await getCountFromServer(usersCollectionRef);
-        if (snapshot.data().count === 0) {
-            isFirstUser = true;
-            docId = currentUser.uid;
-        }
-    }
-    
-    if (!docId) {
-        toast({ title: 'Erro', description: 'Falha ao obter ID para o usuário.', variant: 'destructive'});
+    if (!firestore || !auth) {
+        toast({ title: 'Erro', description: 'Serviços de autenticação ou base de dados indisponíveis.', variant: 'destructive'});
         return;
     }
 
-    const userRef = doc(firestore, 'users', docId);
+    setIsSaving(true);
 
-    const dataToSave = { 
-      ...formData,
-      id: docId,
-      funcao: isFirstUser ? 'Administrador' : (formData.funcao || 'Operador'),
-    };
-    
-    setDocumentNonBlocking(userRef, dataToSave, { merge: true });
+    if (isEditing && userId) {
+        // --- LOGICA DE EDIÇÃO ---
+        const userRef = doc(firestore, 'users', userId);
+        try {
+            await setDoc(userRef, formData, { merge: true });
+            toast({
+                title: 'Sucesso!',
+                description: 'O usuário foi atualizado.',
+            });
+            router.push('/dashboard/cadastros/usuarios');
+        } catch (error: any) {
+            toast({ title: 'Erro ao Atualizar', description: error.message, variant: 'destructive'});
+        } finally {
+            setIsSaving(false);
+        }
 
-    toast({
-        title: 'Sucesso!',
-        description: `O usuário foi ${isEditing ? 'atualizado' : 'salvo'}. ${isFirstUser ? 'Este usuário foi definido como Administrador.' : ''}`,
-    });
+    } else {
+        // --- LOGICA DE CRIAÇÃO ---
+        try {
+            // 1. Criar usuário na Autenticação com uma senha temporária
+            // A senha é forte o suficiente para os padrões do Firebase, mas não deve ser usada pelo usuário.
+            const tempPassword = `Seni0r_${Date.now()}`;
+            const userCredential = await createUserWithEmailAndPassword(auth, formData.email, tempPassword);
+            const user = userCredential.user;
+            
+            // 2. Criar documento no Firestore
+            const usersCollectionRef = collection(firestore, 'users');
+            const snapshot = await getCountFromServer(usersCollectionRef);
+            const isFirstUser = snapshot.data().count <= 1; // <= 1 porque o usuário já foi criado na auth
 
-    router.push('/dashboard/cadastros/usuarios');
+            const userRef = doc(firestore, 'users', user.uid);
+            const dataToSave = { 
+                id: user.uid,
+                nome: formData.nome,
+                email: formData.email,
+                funcao: isFirstUser ? 'Administrador' : (formData.funcao || 'Operador'),
+                status: 'Ativo',
+            };
+
+            await setDoc(userRef, dataToSave, { merge: true });
+
+            toast({
+                title: 'Sucesso!',
+                description: `Usuário criado. O próximo passo é enviar um e-mail de redefinição de senha.`,
+            });
+            
+            // Idealmente, aqui você chamaria uma função para enviar o e-mail de redefinição de senha.
+            // await sendPasswordResetEmail(auth, formData.email);
+
+            router.push('/dashboard/cadastros/usuarios');
+
+        } catch (error: any) {
+            let description = 'Ocorreu um erro ao criar o usuário.';
+            if (error.code === 'auth/email-already-in-use') {
+                description = 'Este endereço de e-mail já está em uso por outra conta.';
+            } else if (error.code === 'auth/invalid-email') {
+                description = 'O e-mail fornecido não é válido.';
+            }
+            toast({ title: 'Erro na Criação', description, variant: 'destructive'});
+        } finally {
+            setIsSaving(false);
+        }
+    }
   };
+  
+  if (isUserLoading) {
+      return (
+          <div className="flex items-center justify-center h-96">
+              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+      );
+  }
+
 
   return (
     <div className="space-y-6">
@@ -156,7 +197,9 @@ export default function NovoUsuarioPage() {
                 onChange={(e) => handleInputChange('email', e.target.value)}
                 placeholder="email@senior.com"
                 required
+                disabled={isEditing}
               />
+               {isEditing && <p className='text-xs text-muted-foreground'>O e-mail não pode ser alterado após a criação.</p>}
             </div>
             <div className="grid md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -197,13 +240,21 @@ export default function NovoUsuarioPage() {
                 </Select>
               </div>
             </div>
+            {!isEditing && (
+                 <p className='text-sm text-muted-foreground p-4 border rounded-md'>
+                    Um novo usuário será criado no sistema de autenticação. Após a criação, recomendamos enviar um e-mail de redefinição de senha para que o usuário possa definir sua própria senha de acesso.
+                </p>
+            )}
             <div className="flex justify-end gap-2 pt-4">
               <Link href="/dashboard/cadastros/usuarios" passHref>
                 <Button variant="outline" type="button">
                   Cancelar
                 </Button>
               </Link>
-              <Button type="submit">Salvar</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {isSaving ? (isEditing ? 'Salvando...' : 'Criando...') : (isEditing ? 'Salvar Alterações' : 'Criar Usuário')}
+              </Button>
             </div>
           </form>
         </CardContent>
