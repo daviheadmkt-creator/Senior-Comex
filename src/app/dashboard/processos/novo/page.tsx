@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import {
   Card,
   CardContent,
@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Building } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Building, Download, Check } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -128,6 +128,9 @@ const initialFormData = {
     deadline_carga: null,
     etd: null,
     eta: null,
+    deadline_draft_file: null as { name: string; url: string } | null,
+    deadline_vgm_file: null as { name: string; url: string } | null,
+    deadline_carga_file: null as { name: string; url: string } | null,
   };
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -146,6 +149,9 @@ export default function NovoProcessoPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | null>(null);
+
   
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
@@ -214,7 +220,6 @@ export default function NovoProcessoPage() {
         } else {
             setExporterContacts([]);
         }
-        // Reset the analyst selection when exporter changes
         handleInputChange('analistaId', '');
         handleInputChange('analistaNome', '');
     }
@@ -227,8 +232,41 @@ export default function NovoProcessoPage() {
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
-  const handleInputChange = (id: string, value: string | number | Date | null) => {
+  const handleInputChange = (id: string, value: any) => {
     setFormData(prev => ({ ...prev, [id]: value ?? '' }));
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && uploadTarget) {
+      const fileData = {
+        name: file.name,
+        // In a real app, this would be an upload URL from a service like Firebase Storage
+        url: URL.createObjectURL(file), 
+      };
+      handleInputChange(uploadTarget, fileData);
+      toast({
+        title: "Ficheiro Anexado",
+        description: `${file.name} foi anexado com sucesso.`,
+      });
+    }
+    // Reset file input and target
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setUploadTarget(null);
+  };
+
+  const triggerFileUpload = (target: string) => {
+    setUploadTarget(target);
+    fileInputRef.current?.click();
+  };
+
+  const removeFile = (target: string) => {
+    handleInputChange(target, null);
+    toast({
+      title: "Anexo Removido",
+      description: "O ficheiro foi removido.",
+      variant: "destructive"
+    });
   };
   
   const handlePortChange = (value: string) => {
@@ -520,6 +558,7 @@ export default function NovoProcessoPage() {
                 <Button type="submit">Salvar Alterações</Button>
             </div>
         </div>
+        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
           {/* Etapa 1 */}
@@ -663,32 +702,71 @@ export default function NovoProcessoPage() {
                                 <DatePicker date={formData.eta || undefined} onDateChange={date => handleInputChange('eta', date)} showTime />
                             </div>
                         </div>
-                        <div className="grid md:grid-cols-3 gap-6">
+                         <div className="grid md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label>Deadline Draft</Label>
                                 <div className="flex items-center gap-2">
                                 <DatePicker date={formData.deadline_draft || undefined} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
-                                <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
-                                    <Upload className="h-4 w-4" />
-                                </Button>
+                                {formData.deadline_draft_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.deadline_draft_file.url} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="icon" type="button" title={formData.deadline_draft_file.name}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_draft_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Deadline VGM</Label>
                                 <div className="flex items-center gap-2">
                                 <DatePicker date={formData.deadline_vgm || undefined} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
-                                <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
-                                    <Upload className="h-4 w-4" />
-                                </Button>
+                                 {formData.deadline_vgm_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.deadline_vgm_file.url} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="icon" type="button" title={formData.deadline_vgm_file.name}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_vgm_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
                                 </div>
                             </div>
                             <div className="space-y-2">
                                 <Label>Deadline Carga</Label>
                                 <div className="flex items-center gap-2">
                                 <DatePicker date={formData.deadline_carga || undefined} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
-                                <Button variant="outline" size="icon" type="button" title="Anexar Comprovante">
-                                    <Upload className="h-4 w-4" />
-                                </Button>
+                                  {formData.deadline_carga_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.deadline_carga_file.url} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="icon" type="button" title={formData.deadline_carga_file.name}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_carga_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
                                 </div>
                             </div>
                         </div>
