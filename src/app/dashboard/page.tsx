@@ -10,13 +10,13 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileWarning, CalendarClock, MoreHorizontal, Loader2 } from 'lucide-react';
+import { AlertTriangle, FileWarning, CalendarClock, MoreHorizontal, Loader2, Eye } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, format } from 'date-fns';
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
@@ -27,6 +27,15 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     if (lowerStatus.includes('atrasado') || lowerStatus.includes('cancelado') || lowerStatus.includes('correcao')) return 'destructive';
     return 'outline';
 };
+
+const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+        return format(parseISO(dateString), 'dd/MM/yyyy');
+    } catch {
+        return 'Data Inválida';
+    }
+}
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -103,17 +112,20 @@ export default function DashboardPage() {
                     <TableHeader>
                         <TableRow>
                             <TableHead>PO</TableHead>
-                            <TableHead>Cliente</TableHead>
+                            <TableHead>Analista (Cliente)</TableHead>
                             <TableHead>Produto</TableHead>
                             <TableHead>Navio</TableHead>
-                            <TableHead>Destino</TableHead>
+                            <TableHead>Origem / Destino</TableHead>
+                            <TableHead>ETA</TableHead>
+                            <TableHead>Deadline</TableHead>
                             <TableHead>Status</TableHead>
+                            <TableHead>Timeline</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {isLoading && (
                              <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={9} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                                 </TableCell>
                             </TableRow>
@@ -121,18 +133,27 @@ export default function DashboardPage() {
                         {!isLoading && processosAtivos && processosAtivos.map((processo) => (
                             <TableRow key={processo.id}>
                                 <TableCell className="font-medium">{processo.po_number}</TableCell>
-                                <TableCell>{processo.exportadorNome}</TableCell>
+                                <TableCell>{processo.analistaNome || 'N/A'} <br/> <span className='text-xs text-muted-foreground'>{processo.exportadorNome}</span></TableCell>
                                 <TableCell>{processo.produtoNome}</TableCell>
                                 <TableCell>{processo.navio}</TableCell>
-                                <TableCell>{processo.destino}</TableCell>
+                                <TableCell>{processo.portoEmbarqueNome} / {processo.portoDescargaNome}</TableCell>
+                                <TableCell>{formatDate(processo.eta)}</TableCell>
+                                <TableCell>{formatDate(processo.deadline_draft)}</TableCell>
                                 <TableCell>
                                     <Badge variant={getStatusVariant(processo.status)}>{processo.status}</Badge>
+                                </TableCell>
+                                <TableCell>
+                                     <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`} passHref>
+                                        <Button variant="outline" size="icon">
+                                            <Eye className="h-4 w-4" />
+                                        </Button>
+                                    </Link>
                                 </TableCell>
                             </TableRow>
                         ))}
                          {!isLoading && (!processosAtivos || processosAtivos.length === 0) && (
                             <TableRow>
-                                <TableCell colSpan={6} className="h-24 text-center">
+                                <TableCell colSpan={9} className="h-24 text-center">
                                     Nenhum processo ativo no momento.
                                 </TableCell>
                             </TableRow>
