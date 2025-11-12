@@ -103,9 +103,7 @@ const initialFormData = {
     documentos: initialDocuments,
     containers: [] as any[],
     bls: [] as any[],
-    nf_remessa: '',
-    nf_retorno: '',
-    nf_exportacao: '',
+    notas_fiscais: [] as any[],
     due_numero: '',
     due_status: 'Não registrada',
     lpco_protocolo: '',
@@ -197,6 +195,7 @@ export default function NovoProcessoPage() {
         documentos: processoData.documentos || initialDocuments,
         containers: processoData.containers || [],
         bls: processoData.bls || [],
+        notas_fiscais: processoData.notas_fiscais || [],
         documentos_originais: processoData.documentos_originais || initialOriginalDocs,
       });
       if (processoData.portoEmbarqueId && terminais) {
@@ -305,6 +304,27 @@ export default function NovoProcessoPage() {
   const removeDocument = (index: number) => {
     const updatedDocuments = formData.documentos.filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
+  };
+  
+  const handleNotaFiscalChange = (index: number, field: string, value: string) => {
+    const updatedNotas = [...formData.notas_fiscais];
+    (updatedNotas[index] as any)[field] = value;
+    setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
+  };
+
+  const addNotaFiscal = () => {
+    setFormData(prev => ({
+      ...prev,
+      notas_fiscais: [
+        ...prev.notas_fiscais,
+        { id: Date.now(), tipo: 'Remessa', chave: '' }
+      ]
+    }));
+  };
+
+  const removeNotaFiscal = (index: number) => {
+    const updatedNotas = formData.notas_fiscais.filter((_: any, i: number) => i !== index);
+    setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
   };
   
   const handleOriginalDocChange = (docId: string, checked: boolean) => {
@@ -845,29 +865,45 @@ export default function NovoProcessoPage() {
             <AccordionContent>
                 <Card>
                     <CardContent className="space-y-6 pt-6">
-                        <div className='grid md:grid-cols-3 gap-4'>
-                            <div className="space-y-2">
-                                <Label htmlFor="nf_remessa">NFs de Remessa (Chave)</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input id="nf_remessa" value={formData.nf_remessa || ''} onChange={e => handleInputChange('nf_remessa', e.target.value)} placeholder="Insira a chave de acesso..." />
-                                    <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                        <div>
+                          <div className="flex justify-between items-center mb-4">
+                            <h3 className="text-md font-medium">Notas Fiscais</h3>
+                            <Button type="button" variant="outline" size="sm" onClick={addNotaFiscal}>
+                              <PlusCircle className="mr-2 h-4 w-4" />
+                              Adicionar Nota Fiscal
+                            </Button>
+                          </div>
+                          <div className="space-y-4">
+                            {formData.notas_fiscais.map((nota: any, index: number) => (
+                              <div key={nota.id} className="grid md:grid-cols-3 gap-2 items-end p-2 border rounded-md">
+                                <div className="space-y-2">
+                                  <Label htmlFor={`nf-tipo-${index}`}>Tipo</Label>
+                                  <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(index, 'tipo', value)}>
+                                    <SelectTrigger id={`nf-tipo-${index}`}>
+                                      <SelectValue placeholder="Selecione o tipo" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="Remessa">Remessa</SelectItem>
+                                      <SelectItem value="Retorno">NF do Produtor</SelectItem>
+                                      <SelectItem value="Exportação">Exportação</SelectItem>
+                                    </SelectContent>
+                                  </Select>
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="nf_retorno">NF do Produtor</Label>
-                                <div className="flex items-center gap-2">
-                                    <Input id="nf_retorno" value={formData.nf_retorno || ''} onChange={e => handleInputChange('nf_retorno', e.target.value)} placeholder="Insira a chave de acesso..." />
-                                    <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                <div className="space-y-2">
+                                  <Label htmlFor={`nf-chave-${index}`}>Chave de Acesso</Label>
+                                  <Input id={`nf-chave-${index}`} value={nota.chave} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Insira a chave da NF..." />
                                 </div>
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="nf_exportacao">NF de Exportação (Chave)</Label>
                                 <div className="flex items-center gap-2">
-                                    <Input id="nf_exportacao" value={formData.nf_exportacao || ''} onChange={e => handleInputChange('nf_exportacao', e.target.value)} placeholder="Insira a chave de acesso..." />
-                                    <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                  <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
+                                    <Trash2 className="h-4 w-4 text-destructive" />
+                                  </Button>
                                 </div>
-                            </div>
+                              </div>
+                            ))}
+                          </div>
                         </div>
+
                         <div>
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-md font-medium">Dados dos Contêineres</h3>
@@ -1153,4 +1189,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
 
