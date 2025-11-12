@@ -573,7 +573,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {exporterContacts.map((contact, index) => (
+                                        {exporterContacts.filter(c => c.nome).map((contact, index) => (
                                             <SelectItem key={index} value={contact.nome}>{contact.nome} ({contact.cargo || 'N/A'})</SelectItem>
                                         ))}
                                         {exporterContacts.length === 0 && formData.exportadorId && (
@@ -1075,3 +1075,4 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
