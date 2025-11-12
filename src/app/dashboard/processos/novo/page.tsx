@@ -148,7 +148,7 @@ export default function NovoProcessoPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadTarget, setUploadTarget] = useState<string | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | null>(null);
 
   
   const isEditing = searchParams.has('edit');
@@ -215,7 +215,7 @@ export default function NovoProcessoPage() {
     if (formData.exportadorId && parceiros) {
         const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
         if (selectedExporter && selectedExporter.contatos) {
-            setExporterContacts(selectedExporter.contatos);
+            setExporterContacts(selectedExporter.contatos.filter((c: any) => c.nome));
         } else {
             setExporterContacts([]);
         }
@@ -243,7 +243,13 @@ export default function NovoProcessoPage() {
         // In a real app, this would be an upload URL from a service like Firebase Storage
         url: URL.createObjectURL(file), 
       };
-      handleInputChange(uploadTarget, fileData);
+      
+      if (typeof uploadTarget === 'string') {
+        handleInputChange(uploadTarget, fileData);
+      } else if (typeof uploadTarget === 'object' && uploadTarget.type === 'nota_fiscal') {
+        handleNotaFiscalChange(uploadTarget.index, 'file', fileData);
+      }
+
       toast({
         title: "Ficheiro Anexado",
         description: `${file.name} foi anexado com sucesso.`,
@@ -254,13 +260,17 @@ export default function NovoProcessoPage() {
     setUploadTarget(null);
   };
 
-  const triggerFileUpload = (target: string) => {
-    setUploadTarget(target);
+  const triggerFileUpload = (target: string | object) => {
+    setUploadTarget(target as any);
     fileInputRef.current?.click();
   };
 
-  const removeFile = (target: string) => {
-    handleInputChange(target, null);
+  const removeFile = (target: string | {type: 'nota_fiscal', index: number}) => {
+    if (typeof target === 'string') {
+      handleInputChange(target, null);
+    } else if (typeof target === 'object' && target.type === 'nota_fiscal') {
+        handleNotaFiscalChange(target.index, 'file', null);
+    }
     toast({
       title: "Anexo Removido",
       description: "O ficheiro foi removido.",
@@ -306,7 +316,7 @@ export default function NovoProcessoPage() {
     setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
   };
   
-  const handleNotaFiscalChange = (index: number, field: string, value: string) => {
+  const handleNotaFiscalChange = (index: number, field: string, value: any) => {
     const updatedNotas = [...formData.notas_fiscais];
     (updatedNotas[index] as any)[field] = value;
     setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
@@ -317,7 +327,7 @@ export default function NovoProcessoPage() {
       ...prev,
       notas_fiscais: [
         ...prev.notas_fiscais,
-        { id: Date.now(), tipo: 'Remessa', chave: '' }
+        { id: Date.now(), tipo: 'Remessa', chave: '', file: null }
       ]
     }));
   };
@@ -632,7 +642,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {exporterContacts.filter(c => c.nome).map((contact, index) => (
+                                        {exporterContacts.map((contact, index) => (
                                             <SelectItem key={index} value={contact.nome}>{contact.nome} ({contact.cargo || 'N/A'})</SelectItem>
                                         ))}
                                         {exporterContacts.length === 0 && formData.exportadorId && (
@@ -894,7 +904,22 @@ export default function NovoProcessoPage() {
                                   <Input id={`nf-chave-${index}`} value={nota.chave} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Insira a chave da NF..." />
                                 </div>
                                 <div className="flex items-center gap-2">
-                                  <Button type="button" variant="outline" size="icon"><FileUp className="h-4 w-4"/></Button>
+                                    {nota.file ? (
+                                        <div className="flex items-center gap-1">
+                                            <a href={nota.file.url} target="_blank" rel="noopener noreferrer">
+                                                <Button variant="outline" size="icon" type="button" title={nota.file.name}>
+                                                    <Check className="h-4 w-4 text-green-600" />
+                                                </Button>
+                                            </a>
+                                            <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'nota_fiscal', index })} className="text-destructive hover:text-destructive">
+                                                <XCircle className="h-4 w-4" />
+                                            </Button>
+                                        </div>
+                                    ) : (
+                                        <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}>
+                                            <FileUp className="h-4 w-4" />
+                                        </Button>
+                                    )}
                                   <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                   </Button>
@@ -1191,3 +1216,6 @@ export default function NovoProcessoPage() {
 }
 
 
+
+
+    
