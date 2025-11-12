@@ -33,6 +33,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
+import { Combobox } from '@/components/ui/combobox';
 
 
 const processStatusOptions = [
@@ -459,6 +460,11 @@ export default function NovoProcessoPage() {
     router.push('/dashboard/processos');
   };
   
+  const portosOptions = useMemo(() => {
+      return portos?.map(p => ({ value: String(p.id), label: `${p.name} - ${p.country}` })) || [];
+  }, [portos]);
+
+
   if (isLoading) {
       return (
           <div className="flex items-center justify-center h-96">
@@ -579,25 +585,25 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                                 <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
-                                    <SelectTrigger id="portoEmbarqueId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{`${p.name} - ${p.country}`}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox
+                                    items={portosOptions}
+                                    value={String(formData.portoEmbarqueId || '')}
+                                    onValueChange={handlePortChange}
+                                    placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                    searchPlaceholder="Buscar porto..."
+                                    noResultsText="Nenhum porto encontrado."
+                                />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
-                                <Select value={String(formData.portoDescargaId || '')} onValueChange={(value) => handleInputChange('portoDescargaId', value)}>
-                                    <SelectTrigger id="portoDescargaId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{`${p.name} - ${p.country}`}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                 <Combobox
+                                    items={portosOptions}
+                                    value={String(formData.portoDescargaId || '')}
+                                    onValueChange={(value) => handleInputChange('portoDescargaId', value)}
+                                    placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                    searchPlaceholder="Buscar porto..."
+                                    noResultsText="Nenhum porto encontrado."
+                                />
                             </div>
                         </div>
 
