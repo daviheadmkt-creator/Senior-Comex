@@ -205,7 +205,7 @@ export default function NovoProcessoPage() {
       if (processoData.exportadorId && parceiros) {
           const selectedExporter = parceiros.find(p => p.id === processoData.exportadorId);
           if (selectedExporter && selectedExporter.contatos) {
-              setExporterContacts(selectedExporter.contatos);
+              setExporterContacts(selectedExporter.contatos.filter((c: any) => c.nome));
           }
       }
     }
@@ -250,7 +250,6 @@ export default function NovoProcessoPage() {
         const { index } = uploadTarget;
         handleNotaFiscalChange(index, 'file', fileData);
 
-        // Se for XML, tenta ler a chave
         if (file.name.toLowerCase().endsWith('.xml')) {
             const reader = new FileReader();
             reader.onload = (event) => {
@@ -613,7 +612,7 @@ export default function NovoProcessoPage() {
                 <Button type="submit">Salvar Alterações</Button>
             </div>
         </div>
-        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" />
+        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xml,.pdf" />
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
           {/* Etapa 1 */}
@@ -935,7 +934,7 @@ export default function NovoProcessoPage() {
                                 </div>
                                 <div className="space-y-2">
                                   <Label htmlFor={`nf-chave-${index}`}>Chave de Acesso</Label>
-                                  <Input id={`nf-chave-${index}`} value={nota.chave} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Insira a chave da NF..." />
+                                  <Input id={`nf-chave-${index}`} value={nota.chave || ''} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Insira a chave da NF..." />
                                 </div>
                                 <div className="flex items-center gap-2">
                                     {nota.file ? (
@@ -1251,5 +1250,7 @@ export default function NovoProcessoPage() {
 
 
 
+
+    
 
     
