@@ -115,6 +115,7 @@ const initialFormData = {
     documentos_originais: initialOriginalDocs,
     awb_courier: '',
     analistaId: '',
+    analistaNome: '',
     draft_bl_shipper: '',
     draft_bl_consignee: '',
     draft_bl_notify: '',
@@ -173,20 +174,12 @@ export default function NovoProcessoPage() {
 
 
   const [formData, setFormData] = useState<any>(initialFormData);
+  const [exporterContacts, setExporterContacts] = useState<any[]>([]);
   
   const userDocRef = useMemoFirebase(
     () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
     [firestore, currentUser]
   );
-  const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
-
-  const isUserAdmin = useMemo(() => currentUserData?.funcao === 'Administrador', [currentUserData]);
-
-  const usersCollectionQuery = useMemoFirebase(
-    () => (firestore && isUserAdmin ? collection(firestore, 'users') : null),
-    [firestore, isUserAdmin]
-  );
-  const { data: usuarios, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
@@ -204,10 +197,30 @@ export default function NovoProcessoPage() {
         const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
         setFilteredTerminais(filtered);
       }
+      if (processoData.exportadorId && parceiros) {
+          const selectedExporter = parceiros.find(p => p.id === processoData.exportadorId);
+          if (selectedExporter && selectedExporter.contatos) {
+              setExporterContacts(selectedExporter.contatos);
+          }
+      }
     }
-  }, [isEditing, processoData, terminais]);
+  }, [isEditing, processoData, terminais, parceiros]);
+
+  useEffect(() => {
+    if (formData.exportadorId && parceiros) {
+        const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
+        if (selectedExporter && selectedExporter.contatos) {
+            setExporterContacts(selectedExporter.contatos);
+        } else {
+            setExporterContacts([]);
+        }
+        // Reset the analyst selection when exporter changes
+        handleInputChange('analistaId', '');
+        handleInputChange('analistaNome', '');
+    }
+  }, [formData.exportadorId, parceiros]);
   
-  const isLoading = isLoadingProcesso || isUserDocLoading || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais || (isUserAdmin && isLoadingUsers);
+  const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais;
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
@@ -439,6 +452,8 @@ export default function NovoProcessoPage() {
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
     const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
+    const selectedContact = exporterContacts.find(c => String(c.nome) === String(formData.analistaId));
+
 
     const dataToSave = {
         ...formData,
@@ -447,6 +462,7 @@ export default function NovoProcessoPage() {
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+        analistaNome: selectedContact?.nome || formData.analistaNome || 'N/A'
     };
     
     setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
@@ -542,23 +558,22 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {parceiros?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                        {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
                            <div className="space-y-2">
-                                <Label htmlFor="analistaId">Analista Responsável</Label>
-                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)} disabled={isLoadingUsers}>
+                                <Label htmlFor="analistaId">Contato do Exportador</Label>
+                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)} disabled={!formData.exportadorId}>
                                     <SelectTrigger id="analistaId">
-                                        <SelectValue placeholder={isLoadingUsers ? "Carregando..." : "Selecione o analista"} />
+                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {isUserAdmin && usuarios ? (
-                                            usuarios.map((user) => <SelectItem key={user.id} value={user.id}>{user.nome}</SelectItem>)
-                                        ) : currentUserData ? (
-                                            <SelectItem value={currentUserData.id}>{currentUserData.nome}</SelectItem>
-                                        ) : (
-                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum usuário disponível.</div>
+                                        {exporterContacts.map((contact, index) => (
+                                            <SelectItem key={index} value={contact.nome}>{contact.nome} ({contact.cargo || 'N/A'})</SelectItem>
+                                        ))}
+                                        {exporterContacts.length === 0 && formData.exportadorId && (
+                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum contato encontrado.</div>
                                         )}
                                     </SelectContent>
                                 </Select>
