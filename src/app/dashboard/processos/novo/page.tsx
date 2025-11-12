@@ -237,25 +237,50 @@ export default function NovoProcessoPage() {
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file && uploadTarget) {
-      const fileData = {
-        name: file.name,
-        // In a real app, this would be an upload URL from a service like Firebase Storage
-        url: URL.createObjectURL(file), 
-      };
-      
-      if (typeof uploadTarget === 'string') {
-        handleInputChange(uploadTarget, fileData);
-      } else if (typeof uploadTarget === 'object' && uploadTarget.type === 'nota_fiscal') {
-        handleNotaFiscalChange(uploadTarget.index, 'file', fileData);
-      }
+    if (!file || !uploadTarget) return;
 
-      toast({
+    const fileData = {
+        name: file.name,
+        url: URL.createObjectURL(file), 
+    };
+    
+    if (typeof uploadTarget === 'string') {
+        handleInputChange(uploadTarget, fileData);
+    } else if (typeof uploadTarget === 'object' && uploadTarget.type === 'nota_fiscal') {
+        const { index } = uploadTarget;
+        handleNotaFiscalChange(index, 'file', fileData);
+
+        // Se for XML, tenta ler a chave
+        if (file.name.toLowerCase().endsWith('.xml')) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                const xmlText = event.target?.result as string;
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
+                if (infNFe) {
+                    const idAttr = infNFe.getAttribute('Id');
+                    if (idAttr && idAttr.startsWith('NFe')) {
+                        const chave = idAttr.substring(3);
+                        if (chave.length === 44) {
+                            handleNotaFiscalChange(index, 'chave', chave);
+                            toast({
+                                title: "Chave da NF-e Extraída!",
+                                description: "A chave de acesso foi lida do XML e preenchida automaticamente.",
+                            });
+                        }
+                    }
+                }
+            };
+            reader.readAsText(file);
+        }
+    }
+
+    toast({
         title: "Ficheiro Anexado",
         description: `${file.name} foi anexado com sucesso.`,
-      });
-    }
-    // Reset file input and target
+    });
+
     if (fileInputRef.current) fileInputRef.current.value = '';
     setUploadTarget(null);
   };
@@ -629,7 +654,10 @@ export default function NovoProcessoPage() {
                                 <Combobox
                                     items={exportadoresOptions}
                                     value={String(formData.exportadorId || '')}
-                                    onValueChange={(value) => handleInputChange('exportadorId', value)}
+                                    onValueChange={(value) => {
+                                        const newValue = value === formData.exportadorId ? "" : value;
+                                        handleInputChange('exportadorId', newValue);
+                                    }}
                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"}
                                     searchPlaceholder="Buscar parceiro..."
                                     noResultsText="Nenhum parceiro encontrado."
@@ -676,7 +704,10 @@ export default function NovoProcessoPage() {
                                 <Combobox
                                     items={portosOptions}
                                     value={String(formData.portoEmbarqueId || '')}
-                                    onValueChange={handlePortChange}
+                                    onValueChange={(value) => {
+                                        const newValue = value === formData.portoEmbarqueId ? "" : value;
+                                        handlePortChange(newValue);
+                                    }}
                                     placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
                                     searchPlaceholder="Buscar porto..."
                                     noResultsText="Nenhum porto encontrado."
@@ -687,7 +718,10 @@ export default function NovoProcessoPage() {
                                  <Combobox
                                     items={portosOptions}
                                     value={String(formData.portoDescargaId || '')}
-                                    onValueChange={(value) => handleInputChange('portoDescargaId', value)}
+                                    onValueChange={(value) => {
+                                        const newValue = value === formData.portoDescargaId ? "" : value;
+                                        handleInputChange('portoDescargaId', newValue);
+                                    }}
                                     placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
                                     searchPlaceholder="Buscar porto..."
                                     noResultsText="Nenhum porto encontrado."
