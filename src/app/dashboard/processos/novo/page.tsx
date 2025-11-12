@@ -480,6 +480,10 @@ export default function NovoProcessoPage() {
       return portos?.map(p => ({ value: String(p.id), label: `${p.name} - ${p.country}` })) || [];
   }, [portos]);
 
+  const exportadoresOptions = useMemo(() => {
+    return parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: String(p.id), label: p.nome_fantasia })) || [];
+  }, [parceiros]);
+
 
   if (isLoading) {
       return (
@@ -553,14 +557,14 @@ export default function NovoProcessoPage() {
                          <div className="grid md:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                                <Select value={String(formData.exportadorId || '')} onValueChange={(value) => handleInputChange('exportadorId', value)}>
-                                    <SelectTrigger id="exportadorId">
-                                        <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox
+                                    items={exportadoresOptions}
+                                    value={String(formData.exportadorId || '')}
+                                    onValueChange={(value) => handleInputChange('exportadorId', value)}
+                                    placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"}
+                                    searchPlaceholder="Buscar parceiro..."
+                                    noResultsText="Nenhum parceiro encontrado."
+                                />
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
