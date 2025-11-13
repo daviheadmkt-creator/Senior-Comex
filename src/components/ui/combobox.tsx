@@ -59,31 +59,31 @@ export function Combobox({
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
           <CommandInput placeholder={searchPlaceholder} />
-            <CommandList>
-                <CommandEmpty>
-                    {noResultsContent || noResultsText}
-                </CommandEmpty>
-                <CommandGroup>
-                {items.map((item) => (
-                    <CommandItem
-                        key={item.value}
-                        value={item.value}
-                        onSelect={(currentValue) => {
-                            onValueChange(currentValue === value ? "" : currentValue)
-                            setOpen(false)
-                        }}
-                    >
-                    <Check
-                        className={cn(
-                        "mr-2 h-4 w-4",
-                        value === item.value ? "opacity-100" : "opacity-0"
-                        )}
-                    />
-                    {item.label}
-                    </CommandItem>
-                ))}
-                </CommandGroup>
-            </CommandList>
+          <CommandList>
+            <CommandEmpty>
+              {noResultsContent || noResultsText}
+            </CommandEmpty>
+            <CommandGroup>
+              {items.map((item) => (
+                <CommandItem
+                  key={item.value}
+                  value={item.value}
+                  onSelect={(currentValue) => {
+                    onValueChange(currentValue === value ? "" : currentValue)
+                    setOpen(false)
+                  }}
+                >
+                  <Check
+                    className={cn(
+                      "mr-2 h-4 w-4",
+                      value === item.value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                  {item.label}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
         </Command>
       </PopoverContent>
     </Popover>
