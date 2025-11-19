@@ -183,6 +183,12 @@ export default function NovoProcessoPage() {
     () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
     [firestore, currentUser]
   );
+  
+  const sortedPorts = useMemo(() => {
+      if (!portos) return [];
+      return [...portos].sort((a, b) => a.name.localeCompare(b.name));
+  }, [portos]);
+
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
 
@@ -692,7 +698,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name} - {p.country}</SelectItem>)}
+                                        {sortedPorts?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name} - {p.country}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -703,7 +709,7 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        {portos?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name} - {p.country}</SelectItem>)}
+                                        {sortedPorts?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name} - {p.country}</SelectItem>)}
                                     </SelectContent>
                                 </Select>
                             </div>
