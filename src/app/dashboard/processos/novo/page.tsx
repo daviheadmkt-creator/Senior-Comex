@@ -596,7 +596,9 @@ export default function NovoProcessoPage() {
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-        analistaNome: selectedContact?.nome || formData.analistaNome || 'N/A'
+        analistaNome: selectedContact?.nome || formData.analistaNome || 'N/A',
+        portoEmbarqueId: formData.portoEmbarqueId || '',
+        portoDescargaId: formData.portoDescargaId || '',
     };
     
     setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
