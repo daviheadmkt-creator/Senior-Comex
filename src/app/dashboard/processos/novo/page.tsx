@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -518,7 +519,7 @@ export default function NovoProcessoPage() {
 
         doc.setFontSize(14);
         doc.text('Conhecimentos de Embarque (BLs)', 14, 40);
-        const blBody = formData.bls.map(bl => [
+        const blBody = formData.bls.map((bl: any) => [
             bl.numero,
             bl.data_emissao ? new Date(bl.data_emissao).toLocaleDateString('pt-BR') : '',
             bl.data_liberacao ? new Date(bl.data_liberacao).toLocaleDateString('pt-BR') : '',
@@ -979,7 +980,7 @@ export default function NovoProcessoPage() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {formData.containers.map((container, index) => (
+                                        {formData.containers.map((container:any, index:number) => (
                                             <TableRow key={index}>
                                                 <TableCell><Input className="min-w-[150px]" value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
                                                 <TableCell><Input className="min-w-[120px]" value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
@@ -1043,7 +1044,7 @@ export default function NovoProcessoPage() {
                         <div>
                             <h3 className="text-md font-medium mb-2">Contêineres para Inspeção</h3>
                             <div className="space-y-2 rounded-md border p-4">
-                            {formData.containers.map((container, index) => (
+                            {formData.containers.map((container:any, index:number) => (
                                 <div key={container.id} className="flex items-center gap-4">
                                     <Checkbox 
                                         id={`inspecionado-${container.id}`} 
@@ -1142,7 +1143,7 @@ export default function NovoProcessoPage() {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {formData.bls.map((bl, index) => (
+                                    {formData.bls.map((bl:any, index:number) => (
                                         <TableRow key={bl.id}>
                                             <TableCell>
                                                 <Select value={bl.tipo || 'BL'} onValueChange={value => handleBlChange(index, 'tipo', value)}>
@@ -1171,7 +1172,7 @@ export default function NovoProcessoPage() {
                         <div>
                             <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
                             <div className="space-y-3">
-                                {formData.documentos_originais.map((doc) => (
+                                {formData.documentos_originais.map((doc:any) => (
                                     <div key={doc.id} className={`flex items-center justify-between gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
                                         <div className="flex items-center gap-4">
                                             <Checkbox
@@ -1234,3 +1235,4 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+    
