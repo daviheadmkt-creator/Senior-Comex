@@ -121,6 +121,16 @@ const initialFormData = {
     draft_bl_port_loading: '',
     draft_bl_port_discharge: '',
     draft_bl_description: '',
+    draft_fito_consignee: '',
+    draft_fito_description: '',
+    draft_fito_treatment: '',
+    draft_fito_chemical: '',
+    draft_fito_concentration: '',
+    draft_fito_date: '',
+    draft_co_consignee: '',
+    draft_co_description: '',
+    draft_co_hs_code: '',
+    draft_co_invoice: '',
     deadline_draft: null,
     deadline_vgm: null,
     deadline_carga: null,
@@ -472,7 +482,8 @@ export default function NovoProcessoPage() {
 
     const generatePdf = () => {
         const doc = new jsPDF();
-        
+        let finalY = 0;
+
         doc.setFontSize(18);
         doc.text(`Pacote de Drafts - Processo: ${formData.processo_interno || 'N/A'}`, 14, 22);
 
@@ -494,14 +505,41 @@ export default function NovoProcessoPage() {
             styles: { fontSize: 10 },
         });
 
-        const blTableHeight = (doc as any).lastAutoTable.finalY;
+        finalY = (doc as any).lastAutoTable.finalY;
 
-        // Draft Fito / COO
+        // Draft Fito
+        doc.addPage();
         doc.setFontSize(14);
-        doc.text('DRAFT - Certificado Fitossanitário / de Origem', 14, blTableHeight + 15);
-        doc.setFontSize(10);
-        doc.text("Esta seção é um placeholder para os dados do Certificado Fitossanitário e de Origem.", 14, blTableHeight + 22);
-        doc.text("Os campos para estes documentos serão adicionados em uma futura implementação.", 14, blTableHeight + 28);
+        doc.text('DRAFT - PHYTOSANITARY CERTIFICATE', 14, 20);
+         (doc as any).autoTable({
+            startY: 25,
+            theme: 'grid',
+            body: [
+                ['Consignee', formData.draft_fito_consignee || ''],
+                ['Description of Goods', formData.draft_fito_description || ''],
+                ['Declared name and concentration of active ingredient', formData.draft_fito_chemical || ''],
+                ['Treatment', formData.draft_fito_treatment || ''],
+                ['Date', formData.draft_fito_date || ''],
+                ['Concentration', formData.draft_fito_concentration || ''],
+            ],
+            styles: { fontSize: 10 },
+        });
+
+        // Draft COO
+        doc.addPage();
+        doc.setFontSize(14);
+        doc.text('DRAFT - CERTIFICATE OF ORIGIN', 14, 20);
+        (doc as any).autoTable({
+            startY: 25,
+            theme: 'grid',
+            body: [
+                ['Consignee', formData.draft_co_consignee || ''],
+                ['Description of Goods', formData.draft_co_description || ''],
+                ['HS Code', formData.draft_co_hs_code || ''],
+                ['Invoice No.', formData.draft_co_invoice || ''],
+            ],
+            styles: { fontSize: 10 },
+        });
         
         doc.save(`Drafts_${formData.processo_interno || 'processo'}.pdf`);
 
@@ -874,9 +912,55 @@ export default function NovoProcessoPage() {
                             </div>
                         </div>
 
-                         <div className="p-4 border rounded-lg space-y-4 text-muted-foreground">
-                            <h4 className='font-medium'>Draft - Certificado Fitossanitário / Origem (Em breve)</h4>
-                            <p className='text-sm'>Os campos para geração dos drafts do Certificado Fitossanitário e de Origem estarão disponíveis em uma futura atualização.</p>
+                         <div className="p-4 border rounded-lg space-y-4">
+                            <h4 className='font-medium'>Draft - Certificado Fitossanitário</h4>
+                             <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="draft_fito_consignee">To consignee</Label>
+                                    <Textarea id="draft_fito_consignee" value={formData.draft_fito_consignee || ''} onChange={e => handleInputChange('draft_fito_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="draft_fito_description">Description of Goods</Label>
+                                    <Textarea id="draft_fito_description" value={formData.draft_fito_description || ''} onChange={e => handleInputChange('draft_fito_description', e.target.value)} placeholder="Descrição da mercadoria" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="draft_fito_treatment">Treatment</Label>
+                                    <Input id="draft_fito_treatment" value={formData.draft_fito_treatment || ''} onChange={e => handleInputChange('draft_fito_treatment', e.target.value)} placeholder="Ex: PHOSPHINE" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="draft_fito_date">Date</Label>
+                                    <Input id="draft_fito_date" value={formData.draft_fito_date || ''} onChange={e => handleInputChange('draft_fito_date', e.target.value)} placeholder="DD/MM/YYYY to DD/MM/YYYY" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="draft_fito_concentration">Concentration</Label>
+                                    <Input id="draft_fito_concentration" value={formData.draft_fito_concentration || ''} onChange={e => handleInputChange('draft_fito_concentration', e.target.value)} placeholder="Ex: 2G/M3 - 120H" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="draft_fito_chemical">Declared name and concentration</Label>
+                                    <Input id="draft_fito_chemical" value={formData.draft_fito_chemical || ''} onChange={e => handleInputChange('draft_fito_chemical', e.target.value)} placeholder="Ex: CALCIUM PHOSPHIDE 98%" />
+                                </div>
+                            </div>
+                         </div>
+                        <div className="p-4 border rounded-lg space-y-4">
+                            <h4 className='font-medium'>Draft - Certificado de Origem</h4>
+                             <div className="grid md:grid-cols-2 gap-4">
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="draft_co_consignee">Consigned to</Label>
+                                    <Textarea id="draft_co_consignee" value={formData.draft_co_consignee || ''} onChange={e => handleInputChange('draft_co_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
+                                </div>
+                                <div className="space-y-2 md:col-span-2">
+                                    <Label htmlFor="draft_co_description">Description of Goods</Label>
+                                    <Textarea id="draft_co_description" value={formData.draft_co_description || ''} onChange={e => handleInputChange('draft_co_description', e.target.value)} placeholder="Descrição da mercadoria" />
+                                </div>
+                                <div className="space-y-2">
+                                    <Label htmlFor="draft_co_hs_code">HS Code</Label>
+                                    <Input id="draft_co_hs_code" value={formData.draft_co_hs_code || ''} onChange={e => handleInputChange('draft_co_hs_code', e.target.value)} placeholder="NCM do produto" />
+                                </div>
+                                 <div className="space-y-2">
+                                    <Label htmlFor="draft_co_invoice">Invoice No.</Label>
+                                    <Input id="draft_co_invoice" value={formData.draft_co_invoice || ''} onChange={e => handleInputChange('draft_co_invoice', e.target.value)} placeholder="Número da Invoice" />
+                                </div>
+                            </div>
                          </div>
                     </CardContent>
                 </Card>
