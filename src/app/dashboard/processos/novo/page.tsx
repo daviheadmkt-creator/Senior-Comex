@@ -34,6 +34,7 @@ import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 
 const processStatusOptions = [
@@ -482,7 +483,6 @@ export default function NovoProcessoPage() {
 
     const generatePdf = () => {
         const doc = new jsPDF();
-        let finalY = 0;
 
         doc.setFontSize(18);
         doc.text(`Pacote de Drafts - Processo: ${formData.processo_interno || 'N/A'}`, 14, 22);
@@ -497,15 +497,13 @@ export default function NovoProcessoPage() {
                 ['Shipper', formData.draft_bl_shipper || ''],
                 ['Consignee', formData.draft_bl_consignee || ''],
                 ['Notify Party', formData.draft_bl_notify || ''],
-                ['Port of Loading', formData.draft_bl_port_loading || ''],
-                ['Port of Discharge', formData.draft_bl_port_discharge || ''],
+                ['Port of Loading', formData.portoEmbarqueNome || ''],
+                ['Port of Discharge', formData.portoDescargaNome || ''],
                 ['Marks and Numbers', formData.draft_bl_marks || ''],
                 ['Description of Goods', formData.draft_bl_description || ''],
             ],
             styles: { fontSize: 10 },
         });
-
-        finalY = (doc as any).lastAutoTable.finalY;
 
         // Draft Fito
         doc.addPage();
@@ -515,7 +513,7 @@ export default function NovoProcessoPage() {
             startY: 25,
             theme: 'grid',
             body: [
-                ['Consignee', formData.draft_fito_consignee || ''],
+                ['To consignee', formData.draft_fito_consignee || ''],
                 ['Description of Goods', formData.draft_fito_description || ''],
                 ['Declared name and concentration of active ingredient', formData.draft_fito_chemical || ''],
                 ['Treatment', formData.draft_fito_treatment || ''],
@@ -533,7 +531,7 @@ export default function NovoProcessoPage() {
             startY: 25,
             theme: 'grid',
             body: [
-                ['Consignee', formData.draft_co_consignee || ''],
+                ['Consigned to', formData.draft_co_consignee || ''],
                 ['Description of Goods', formData.draft_co_description || ''],
                 ['HS Code', formData.draft_co_hs_code || ''],
                 ['Invoice No.', formData.draft_co_invoice || ''],
@@ -886,82 +884,92 @@ export default function NovoProcessoPage() {
                         </div>
                     </CardHeader>
                     <CardContent className='space-y-6'>
-                        <div className="p-4 border rounded-lg space-y-4">
-                            <h4 className='font-medium'>Draft - Bill of Lading (BL)</h4>
-                             <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="draft_bl_shipper">Shipper (Exportador)</Label>
-                                    <Textarea id="draft_bl_shipper" value={formData.draft_bl_shipper || ''} onChange={e => handleInputChange('draft_bl_shipper', e.target.value)} placeholder="Nome completo e endereço do exportador" />
+                       <Tabs defaultValue="bl" className="w-full">
+                            <TabsList className="grid w-full grid-cols-3">
+                                <TabsTrigger value="bl">Draft BL</TabsTrigger>
+                                <TabsTrigger value="fito">Draft Fito</TabsTrigger>
+                                <TabsTrigger value="co">Draft Origem</TabsTrigger>
+                            </TabsList>
+                            <TabsContent value="bl">
+                                <div className="p-4 border rounded-lg space-y-4 mt-4">
+                                     <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2">
+                                            <Label htmlFor="draft_bl_shipper">Shipper (Exportador)</Label>
+                                            <Textarea id="draft_bl_shipper" value={formData.draft_bl_shipper || ''} onChange={e => handleInputChange('draft_bl_shipper', e.target.value)} placeholder="Nome completo e endereço do exportador" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="draft_bl_consignee">Consignee (Importador)</Label>
+                                            <Textarea id="draft_bl_consignee" value={formData.draft_bl_consignee || ''} onChange={e => handleInputChange('draft_bl_consignee', e.target.value)} placeholder="Nome completo e endereço do importador" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="draft_bl_notify">Notify Party (Notificar)</Label>
+                                            <Textarea id="draft_bl_notify" value={formData.draft_bl_notify || ''} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="draft_bl_marks">Marks and Numbers</Label>
+                                            <Textarea id="draft_bl_marks" value={formData.draft_bl_marks || ''} onChange={e => handleInputChange('draft_bl_marks', e.target.value)} placeholder="Marcas e números dos pacotes" />
+                                        </div>
+                                         <div className="space-y-2 md:col-span-2">
+                                            <Label htmlFor="draft_bl_description">Description of Goods</Label>
+                                            <Textarea id="draft_bl_description" value={formData.draft_bl_description || ''} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
+                                        </div>
+                                    </div>
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="draft_bl_consignee">Consignee (Importador)</Label>
-                                    <Textarea id="draft_bl_consignee" value={formData.draft_bl_consignee || ''} onChange={e => handleInputChange('draft_bl_consignee', e.target.value)} placeholder="Nome completo e endereço do importador" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="draft_bl_notify">Notify Party (Notificar)</Label>
-                                    <Textarea id="draft_bl_notify" value={formData.draft_bl_notify || ''} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="draft_bl_marks">Marks and Numbers</Label>
-                                    <Textarea id="draft_bl_marks" value={formData.draft_bl_marks || ''} onChange={e => handleInputChange('draft_bl_marks', e.target.value)} placeholder="Marcas e números dos pacotes" />
-                                </div>
-                                 <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="draft_bl_description">Description of Goods</Label>
-                                    <Textarea id="draft_bl_description" value={formData.draft_bl_description || ''} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
-                                </div>
-                            </div>
-                        </div>
+                            </TabsContent>
+                            <TabsContent value="fito">
+                                 <div className="p-4 border rounded-lg space-y-4 mt-4">
+                                     <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label htmlFor="draft_fito_consignee">To consignee</Label>
+                                            <Textarea id="draft_fito_consignee" value={formData.draft_fito_consignee || ''} onChange={e => handleInputChange('draft_fito_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label htmlFor="draft_fito_description">Description of Goods</Label>
+                                            <Textarea id="draft_fito_description" value={formData.draft_fito_description || ''} onChange={e => handleInputChange('draft_fito_description', e.target.value)} placeholder="Descrição da mercadoria" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="draft_fito_treatment">Treatment</Label>
+                                            <Input id="draft_fito_treatment" value={formData.draft_fito_treatment || ''} onChange={e => handleInputChange('draft_fito_treatment', e.target.value)} placeholder="Ex: PHOSPHINE" />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="draft_fito_date">Date</Label>
+                                            <Input id="draft_fito_date" value={formData.draft_fito_date || ''} onChange={e => handleInputChange('draft_fito_date', e.target.value)} placeholder="DD/MM/YYYY to DD/MM/YYYY" />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="draft_fito_concentration">Concentration</Label>
+                                            <Input id="draft_fito_concentration" value={formData.draft_fito_concentration || ''} onChange={e => handleInputChange('draft_fito_concentration', e.target.value)} placeholder="Ex: 2G/M3 - 120H" />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="draft_fito_chemical">Declared name and concentration</Label>
+                                            <Input id="draft_fito_chemical" value={formData.draft_fito_chemical || ''} onChange={e => handleInputChange('draft_fito_chemical', e.target.value)} placeholder="Ex: CALCIUM PHOSPHIDE 98%" />
+                                        </div>
+                                    </div>
+                                 </div>
+                            </TabsContent>
+                            <TabsContent value="co">
+                                <div className="p-4 border rounded-lg space-y-4 mt-4">
+                                     <div className="grid md:grid-cols-2 gap-4">
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label htmlFor="draft_co_consignee">Consigned to</Label>
+                                            <Textarea id="draft_co_consignee" value={formData.draft_co_consignee || ''} onChange={e => handleInputChange('draft_co_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
+                                        </div>
+                                        <div className="space-y-2 md:col-span-2">
+                                            <Label htmlFor="draft_co_description">Description of Goods</Label>
+                                            <Textarea id="draft_co_description" value={formData.draft_co_description || ''} onChange={e => handleInputChange('draft_co_description', e.target.value)} placeholder="Descrição da mercadoria" />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="draft_co_hs_code">HS Code</Label>
+                                            <Input id="draft_co_hs_code" value={formData.draft_co_hs_code || ''} onChange={e => handleInputChange('draft_co_hs_code', e.target.value)} placeholder="NCM do produto" />
+                                        </div>
+                                         <div className="space-y-2">
+                                            <Label htmlFor="draft_co_invoice">Invoice No.</Label>
+                                            <Input id="draft_co_invoice" value={formData.draft_co_invoice || ''} onChange={e => handleInputChange('draft_co_invoice', e.target.value)} placeholder="Número da Invoice" />
+                                        </div>
+                                    </div>
+                                 </div>
+                            </TabsContent>
+                        </Tabs>
 
-                         <div className="p-4 border rounded-lg space-y-4">
-                            <h4 className='font-medium'>Draft - Certificado Fitossanitário</h4>
-                             <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="draft_fito_consignee">To consignee</Label>
-                                    <Textarea id="draft_fito_consignee" value={formData.draft_fito_consignee || ''} onChange={e => handleInputChange('draft_fito_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="draft_fito_description">Description of Goods</Label>
-                                    <Textarea id="draft_fito_description" value={formData.draft_fito_description || ''} onChange={e => handleInputChange('draft_fito_description', e.target.value)} placeholder="Descrição da mercadoria" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="draft_fito_treatment">Treatment</Label>
-                                    <Input id="draft_fito_treatment" value={formData.draft_fito_treatment || ''} onChange={e => handleInputChange('draft_fito_treatment', e.target.value)} placeholder="Ex: PHOSPHINE" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="draft_fito_date">Date</Label>
-                                    <Input id="draft_fito_date" value={formData.draft_fito_date || ''} onChange={e => handleInputChange('draft_fito_date', e.target.value)} placeholder="DD/MM/YYYY to DD/MM/YYYY" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="draft_fito_concentration">Concentration</Label>
-                                    <Input id="draft_fito_concentration" value={formData.draft_fito_concentration || ''} onChange={e => handleInputChange('draft_fito_concentration', e.target.value)} placeholder="Ex: 2G/M3 - 120H" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="draft_fito_chemical">Declared name and concentration</Label>
-                                    <Input id="draft_fito_chemical" value={formData.draft_fito_chemical || ''} onChange={e => handleInputChange('draft_fito_chemical', e.target.value)} placeholder="Ex: CALCIUM PHOSPHIDE 98%" />
-                                </div>
-                            </div>
-                         </div>
-                        <div className="p-4 border rounded-lg space-y-4">
-                            <h4 className='font-medium'>Draft - Certificado de Origem</h4>
-                             <div className="grid md:grid-cols-2 gap-4">
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="draft_co_consignee">Consigned to</Label>
-                                    <Textarea id="draft_co_consignee" value={formData.draft_co_consignee || ''} onChange={e => handleInputChange('draft_co_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
-                                </div>
-                                <div className="space-y-2 md:col-span-2">
-                                    <Label htmlFor="draft_co_description">Description of Goods</Label>
-                                    <Textarea id="draft_co_description" value={formData.draft_co_description || ''} onChange={e => handleInputChange('draft_co_description', e.target.value)} placeholder="Descrição da mercadoria" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="draft_co_hs_code">HS Code</Label>
-                                    <Input id="draft_co_hs_code" value={formData.draft_co_hs_code || ''} onChange={e => handleInputChange('draft_co_hs_code', e.target.value)} placeholder="NCM do produto" />
-                                </div>
-                                 <div className="space-y-2">
-                                    <Label htmlFor="draft_co_invoice">Invoice No.</Label>
-                                    <Input id="draft_co_invoice" value={formData.draft_co_invoice || ''} onChange={e => handleInputChange('draft_co_invoice', e.target.value)} placeholder="Número da Invoice" />
-                                </div>
-                            </div>
-                         </div>
                     </CardContent>
                 </Card>
             </AccordionContent>
