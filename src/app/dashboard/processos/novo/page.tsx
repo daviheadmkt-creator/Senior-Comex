@@ -593,10 +593,12 @@ export default function NovoProcessoPage() {
         ...formData,
         id: docId,
         exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+        analistaNome: selectedContact?.nome || formData.analistaNome || 'N/A',
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-        analistaNome: selectedContact?.nome || formData.analistaNome || 'N/A',
+        exportadorId: formData.exportadorId || '',
+        analistaId: formData.analistaId || '',
         portoEmbarqueId: formData.portoEmbarqueId || '',
         portoDescargaId: formData.portoDescargaId || '',
     };
