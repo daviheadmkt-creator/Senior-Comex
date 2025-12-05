@@ -632,6 +632,8 @@ export default function NovoProcessoPage() {
         analistaId: formData.analistaId || '',
         portoEmbarqueId: formData.portoEmbarqueId || '',
         portoDescargaId: formData.portoDescargaId || '',
+        etd: formData.etd || null,
+        eta: formData.eta || null,
     };
     
     setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
@@ -718,14 +720,14 @@ export default function NovoProcessoPage() {
                          <div className="grid md:grid-cols-2 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
-                                <Select value={String(formData.exportadorId || '')} onValueChange={(value) => handleInputChange('exportadorId', value)}>
-                                    <SelectTrigger id="exportadorId">
-                                        <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                                     value={formData.exportadorId}
+                                     onValueChange={(value) => handleInputChange('exportadorId', value)}
+                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"}
+                                     searchPlaceholder="Buscar parceiro..."
+                                     noResultsText="Nenhum parceiro encontrado."
+                                 />
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
