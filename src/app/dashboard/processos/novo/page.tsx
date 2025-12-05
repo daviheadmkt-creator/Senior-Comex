@@ -35,6 +35,7 @@ import 'jspdf-autotable';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { Combobox } from '@/components/ui/combobox';
 
 
 const processStatusOptions = [
@@ -55,6 +56,31 @@ const processStatusOptions = [
     "Concluído",
     "Cancelado",
 ]
+
+const dueStatusOptions = [
+    "RASCUNHO SALVO",
+    "REGISTRADA",
+    "AGUARDANDO ENTREGA DO CARGA/PARAMETRIZAÇÃO",
+    "DESEMABRAÇADA",
+    "SELECIONADA/CANAL LARANJA (AGUARDANDO CONFERENCIA DOCUMENTAL)",
+    "SELECIONADA/CANAL VERMELHO (AGUARDANDO CONFERENCIA FISICA)",
+    "DESEMBARAÇADA", // This seems to be a duplicate, keeping it as requested.
+    "RETIFICAÇÃO (PENDENTE DE AUTORIZAÇÃO FISCAL)",
+    "AVERBADA"
+];
+
+const lpcoStatusOptions = [
+    "RASCUNHO SALVO",
+    "REGISTRADA/EM ANALISE",
+    "REGISTRADA/EM EXIGENCIA",
+    "REGISTRADA/AGUARDANDO INSPEÇÃO FISICA",
+    "EM EXIGENCIA/NFA",
+    "EM RETIFICAÇÃO",
+    "INDEFERIDA",
+    "DEFERIDA",
+    "DEFERIDA/CERTIFICADO EMITIDO"
+];
+
 
 const documentTypes = [
     "INVOICE",
@@ -106,9 +132,9 @@ const initialFormData = {
     bls: [] as any[],
     notas_fiscais: [] as any[],
     due_numero: '',
-    due_status: 'Não registrada',
+    due_status: 'RASCUNHO SALVO',
     lpco_protocolo: '',
-    mapa_status: 'Aguardando Análise',
+    mapa_status: 'RASCUNHO SALVO',
     navio_final: '',
     viagem_final: '',
     documentos_originais: initialOriginalDocs,
@@ -200,6 +226,11 @@ export default function NovoProcessoPage() {
       if (!portos) return [];
       return [...portos].sort((a, b) => a.name.localeCompare(b.name));
   }, [portos]);
+
+  const portOptions = useMemo(() => {
+    if (!sortedPorts) return [];
+    return sortedPorts.map(port => ({ value: port.id, label: `${port.name} - ${port.country}` }));
+  }, [sortedPorts]);
 
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
@@ -734,25 +765,25 @@ export default function NovoProcessoPage() {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="portoEmbarqueId">Porto de Embarque</Label>
-                                 <Select value={String(formData.portoEmbarqueId || '')} onValueChange={handlePortChange}>
-                                    <SelectTrigger id="portoEmbarqueId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {sortedPorts?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name} - {p.country}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                 <Combobox 
+                                     items={portOptions}
+                                     value={formData.portoEmbarqueId}
+                                     onValueChange={(value) => handlePortChange(value)}
+                                     placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                     searchPlaceholder="Buscar porto..."
+                                     noResultsText="Nenhum porto encontrado."
+                                 />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="portoDescargaId">Porto de Descarga</Label>
-                                <Select value={String(formData.portoDescargaId || '')} onValueChange={(value) => handleInputChange('portoDescargaId', value)}>
-                                    <SelectTrigger id="portoDescargaId">
-                                        <SelectValue placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {sortedPorts?.map(p => <SelectItem key={p.id} value={String(p.id)}>{p.name} - {p.country}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                     items={portOptions}
+                                     value={formData.portoDescargaId}
+                                     onValueChange={(value) => handleInputChange('portoDescargaId', value)}
+                                     placeholder={isLoadingPorts ? "Carregando..." : "Selecione o porto"}
+                                     searchPlaceholder="Buscar porto..."
+                                     noResultsText="Nenhum porto encontrado."
+                                 />
                             </div>
                         </div>
 
@@ -1109,9 +1140,9 @@ export default function NovoProcessoPage() {
                                         <SelectValue placeholder="Selecione o status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Não registrada">Não registrada</SelectItem>
-                                        <SelectItem value="Em análise">Em análise</SelectItem>
-                                        <SelectItem value="Desembaraçada">Desembaraçada</SelectItem>
+                                        {dueStatusOptions.map(status => (
+                                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
@@ -1122,17 +1153,15 @@ export default function NovoProcessoPage() {
                                 <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="mapa_status">Status da Inspeção MAPA</Label>
+                                <Label htmlFor="mapa_status">Status da Inspeção MAPA (LPCO)</Label>
                                 <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
                                     <SelectTrigger id="mapa_status">
                                         <SelectValue placeholder="Selecione o status" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Aguardando Análise">Aguardando Análise</SelectItem>
-                                        <SelectItem value="Inspeção Agendada">Inspeção Agendada</SelectItem>
-                                        <SelectItem value="Inspeção Realizada">Inspeção Realizada</SelectItem>
-                                        <SelectItem value="Deferido">Deferido (Liberado)</SelectItem>
-                                        <SelectItem value="Indeferido">Indeferido (Rejeitado)</SelectItem>
+                                         {lpcoStatusOptions.map(status => (
+                                          <SelectItem key={status} value={status}>{status}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>
