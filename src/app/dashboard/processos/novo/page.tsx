@@ -621,19 +621,17 @@ export default function NovoProcessoPage() {
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
     const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
-    const selectedContact = exporterContacts.find(c => String(c.nome) === String(formData.analistaId));
-
-
+    
     const dataToSave = {
         ...formData,
         id: docId,
         exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
-        analistaNome: selectedContact?.nome || formData.analistaNome || 'N/A',
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
         exportadorId: formData.exportadorId || '',
         analistaId: formData.analistaId || '',
+        analistaNome: formData.analistaNome || '',
         portoEmbarqueId: formData.portoEmbarqueId || '',
         portoDescargaId: formData.portoDescargaId || '',
         etd: formData.etd || null,
@@ -735,7 +733,15 @@ export default function NovoProcessoPage() {
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
-                                <Select value={String(formData.analistaId || '')} onValueChange={value => handleInputChange('analistaId', value)} disabled={!formData.exportadorId}>
+                                <Select 
+                                    value={formData.analistaId || ''} 
+                                    onValueChange={value => {
+                                        const contact = exporterContacts.find(c => c.nome === value);
+                                        handleInputChange('analistaId', contact?.nome || '');
+                                        handleInputChange('analistaNome', contact?.nome || '');
+                                    }} 
+                                    disabled={!formData.exportadorId}
+                                >
                                     <SelectTrigger id="analistaId">
                                         <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
                                     </SelectTrigger>
