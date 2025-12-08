@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -32,16 +31,34 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useCollection, useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
+import { deleteDoc, doc, getFunctions, httpsCallable } from 'firebase/firestore';
 import { useState, useEffect } from 'react';
+import { useToast } from '@/hooks/use-toast';
+import { getAuth } from 'firebase/auth';
+
+// This interface must match the one in the Cloud Function return type
+export interface UserRecord {
+  uid: string;
+  email?: string;
+  displayName?: string;
+  photoURL?: string;
+  disabled: boolean;
+  // Firestore data
+  nome?: string;
+  funcao?: string;
+  status?: string;
+}
 
 
 export default function ListaUsuariosPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
+  const { toast } = useToast();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
+  const [users, setUsers] = useState<UserRecord[]>([]);
+  const [isLoadingUsers, setIsLoadingUsers] = useState(true);
 
   const userDocRef = useMemoFirebase(
     () => (currentUser ? doc(firestore, 'users', currentUser.uid) : null),
@@ -49,18 +66,38 @@ export default function ListaUsuariosPage() {
   );
   const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
   
-  const usersCollectionQuery = useMemoFirebase(
-    () => (isAdminVerified && isAdmin ? collection(firestore, 'users') : null),
-    [firestore, isAdminVerified, isAdmin]
-  );
-  const { data: users, isLoading: isLoadingUsers } = useCollection(usersCollectionQuery);
-
   useEffect(() => {
-    if (!isUserDocLoading) {
-      setIsAdmin(currentUserData?.funcao === 'Administrador');
+    if (!isUserDocLoading && currentUser) {
+      const isAdminUser = currentUserData?.funcao === 'Administrador';
+      setIsAdmin(isAdminUser);
       setIsAdminVerified(true);
+      
+      if (isAdminUser) {
+        setIsLoadingUsers(true);
+        const functions = getFunctions();
+        const listUsersFunction = httpsCallable(functions, 'listusers');
+
+        listUsersFunction()
+            .then(response => {
+                const userList = response.data as UserRecord[];
+                setUsers(userList);
+            })
+            .catch(error => {
+                console.error("Erro ao buscar usuários:", error);
+                toast({
+                    title: 'Erro ao Listar Usuários',
+                    description: error.message,
+                    variant: 'destructive',
+                });
+            })
+            .finally(() => {
+                setIsLoadingUsers(false);
+            });
+      } else {
+          setIsLoadingUsers(false);
+      }
     }
-  }, [currentUserData, isUserDocLoading]);
+  }, [currentUser, currentUserData, isUserDocLoading, toast]);
 
 
   const getStatusVariant = (status: string): "destructive" | "default" => {
@@ -70,14 +107,19 @@ export default function ListaUsuariosPage() {
   const handleDelete = async (uid: string) => {
     if (!firestore) return;
     try {
+        // This is a simplified deletion logic. 
+        // In a real-world app, you would likely call a Cloud Function to delete the user from Firebase Auth as well.
         await deleteDoc(doc(firestore, 'users', uid));
+        setUsers(prev => prev.filter(u => u.uid !== uid));
+        toast({ title: 'Sucesso', description: 'Usuário excluído.'});
     } catch(error) {
         console.error("Error deleting user document:", error);
+        toast({ title: 'Erro', description: 'Não foi possível excluir o usuário.', variant: 'destructive' });
     }
   };
 
   const renderContent = () => {
-    const isLoading = isUserDocLoading || (isAdmin && isLoadingUsers);
+    const isLoading = isUserDocLoading || isLoadingUsers;
 
     if (isLoading) {
        return (
@@ -113,21 +155,21 @@ export default function ListaUsuariosPage() {
     }
 
     return users.map((user) => (
-          <TableRow key={user.id}>
-            <TableCell className="font-medium">{user.nome || 'N/A'}</TableCell>
+          <TableRow key={user.uid}>
+            <TableCell className="font-medium">{user.nome || user.displayName || 'N/A'}</TableCell>
             <TableCell>{user.email}</TableCell>
-            <TableCell>{user.funcao || 'N/A'}</TableCell>
+            <TableCell>{(user as any).funcao || 'N/A'}</TableCell>
             <TableCell>
               <Badge
-                variant={getStatusVariant(user.status)}
+                variant={getStatusVariant((user as any).status)}
               >
-                {user.status || 'N/A'}
+                {(user as any).status || (user.disabled ? 'Inativo' : 'Ativo')}
               </Badge>
             </TableCell>
             <TableCell>
               <div className="flex gap-2">
                 <Link
-                  href={`/dashboard/cadastros/usuarios/novo?id=${user.id}&edit=true`}
+                  href={`/dashboard/cadastros/usuarios/novo?id=${user.uid}&edit=true`}
                   passHref
                 >
                   <Button
@@ -144,7 +186,7 @@ export default function ListaUsuariosPage() {
                       variant="outline"
                       size="icon"
                       className="text-red-600 hover:text-red-700"
-                       disabled={user.id === currentUser?.uid}
+                       disabled={user.uid === currentUser?.uid}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -161,7 +203,7 @@ export default function ListaUsuariosPage() {
                     <AlertDialogFooter>
                       <AlertDialogCancel>Cancelar</AlertDialogCancel>
                       <AlertDialogAction
-                        onClick={() => handleDelete(user.id)}
+                        onClick={() => handleDelete(user.uid)}
                       >
                         Excluir Perfil
                       </AlertDialogAction>
