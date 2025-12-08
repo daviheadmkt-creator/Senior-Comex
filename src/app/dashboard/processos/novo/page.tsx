@@ -245,6 +245,10 @@ export default function NovoProcessoPage() {
         bls: processoData.bls || [],
         notas_fiscais: processoData.notas_fiscais || [],
         documentos_originais: processoData.documentos_originais || initialOriginalDocs,
+        analistaId: processoData.analistaId || '',
+        portoEmbarqueId: processoData.portoEmbarqueId || '',
+        portoDescargaId: processoData.portoDescargaId || '',
+        armadorId: processoData.armadorId || '',
       });
       if (processoData.portoEmbarqueId && terminais) {
         const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
