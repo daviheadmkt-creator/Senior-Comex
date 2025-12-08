@@ -7,7 +7,7 @@ config();
  * It is not used in production.
  */
 import { genkit } from 'genkit';
-import { googleAI } from '@genkit-ai/googleai';
+import { googleAI } from '@genkit-ai/google-genai';
 import { firebase } from '@genkit-ai/firebase';
 
 export default genkit({
