@@ -1,12 +1,11 @@
 'use server';
 /**
- * @fileOverview A server-side flow to securely list all users from Firebase Authentication.
+ * @fileOverview A server-side flow to securely list all users by calling a dedicated Cloud Function.
  */
 
 import { z } from 'genkit/zod';
 import { ai } from '@/ai/genkit';
-import { getAuth } from 'firebase-admin/auth';
-import { initializeApp, getApps } from 'firebase-admin/app';
+import { getFunctions} from 'firebase-admin/functions';
 
 // This interface must match the one in the calling component
 export const UserRecordSchema = z.object({
@@ -26,26 +25,36 @@ const listUsersFlow = ai.defineFlow(
     outputSchema: z.array(UserRecordSchema),
   },
   async () => {
-    // Ensure Firebase Admin is initialized only once on the server
-    if (getApps().length === 0) {
-      initializeApp();
-    }
-
+    // In a production App Hosting environment, this will resolve to the correct URL.
+    // In local development, you need to run the functions emulator and point to it.
+    const listUsersUrl = process.env.FUNCTIONS_EMULATOR_URL || 'https://listusers-c67k2w3jea-uc.a.run.app';
+    
     try {
-      const auth = getAuth();
-      const userRecords = await auth.listUsers();
-      const users = userRecords.users.map((user) => ({
-        uid: user.uid,
-        email: user.email,
-        displayName: user.displayName,
-        photoURL: user.photoURL,
-        disabled: user.disabled,
-      }));
+      const functions = getFunctions();
+      const idToken = await functions.app.INTERNAL.getToken();
+
+      if (!idToken) {
+          throw new Error('Não foi possível obter o token de autenticação para chamar a função.');
+      }
+      
+      const response = await fetch(listUsersUrl, {
+          headers: {
+              'Authorization': `Bearer ${idToken.token}`,
+              'Content-Type': 'application/json',
+          },
+      });
+
+      if (!response.ok) {
+          const errorBody = await response.text();
+          throw new Error(`A chamada à função falhou com o estado ${response.status}: ${errorBody}`);
+      }
+
+      const users = await response.json();
       return users;
+
     } catch (error: any) {
-      console.error('Error listing users within listUsersFlow:', error);
-      // Re-throw the error with a more specific message to aid debugging.
-      throw new Error(`Failed to list users from Firebase Auth: ${error.message}`);
+      console.error('Erro ao invocar a função listUsers:', error);
+      throw new Error(`Falha ao listar os utilizadores a partir da Cloud Function: ${error.message}`);
     }
   }
 );
