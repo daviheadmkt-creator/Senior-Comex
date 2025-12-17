@@ -629,13 +629,6 @@ export default function NovoProcessoPage() {
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-        exportadorId: formData.exportadorId || '',
-        analistaId: formData.analistaId || '',
-        analistaNome: formData.analistaNome || '',
-        portoEmbarqueId: formData.portoEmbarqueId || '',
-        portoDescargaId: formData.portoDescargaId || '',
-        etd: formData.etd || null,
-        eta: formData.eta || null,
     };
     
     setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
@@ -743,7 +736,7 @@ export default function NovoProcessoPage() {
                                     disabled={!formData.exportadorId}
                                 >
                                     <SelectTrigger id="analistaId">
-                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
+                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : (formData.analistaNome || "Selecione o contato")} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {exporterContacts.map((contact, index) => (
