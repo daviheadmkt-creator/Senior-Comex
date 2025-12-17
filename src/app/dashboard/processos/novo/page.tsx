@@ -245,11 +245,11 @@ export default function NovoProcessoPage() {
         bls: processoData.bls || [],
         notas_fiscais: processoData.notas_fiscais || [],
         documentos_originais: processoData.documentos_originais || initialOriginalDocs,
-        analistaId: processoData.analistaId || '',
-        analistaNome: processoData.analistaNome || '',
-        portoEmbarqueId: processoData.portoEmbarqueId || '',
-        portoDescargaId: processoData.portoDescargaId || '',
-        armadorId: processoData.armadorId || '',
+        analistaId: String(processoData.analistaId || ''),
+        analistaNome: String(processoData.analistaNome || ''),
+        portoEmbarqueId: String(processoData.portoEmbarqueId || ''),
+        portoDescargaId: String(processoData.portoDescargaId || ''),
+        armadorId: String(processoData.armadorId || ''),
       });
       if (processoData.portoEmbarqueId && terminais) {
         const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
@@ -264,21 +264,32 @@ export default function NovoProcessoPage() {
     }
   }, [isEditing, processoData, terminais, parceiros]);
 
-  useEffect(() => {
+ useEffect(() => {
     if (formData.exportadorId && parceiros) {
         const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
         setExporterContacts(newContacts);
 
         // Check if the current contact is still valid for the new exporter
-        const isCurrentContactValid = newContacts.some(c => c.nome === formData.analistaNome);
-        
+        const isCurrentContactValid = newContacts.some(c => c.id === formData.analistaId);
+
         if (!isCurrentContactValid) {
             handleInputChange('analistaId', '');
             handleInputChange('analistaNome', '');
         }
     }
-  }, [formData.exportadorId, parceiros]);
+}, [formData.exportadorId, parceiros]);
+
+
+useEffect(() => {
+    if (formData.analistaId && exporterContacts.length > 0) {
+        const contact = exporterContacts.find(c => c.id === formData.analistaId);
+        if (contact && contact.nome !== formData.analistaNome) {
+            handleInputChange('analistaNome', contact.nome);
+        }
+    }
+}, [formData.analistaId, exporterContacts]);
+
   
   const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais;
 
@@ -730,26 +741,15 @@ export default function NovoProcessoPage() {
                             </div>
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
-                                <Select 
-                                    value={formData.analistaNome || ''} 
-                                    onValueChange={value => {
-                                        handleInputChange('analistaId', value);
-                                        handleInputChange('analistaNome', value);
-                                    }} 
+                                 <Combobox
+                                    items={exporterContacts.map(c => ({ value: c.id, label: `${c.nome} (${c.cargo || 'N/A'})` }))}
+                                    value={formData.analistaId}
+                                    onValueChange={(value) => handleInputChange('analistaId', value)}
+                                    placeholder={!formData.exportadorId ? "Selecione um exportador" : "Selecione o contato"}
+                                    searchPlaceholder="Buscar contato..."
+                                    noResultsText="Nenhum contato encontrado."
                                     disabled={!formData.exportadorId}
-                                >
-                                    <SelectTrigger id="analistaId">
-                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {exporterContacts.map((contact, index) => (
-                                            <SelectItem key={index} value={contact.nome}>{contact.nome} ({contact.cargo || 'N/A'})</SelectItem>
-                                        ))}
-                                        {exporterContacts.length === 0 && formData.exportadorId && (
-                                            <div className="px-2 py-1.5 text-sm text-muted-foreground">Nenhum contato encontrado.</div>
-                                        )}
-                                    </SelectContent>
-                                </Select>
+                                 />
                             </div>
                          </div>
 
@@ -1369,4 +1369,3 @@ export default function NovoProcessoPage() {
   );
 }
     
-
