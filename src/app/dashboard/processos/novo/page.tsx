@@ -277,12 +277,14 @@ export default function NovoProcessoPage() {
             handleInputChange('analistaId', '');
             handleInputChange('analistaNome', '');
         }
+    } else {
+        setExporterContacts([]);
     }
 }, [formData.exportadorId, parceiros]);
 
 
 useEffect(() => {
-    if (formData.analistaId && exporterContacts.length > 0) {
+    if (formData.analistaId) {
         const contact = exporterContacts.find(c => c.id === formData.analistaId);
         if (contact && contact.nome !== formData.analistaNome) {
             handleInputChange('analistaNome', contact.nome);
@@ -744,7 +746,11 @@ useEffect(() => {
                                  <Combobox
                                     items={exporterContacts.map(c => ({ value: c.id, label: `${c.nome} (${c.cargo || 'N/A'})` }))}
                                     value={formData.analistaId}
-                                    onValueChange={(value) => handleInputChange('analistaId', value)}
+                                    onValueChange={(id) => {
+                                      const contact = exporterContacts.find(c => c.id === id);
+                                      handleInputChange('analistaId', id);
+                                      handleInputChange('analistaNome', contact ? contact.nome : '');
+                                    }}
                                     placeholder={!formData.exportadorId ? "Selecione um exportador" : "Selecione o contato"}
                                     searchPlaceholder="Buscar contato..."
                                     noResultsText="Nenhum contato encontrado."

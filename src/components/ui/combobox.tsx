@@ -28,6 +28,7 @@ interface ComboboxProps {
     searchPlaceholder?: string;
     noResultsText?: string;
     noResultsContent?: React.ReactNode;
+    disabled?: boolean;
 }
 
 export function Combobox({ 
@@ -38,6 +39,7 @@ export function Combobox({
     searchPlaceholder = "Buscar item...",
     noResultsText = "Nenhum item encontrado.",
     noResultsContent,
+    disabled = false
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
 
@@ -49,6 +51,7 @@ export function Combobox({
           role="combobox"
           aria-expanded={open}
           className="w-full justify-between"
+          disabled={disabled}
         >
           {value
             ? items.find((item) => item.value === value)?.label
