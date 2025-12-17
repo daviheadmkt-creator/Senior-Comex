@@ -270,7 +270,6 @@ export default function NovoProcessoPage() {
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
         setExporterContacts(newContacts);
 
-        // Check if the current contact is still valid for the new exporter
         const isCurrentContactValid = newContacts.some(c => c.id === formData.analistaId);
 
         if (!isCurrentContactValid) {
@@ -285,7 +284,7 @@ export default function NovoProcessoPage() {
 
 useEffect(() => {
     if (formData.analistaId) {
-        const contact = exporterContacts.find(c => c.id === formData.analistaId);
+        const contact = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
         if (contact && contact.nome !== formData.analistaNome) {
             handleInputChange('analistaNome', contact.nome);
         }
@@ -747,7 +746,7 @@ useEffect(() => {
                                     items={exporterContacts.map(c => ({ value: c.id, label: `${c.nome} (${c.cargo || 'N/A'})` }))}
                                     value={formData.analistaId}
                                     onValueChange={(id) => {
-                                      const contact = exporterContacts.find(c => c.id === id);
+                                      const contact = exporterContacts.find(c => String(c.id) === String(id));
                                       handleInputChange('analistaId', id);
                                       handleInputChange('analistaNome', contact ? contact.nome : '');
                                     }}
