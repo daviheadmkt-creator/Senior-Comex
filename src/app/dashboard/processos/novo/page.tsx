@@ -238,7 +238,7 @@ export default function NovoProcessoPage() {
     useEffect(() => {
     if (isEditing && processoData) {
       const selectedExporter = parceiros?.find(p => p.id === processoData.exportadorId);
-      const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
+      const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({...c, id: index })) || [];
       setExporterContacts(newContacts);
 
       setFormData({
@@ -265,9 +265,10 @@ export default function NovoProcessoPage() {
  useEffect(() => {
     if (formData.exportadorId && parceiros) {
         const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
-        const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
+        const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({...c, id: index })) || [];
         setExporterContacts(newContacts);
 
+        // Check if the currently selected contact is still valid for the new exporter
         const isCurrentContactValid = newContacts.some(c => String(c.id) === String(formData.analistaId));
 
         if (!isCurrentContactValid) {
@@ -633,6 +634,7 @@ useEffect(() => {
     const processoRef = doc(firestore, 'processos', docId);
 
     const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
+    const selectedAnalista = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
     const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
     const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
     
@@ -640,6 +642,7 @@ useEffect(() => {
         ...formData,
         id: docId,
         exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+        analistaNome: selectedAnalista?.nome || formData.analistaNome || 'N/A',
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
@@ -741,11 +744,11 @@ useEffect(() => {
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
                                  <Combobox
-                                    items={exporterContacts.map(c => ({ value: c.nome, label: `${c.nome} (${c.cargo || 'N/A'})` }))}
-                                    value={formData.analistaNome}
-                                    onValueChange={(nome) => {
-                                      const contact = exporterContacts.find(c => c.nome === nome);
-                                      handleInputChange('analistaId', contact ? contact.nome : '');
+                                    items={exporterContacts.map(c => ({ value: String(c.id), label: `${c.nome} (${c.cargo || 'N/A'})` }))}
+                                    value={String(formData.analistaId || '')}
+                                    onValueChange={(id) => {
+                                      const contact = exporterContacts.find(c => String(c.id) === id);
+                                      handleInputChange('analistaId', id);
                                       handleInputChange('analistaNome', contact ? contact.nome : '');
                                     }}
                                     placeholder={!formData.exportadorId ? "Selecione um exportador" : "Selecione o contato"}
