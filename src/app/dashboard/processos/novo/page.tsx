@@ -237,6 +237,10 @@ export default function NovoProcessoPage() {
 
     useEffect(() => {
     if (isEditing && processoData) {
+      const selectedExporter = parceiros?.find(p => p.id === processoData.exportadorId);
+      const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
+      setExporterContacts(newContacts);
+
       setFormData({
         ...initialFormData,
         ...processoData,
@@ -255,12 +259,6 @@ export default function NovoProcessoPage() {
         const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
         setFilteredTerminais(filtered);
       }
-      if (processoData.exportadorId && parceiros) {
-          const selectedExporter = parceiros.find(p => p.id === processoData.exportadorId);
-          if (selectedExporter && selectedExporter.contatos) {
-              setExporterContacts(selectedExporter.contatos.filter((c: any) => c.nome));
-          }
-      }
     }
   }, [isEditing, processoData, terminais, parceiros]);
 
@@ -270,20 +268,20 @@ export default function NovoProcessoPage() {
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
         setExporterContacts(newContacts);
 
-        const isCurrentContactValid = newContacts.some(c => c.id === formData.analistaId);
+        const isCurrentContactValid = newContacts.some(c => String(c.id) === String(formData.analistaId));
 
         if (!isCurrentContactValid) {
             handleInputChange('analistaId', '');
             handleInputChange('analistaNome', '');
         }
-    } else {
+    } else if (!formData.exportadorId) {
         setExporterContacts([]);
     }
 }, [formData.exportadorId, parceiros]);
 
 
 useEffect(() => {
-    if (formData.analistaId) {
+    if (formData.analistaId && exporterContacts.length > 0) {
         const contact = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
         if (contact && contact.nome !== formData.analistaNome) {
             handleInputChange('analistaNome', contact.nome);
@@ -743,11 +741,11 @@ useEffect(() => {
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
                                  <Combobox
-                                    items={exporterContacts.map(c => ({ value: c.id, label: `${c.nome} (${c.cargo || 'N/A'})` }))}
-                                    value={formData.analistaId}
-                                    onValueChange={(id) => {
-                                      const contact = exporterContacts.find(c => String(c.id) === String(id));
-                                      handleInputChange('analistaId', id);
+                                    items={exporterContacts.map(c => ({ value: c.nome, label: `${c.nome} (${c.cargo || 'N/A'})` }))}
+                                    value={formData.analistaNome}
+                                    onValueChange={(nome) => {
+                                      const contact = exporterContacts.find(c => c.nome === nome);
+                                      handleInputChange('analistaId', contact ? contact.nome : '');
                                       handleInputChange('analistaNome', contact ? contact.nome : '');
                                     }}
                                     placeholder={!formData.exportadorId ? "Selecione um exportador" : "Selecione o contato"}
