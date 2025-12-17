@@ -246,6 +246,7 @@ export default function NovoProcessoPage() {
         notas_fiscais: processoData.notas_fiscais || [],
         documentos_originais: processoData.documentos_originais || initialOriginalDocs,
         analistaId: processoData.analistaId || '',
+        analistaNome: processoData.analistaNome || '',
         portoEmbarqueId: processoData.portoEmbarqueId || '',
         portoDescargaId: processoData.portoDescargaId || '',
         armadorId: processoData.armadorId || '',
@@ -266,13 +267,16 @@ export default function NovoProcessoPage() {
   useEffect(() => {
     if (formData.exportadorId && parceiros) {
         const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
-        if (selectedExporter && selectedExporter.contatos) {
-            setExporterContacts(selectedExporter.contatos.filter((c: any) => c.nome));
-        } else {
-            setExporterContacts([]);
+        const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome) || [];
+        setExporterContacts(newContacts);
+
+        // Check if the current contact is still valid for the new exporter
+        const isCurrentContactValid = newContacts.some(c => c.nome === formData.analistaNome);
+        
+        if (!isCurrentContactValid) {
+            handleInputChange('analistaId', '');
+            handleInputChange('analistaNome', '');
         }
-        handleInputChange('analistaId', '');
-        handleInputChange('analistaNome', '');
     }
   }, [formData.exportadorId, parceiros]);
   
@@ -727,16 +731,15 @@ export default function NovoProcessoPage() {
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
                                 <Select 
-                                    value={formData.analistaId || ''} 
+                                    value={formData.analistaNome || ''} 
                                     onValueChange={value => {
-                                        const contact = exporterContacts.find(c => c.nome === value);
-                                        handleInputChange('analistaId', contact?.nome || '');
-                                        handleInputChange('analistaNome', contact?.nome || '');
+                                        handleInputChange('analistaId', value);
+                                        handleInputChange('analistaNome', value);
                                     }} 
                                     disabled={!formData.exportadorId}
                                 >
                                     <SelectTrigger id="analistaId">
-                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : (formData.analistaNome || "Selecione o contato")} />
+                                        <SelectValue placeholder={!formData.exportadorId ? "Selecione um exportador primeiro" : "Selecione o contato"} />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {exporterContacts.map((contact, index) => (
@@ -1366,3 +1369,4 @@ export default function NovoProcessoPage() {
   );
 }
     
+
