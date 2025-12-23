@@ -558,92 +558,86 @@ useEffect(() => {
         const doc = new jsPDF();
         const systemLogo = localStorage.getItem('system_logo');
 
-        // ======== DRAFT BL ========
+        // ======== DRAFT FITO (Phytosanitary Certificate) ========
+        doc.addPage();
+        const govLogo = 'data:image/png;base64,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kAAAAAAOQQAAAAAEkABgAAAASQAAYAAADIEgAAAAAAAAB/AvwEAAAAAADGCAAAAAAAYwwkABgAAAAAJIEgAAAAAAAEgAMAAAAABJAAYAAAAAEkAAAAAAOQQAAAAAJDYAAAAAAAAYIwkAAAAAAACwDiEAAAAAAGCcBAAAAAAAgK+QAAAAAABgnAQAAAAAAAAAEGgAAAAAgLEIAAAAAAAAIEgABgAAAJAkAAMAAAAEkAAKAAAAAOCQAGAAAADAEAAAAAAGA8hAAAAAADAEgkAAAAAADAEwAAAAAAACwDiEAAAAAgGEIAAAAAAAAIEgABgAAAAASQAAYAAAACJAkAAAAAAOQSAAYAAAASIAGAAAADAEAAAAAAIAxCQAAAAAAYCwkABgAAAAAJICQAAAAAAAQSAAAAAAAAISQAAAAAAGQEGAAAAChIADAAAAABSQAAAAAAIEgAAAAAgDEJAAAAAAAwDiEAAAAAAGAcBAAAAAAAgDEJAAAAAAAAAAAAIEgAAAAAAACQSAAYAAAAAEkABgAAAJAkAAAAAAOQQAGAAAACBIADAAAAAAkAAAAAAYIwkAAAAAADAOEIAAAAAADjCQAGAAAAAAkgSAAAAAAAAAASAAAADAAAAJDYAAAAAAAAMJAAAAAAAAD4kAAKAAAAACSSAAAADAAAAASQAAYAAAAACQAAYAAAAEkAAAAAAOQSAAGAAAACBIADAAAAACSCAAGAAAADAEAAAAAAIAxCQAAAAAAYCwkABgAAAAAJICQAAAAAAAAASQAAAAAAACISAAAAAADICAAAAAAAUBAAAAAAABgnAQAAAAAAYCwkAAAAAACAsQgAAAAAAAAACSAAGAAAACBJAAZAAAAAkAAAAgJAAZAAAAIEgAAAAAAACQAGAAAACBJAAAAAAAAAhCQAAAAAAYIyEAAAAAAAgLEIAAAAAAAAAAgkABgAAAAASAAAACAAAAChIAAAAAAAAAhCQAAAAAAAA4hAAAAAAAMQ5CQAAAAAAYA4kABgAAAAAJICQAAAAAAAAIEgAAAAAAAACQGAAAAAAAAAIEgAAAAAAOQQAAAAAAAAAAAAJAAAAAAA/gX4kAAAAAAAAAQAAAAAAAAAkABgAAAIEgABgAAAAASAAAAGCRJAAYAAACISAAAAAAAAChIAAYAAAAACSAAAAAAAGCcBAAAAAACQGEIAAAAACBCQAAAAAAAAASAAAADAAAAASAAAACBJAAAAAAAOQSBAAAAAAQAAAAAASAAAADAAAAASAAAACBJAAZAAAAASAAAAACBJAAAAAAIEkABgAAAAAIAkAAAAAAACSCAAGAAAAADiEAAAAAAAAAxjkJAAAAAAAACwkABgAAAAAQSAAGAAAAAAkAAAAAAOQSAAAAAAAAISQAGAAAACBJAAAAAAAAAhCQAAAAAAMA4CQAAAAAAABgnAQAAAAAAIEgAAAAAgDEJAAAAAAAAACAAAAADAAAAABJAADAAAAACSAAGAAAACBJAAZAAAAASQAGAAAACBJAAZAAAAASAAAACAAAAAAAAIQkAAAAAAAAOEIAAAAAAAAAAhCQAAAAAAgLAAAAAAACAOEgAMAAAAAECQAAAAAAAAxCQAAAAAAMA4CQAAAAAAACBJAAAAAAIEgABgAAAAAAAASQAAAAAAISQAGAAAAADgJAAAAAAAAGEIAAAAAAAAAAgkABgAAAAASAAAACBJAAAAAAAIAAAAAABgnAQAAAAAAAICxCQAAAAAAYIwkAAAAAAAACAAAADAAAAASQAAYAAAAAEkAAKAAAAABJAADAAAAAAkABgAAAAAQAAAAAwDiEAAAAAAwBwkABgAAAAAQSAAGAAAAAAkAAAAAAOQSAAAAAAAAAISQAGAAAACBJAAAAAAAAAhCQAAAAAAMA4CQAAAAAAABhLCAAAAAAAAAAAAJAADAAAAADAAAAABJAADAAAAAAkAAKAAAACASQAAAAAAEIAAAAAAAAcIwkAAAAAAACAsQgAAAAAAAAADCTAAAAAAAABIADAAAAACSAAGAAAABJAAZAAAAACSAAGAAAABJAAZAAAAIEgAAAAAAACISAAAAAAAAHCEAAAAAAAgLEIAAAAAAAAAAgkABgAAAAASAAAADAAAAChIAAAAAAAAIhCQAAAAAAAA4hAAAAAAAMQ5CQAAAAAAYBwkABgAAAAAQSAAAAAAAADAEAAAAAAASAASAAAAAABAJAAAAAAAA/wC7oT1qY1Vz1gAAAABJRU5ErkJggg==';
+
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
-        doc.text('BILL OF LADING - DRAFT', 105, 15, { align: 'center' });
-
-        if (systemLogo) {
-            try {
-                const img = new Image();
-                img.src = systemLogo;
-                // Get image type from data URI
-                const mimeType = systemLogo.substring(systemLogo.indexOf(":")+1, systemLogo.indexOf(";"));
-                const imageType = mimeType.split('/')[1].toUpperCase();
-                doc.addImage(img, imageType, 15, 8, 40, 10);
-            } catch (e) {
-                console.error("Error adding logo to PDF:", e);
-            }
-        }
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        (doc as any).autoTable({
-            startY: 25,
-            theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2 },
-            body: [
-                [{ content: 'Shipper', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_shipper || '', 120) }],
-                [{ content: 'Consignee', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_consignee || '', 120) }],
-                [{ content: 'Notify Party', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_notify || '', 120) }],
-                [{ content: 'Port of Loading', styles: { fontStyle: 'bold' } }, { content: formData.portoEmbarqueNome || '' }],
-                [{ content: 'Port of Discharge', styles: { fontStyle: 'bold' } }, { content: formData.portoDescargaNome || '' }],
-                [{ content: 'Vessel/Voyage', styles: { fontStyle: 'bold' } }, { content: `${formData.navio || ''} / ${formData.viagem || ''}` }],
-                [{ content: 'Marks and Numbers', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_marks || '', 120) }],
-                [{ content: 'Description of Goods', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_description || '', 120) }],
-                [{ content: 'Gross Weight', styles: { fontStyle: 'bold' } }, { content: formData.quantidade || '' }],
-            ],
-            didDrawPage: (data) => {
-                doc.setFontSize(8);
-                doc.text('Page ' + doc.internal.getNumberOfPages(), data.settings.margin.left, doc.internal.pageSize.height - 10);
-            }
-        });
-
-
-        // ======== DRAFT FITO ========
-        doc.addPage();
+        doc.text('CERTIFICADO FITOSSANITÁRIO', 105, 15, { align: 'center' });
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
-        doc.text('CERTIFICADO FITOSSANITÁRIO', 105, 15, { align: 'center' });
-        doc.setFont('helvetica', 'normal');
         doc.text('PHYTOSANITARY CERTIFICATE', 105, 20, { align: 'center' });
-        doc.setFontSize(8);
-        doc.text('MINISTÉRIO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO', 105, 25, { align: 'center' });
-        (doc as any).autoTable({
-             startY: 35,
-             theme: 'grid',
-             styles: { fontSize: 8, cellPadding: 2 },
-             body: [
-                 [{ content: 'Consignee', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_fito_consignee || '', 120) }],
-                 [{ content: 'Description of Goods', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_fito_description || '', 120) }],
-                 [{ content: 'Treatment', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_treatment || '' }],
-                 [{ content: 'Chemical (active ingredient)', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_chemical || '' }],
-                 [{ content: 'Concentration', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_concentration || '' }],
-                 [{ content: 'Date', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_date || '' }],
-             ]
-        });
-
-        // ======== DRAFT COO ========
-        doc.addPage();
-        doc.setFontSize(14);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DRAFT - CERTIFICATE OF ORIGIN', 105, 20, { align: 'center' });
-        (doc as any).autoTable({
-            startY: 25, theme: 'grid',
-            styles: { fontSize: 8, cellPadding: 2 },
-            body: [
-                [{ content: 'Consigned to', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_co_consignee || '', 120) }],
-                [{ content: 'Description of Goods', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_co_description || '', 120) }],
-                [{ content: 'HS Code', styles: { fontStyle: 'bold' } }, { content: formData.draft_co_hs_code || '' }],
-                [{ content: 'Invoice No.', styles: { fontStyle: 'bold' } }, { content: formData.draft_co_invoice || '' }],
-            ],
-        });
         
-        doc.save(`Drafts_${formData.processo_interno || 'processo'}.pdf`);
+        doc.addImage(govLogo, 'PNG', 15, 8, 20, 20);
 
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text('MINISTÉRIO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO', 105, 25, { align: 'center' });
+        doc.text('DEPARTAMENTO DE SANIDADE VEGETAL', 105, 29, { align: 'center' });
+        doc.text('ORGANIZAÇÃO NACIONAL DE PROTEÇÃO FITOSSANITÁRIA DO BRASIL', 105, 33, { align: 'center' });
+        doc.text('PLANT PROTECTION ORGANIZATION OF BRAZIL', 105, 37, { align: 'center' });
+
+
+        const drawTextBox = (x: number, y: number, width: number, height: number, label: string, text: string) => {
+            doc.rect(x, y, width, height);
+            doc.setFontSize(6);
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, x + 1, y + 3);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'normal');
+            doc.text(doc.splitTextToSize(text, width - 4), x + 2, y + 7);
+        };
+        
+        // Fields
+        drawTextBox(15, 40, 180, 10, '1. Para: Organização Nacional de Proteção Fitossanitária de / To: Plant Protection Organization(s) of', 'INDIA');
+        drawTextBox(15, 50, 90, 20, '2. Nome e endereço do exportador / Name and address of exporter', formData.draft_bl_shipper || '');
+        drawTextBox(105, 50, 90, 20, '3. Nome e endereço do destinatário declarado / Declared name and address of consignee', formData.draft_fito_consignee || '');
+        drawTextBox(15, 70, 90, 10, '4. Lugar de Origem / Place of Origin', 'MATO GROSSO - BRASIL');
+        drawTextBox(105, 70, 45, 10, '5. Meios de transporte declarados / Declared means of conveyance', 'MARÍTIMO / MARITIME');
+        drawTextBox(150, 70, 45, 10, '6. Porto de descarga / Declared point of entry', formData.portoDescargaNome || '');
+
+        drawTextBox(15, 80, 90, 20, '7. Número e descrição dos volumes / Number and description of packages', '2700 BOLSAS / BAGS');
+        
+        doc.rect(105, 80, 90, 20);
+        doc.setFontSize(6);
+        doc.setFont('helvetica', 'bold');
+        doc.text('8. Nome do produto e quantidade declarada / Name of product and quantity declared', 106, 83);
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
+        doc.text(doc.splitTextToSize(formData.draft_fito_description || '', 86), 107, 87);
+        doc.text(doc.splitTextToSize(formData.quantidade || '', 86), 160, 95, {align: 'right'});
+
+        drawTextBox(15, 100, 90, 10, '9. Marcas distintas / Distinguishing marks', `NAVIO / VESSEL:\n${formData.navio || ''}\n\nCONHECIMENTO DE EMBARQUE / BILL OF LADING: ${formData.bls?.[0]?.numero || ''}`);
+        drawTextBox(105, 100, 90, 10, '10. Nome científico das plantas / Botanical name of plants', 'Sesamum indicum');
+
+        drawTextBox(15, 110, 180, 20, '11. Pelo presente certifica-se que os vegetais, seus produtos ou outros artigos regulamentados aqui descritos foram inspecionados e/ou testados de acordo com os procedimentos oficiais adequados e considerados livres de pragas quarentenárias especificadas pela parte contratante importadora e que cumprem os requisitos fitossanitários vigentes da parte contratante importadora, incluídos os relativos às pragas não quarentenárias regulamentadas. / This is to certify that the plants, plant products or other regulated articles described herein have been inspected and/or tested according to appropriate official procedures and are considered to be free from the quarantine pests specified by the importing contracting party and to conform with the current phytosanitary requirements of the importing contracting party, including those for regulated non-quarantine pests.', '');
+
+        // Additional Declaration
+        drawTextBox(15, 130, 180, 20, 'DECLARAÇÃO ADICIONAL / ADDITIONAL DECLARATION', `DATA DE INSPEÇÃO...: ${formData.draft_fito_date || 'XX/NOV/2025'}\nINSPECTION DATE......: ${formData.draft_fito_date || 'NOV/XX/2025'}\n\nThe consignment is free from quarantine weed seeds and soil contamination.\nFIT FOR HUMAN CONSUMPTION.`);
+
+        // Disinfection Treatment
+        doc.rect(15, 150, 180, 5);
+        doc.setFontSize(8).setFont('helvetica', 'bold').text('TRATAMENTO DE DESINFESTAÇÃO E/OU DESINFECÇÃO / DISINFESTATION AND/OR DISINFECTION TREATMENT', 105, 153.5, { align: 'center' });
+
+        drawTextBox(15, 155, 30, 10, '12. Data do Tratamento / Date of Treatment', 'NONE');
+        drawTextBox(45, 155, 30, 10, '13. Tratamento / Treatment', 'NONE');
+        drawTextBox(75, 155, 30, 10, '14. Produto químico / Chemical (active ingredient)', 'NONE');
+        drawTextBox(105, 155, 30, 10, '15. Concentração / Concentration', 'NONE');
+        drawTextBox(135, 155, 30, 10, '16. Duração e Temperatura / Duration and Temperature', 'NONE');
+        drawTextBox(165, 155, 30, 10, '17. Informação adicional / Additional information', 'NONE');
+        
+        // Footer
+        drawTextBox(15, 165, 60, 20, '18. Carimbo da Organização / Stamp of organization', '');
+        drawTextBox(75, 165, 60, 10, '19. Lugar de Expedição / Place of issue', '');
+        drawTextBox(135, 165, 60, 10, '20. Data de emissão / Date of issue', '');
+        drawTextBox(75, 175, 60, 10, '21. Nome do Fiscal Federal Agropecuário autorizado / Name of authorized officer', '');
+        drawTextBox(135, 175, 60, 10, '22. Assinatura do Fiscal Federal Agropecuário autorizado / Signature of authorized officer', '');
+
+        doc.save(`Draft_FITO_${formData.processo_interno || 'processo'}.pdf`);
         toast({
             title: "PDF Gerado!",
-            description: "O pacote de drafts foi gerado com sucesso.",
+            description: "O draft do Certificado Fitossanitário foi gerado.",
         });
     };
 
@@ -1430,3 +1424,4 @@ useEffect(() => {
   );
 }
     
+
