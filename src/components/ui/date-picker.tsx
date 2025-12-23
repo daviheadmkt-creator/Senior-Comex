@@ -29,18 +29,19 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
 
   React.useEffect(() => {
     if (propDate) {
-        // Check if propDate is a string and parse it, otherwise assume it's a Date object.
         const parsedDate = typeof propDate === 'string' ? parseISO(propDate) : propDate;
         if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
             setDate(parsedDate);
-            setTime(format(parsedDate, 'HH:mm'));
+            if (showTime) {
+              setTime(format(parsedDate, 'HH:mm'));
+            }
         } else {
              setDate(undefined);
         }
     } else {
         setDate(undefined);
     }
-  }, [propDate]);
+  }, [propDate, showTime]);
 
   const handleDateSelect = (selectedDate: Date | undefined) => {
     if (!selectedDate) {
@@ -48,11 +49,20 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
         if (onDateChange) onDateChange(null);
         return;
     }
-    const [hours, minutes] = time.split(':').map(Number);
-    let newDate = setHours(selectedDate, hours);
-    newDate = setMinutes(newDate, minutes);
+
+    let newDate = selectedDate;
+    if (showTime) {
+      const [hours, minutes] = time.split(':').map(Number);
+      if (!isNaN(hours) && !isNaN(minutes)) {
+        newDate = setHours(newDate, hours);
+        newDate = setMinutes(newDate, minutes);
+      }
+    }
+    
     setDate(newDate);
-    if (onDateChange) onDateChange(newDate.toISOString());
+    if (onDateChange) {
+      onDateChange(newDate.toISOString());
+    }
 
     if (!showTime) {
       setIsOpen(false);
@@ -68,7 +78,9 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
             let newDate = setHours(date, hours);
             newDate = setMinutes(newDate, minutes);
             setDate(newDate);
-             if (onDateChange) onDateChange(newDate.toISOString());
+             if (onDateChange) {
+               onDateChange(newDate.toISOString());
+             }
         }
     }
   }

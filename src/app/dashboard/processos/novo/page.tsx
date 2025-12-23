@@ -111,7 +111,7 @@ const initialOriginalDocs = [
 const initialFormData = {
     id: '',
     processo_interno: '',
-    data_nomeacao: '',
+    data_nomeacao: null as string | null,
     po_number: '',
     produtoNome: '',
     quantidade: '',
@@ -158,11 +158,11 @@ const initialFormData = {
     draft_co_description: '',
     draft_co_hs_code: '',
     draft_co_invoice: '',
-    deadline_draft: null,
-    deadline_vgm: null,
-    deadline_carga: null,
-    etd: null,
-    eta: null,
+    deadline_draft: null as string | null,
+    deadline_vgm: null as string | null,
+    deadline_carga: null as string | null,
+    etd: null as string | null,
+    eta: null as string | null,
     deadline_draft_file: null as { name: string; url: string } | null,
     deadline_vgm_file: null as { name: string; url: string } | null,
     deadline_carga_file: null as { name: string; url: string } | null,
@@ -512,12 +512,12 @@ useEffect(() => {
 
  const getStepStatusIcon = (step: number) => {
     const { 
-        status, booking_number, documentos, due_status, mapa_status, bls, documentos_originais, awb_courier,
+        status, booking_number, due_status, mapa_status, bls, documentos_originais, awb_courier,
         draft_bl_shipper, draft_bl_consignee, draft_bl_description,
         draft_fito_consignee, draft_fito_description,
         draft_co_consignee, draft_co_description
     } = formData;
-    const allDocsApproved = documentos.length > 0 && documentos.every(d => d.status === 'Aprovado');
+    
     const allOriginalDocsDone = documentos_originais.every(d => d.done);
 
     switch (step) {
@@ -746,7 +746,7 @@ useEffect(() => {
                              <div className="space-y-2">
                                 <Label>Data da Nomeação</Label>
                                 <DatePicker 
-                                    date={formData.data_nomeacao || undefined}
+                                    date={formData.data_nomeacao}
                                     onDateChange={(date) => handleInputChange('data_nomeacao', date)} 
                                 />
                             </div>
@@ -859,18 +859,18 @@ useEffect(() => {
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label>Previsão de Embarque (ETD)</Label>
-                                <DatePicker date={formData.etd || undefined} onDateChange={date => handleInputChange('etd', date)} showTime />
+                                <DatePicker date={formData.etd} onDateChange={date => handleInputChange('etd', date)} showTime />
                             </div>
                             <div className="space-y-2">
                                 <Label>Previsão de Chegada (ETA)</Label>
-                                <DatePicker date={formData.eta || undefined} onDateChange={date => handleInputChange('eta', date)} showTime />
+                                <DatePicker date={formData.eta} onDateChange={date => handleInputChange('eta', date)} showTime />
                             </div>
                         </div>
                          <div className="grid md:grid-cols-3 gap-6">
                             <div className="space-y-2">
                                 <Label>Deadline Draft</Label>
                                 <div className="flex items-center gap-2">
-                                <DatePicker date={formData.deadline_draft || undefined} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
+                                <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 {formData.deadline_draft_file ? (
                                     <div className="flex items-center gap-1">
                                         <a href={formData.deadline_draft_file.url} target="_blank" rel="noopener noreferrer">
@@ -892,7 +892,7 @@ useEffect(() => {
                             <div className="space-y-2">
                                 <Label>Deadline VGM</Label>
                                 <div className="flex items-center gap-2">
-                                <DatePicker date={formData.deadline_vgm || undefined} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
+                                <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                  {formData.deadline_vgm_file ? (
                                     <div className="flex items-center gap-1">
                                         <a href={formData.deadline_vgm_file.url} target="_blank" rel="noopener noreferrer">
@@ -914,7 +914,7 @@ useEffect(() => {
                             <div className="space-y-2">
                                 <Label>Deadline Carga</Label>
                                 <div className="flex items-center gap-2">
-                                <DatePicker date={formData.deadline_carga || undefined} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
+                                <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                   {formData.deadline_carga_file ? (
                                     <div className="flex items-center gap-1">
                                         <a href={formData.deadline_carga_file.url} target="_blank" rel="noopener noreferrer">
