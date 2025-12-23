@@ -268,13 +268,13 @@ export default function NovoProcessoPage() {
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({...c, id: index })) || [];
         setExporterContacts(newContacts);
 
-        // Check if the currently selected contact is still valid for the new exporter
-        const isCurrentContactValid = newContacts.some(c => String(c.id) === String(formData.analistaId));
-
+        const isCurrentContactValid = newContacts.some(c => c.id === formData.analistaId);
+        
         if (!isCurrentContactValid) {
             handleInputChange('analistaId', '');
             handleInputChange('analistaNome', '');
         }
+
     } else if (!formData.exportadorId) {
         setExporterContacts([]);
     }
@@ -733,7 +733,7 @@ useEffect(() => {
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                                 <Combobox 
-                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: `${p.nome_fantasia} | ${p.cnpj || 'N/A'}` })) || []}
                                      value={formData.exportadorId}
                                      onValueChange={(value) => handleInputChange('exportadorId', value)}
                                      placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"}
@@ -748,7 +748,7 @@ useEffect(() => {
                                     value={String(formData.analistaId || '')}
                                     onValueChange={(id) => {
                                       const contact = exporterContacts.find(c => String(c.id) === id);
-                                      handleInputChange('analistaId', id);
+                                      handleInputChange('analistaId', contact?.id);
                                       handleInputChange('analistaNome', contact ? contact.nome : '');
                                     }}
                                     placeholder={!formData.exportadorId ? "Selecione um exportador" : "Selecione o contato"}
