@@ -510,42 +510,49 @@ useEffect(() => {
     }
   }
 
-  const getStepStatusIcon = (step: number) => {
-        const { status, booking_number, documentos, due_status, mapa_status, bls, documentos_originais, awb_courier } = formData;
-        const allDocsApproved = documentos.length > 0 && documentos.every(d => d.status === 'Aprovado');
-        const allOriginalDocsDone = documentos_originais.every(d => d.done);
+ const getStepStatusIcon = (step: number) => {
+    const { 
+        status, booking_number, documentos, due_status, mapa_status, bls, documentos_originais, awb_courier,
+        draft_bl_shipper, draft_bl_consignee, draft_bl_description,
+        draft_fito_consignee, draft_fito_description,
+        draft_co_consignee, draft_co_description
+    } = formData;
+    const allDocsApproved = documentos.length > 0 && documentos.every(d => d.status === 'Aprovado');
+    const allOriginalDocsDone = documentos_originais.every(d => d.done);
 
-        switch (step) {
-            case 1: // Nomeação + Booking
-                if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                 return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-            case 2: // Drafts
-                if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-                if (allDocsApproved || status.includes('APROVADOS')) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (status.includes('DRAFT')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 3: // Liberação Fiscal e Inspeção
-                if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
-                if (status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 4: // Embarque
-                if (bls && bls.length > 0 && bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 5: // Docs Originais
-                if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (bls && bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                 return <XCircle className="h-5 w-5 text-gray-400" />;
-            case 6: // Encerramento
-                if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
-                if (allOriginalDocsDone) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-                return <XCircle className="h-5 w-5 text-gray-400" />;
-            default:
-                return null;
-        }
-    };
+    switch (step) {
+        case 1: // Nomeação + Booking
+            if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
+             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+        case 2: // Drafts
+            const areDraftsFilled = draft_bl_shipper && draft_bl_consignee && draft_bl_description &&
+                                    draft_fito_consignee && draft_fito_description &&
+                                    draft_co_consignee && draft_co_description;
+            if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
+            if (areDraftsFilled || status.includes('APROVADOS')) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
+        case 3: // Liberação Fiscal e Inspeção
+            if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
+            if (status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
+        case 4: // Embarque
+            if (bls && bls.length > 0 && bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
+        case 5: // Docs Originais
+            if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (bls && bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+             return <XCircle className="h-5 w-5 text-gray-400" />;
+        case 6: // Encerramento
+            if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (allOriginalDocsDone) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
+        default:
+            return null;
+    }
+};
 
     const generatePdf = () => {
         const doc = new jsPDF();
