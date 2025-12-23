@@ -268,7 +268,7 @@ export default function NovoProcessoPage() {
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({...c, id: index })) || [];
         setExporterContacts(newContacts);
 
-        const isCurrentContactValid = newContacts.some(c => c.id === formData.analistaId);
+        const isCurrentContactValid = newContacts.some(c => String(c.id) === String(formData.analistaId));
         
         if (!isCurrentContactValid) {
             handleInputChange('analistaId', '');
@@ -300,6 +300,22 @@ useEffect(() => {
 
   const handleInputChange = (id: string, value: any) => {
     setFormData(prev => ({ ...prev, [id]: value ?? '' }));
+  };
+
+  const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawValue = e.target.value;
+    const digitsOnly = rawValue.replace(/\D/g, '');
+    if (!digitsOnly) {
+        handleInputChange('quantidade', '');
+        return;
+    }
+    const number = parseInt(digitsOnly, 10);
+    const formatted = new Intl.NumberFormat('pt-BR', {
+        minimumFractionDigits: 5,
+        maximumFractionDigits: 5
+    }).format(number / 100000);
+
+    handleInputChange('quantidade', `${formatted} TON`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -748,8 +764,13 @@ useEffect(() => {
                                     value={String(formData.analistaId || '')}
                                     onValueChange={(id) => {
                                       const contact = exporterContacts.find(c => String(c.id) === id);
-                                      handleInputChange('analistaId', contact?.id);
-                                      handleInputChange('analistaNome', contact ? contact.nome : '');
+                                      if (contact) {
+                                        handleInputChange('analistaId', contact.id);
+                                        handleInputChange('analistaNome', contact.nome);
+                                      } else {
+                                        handleInputChange('analistaId', '');
+                                        handleInputChange('analistaNome', '');
+                                      }
                                     }}
                                     placeholder={!formData.exportadorId ? "Selecione um exportador" : "Selecione o contato"}
                                     searchPlaceholder="Buscar contato..."
@@ -772,7 +793,7 @@ useEffect(() => {
                             </div>
                              <div className="space-y-2">
                                 <Label htmlFor="quantidade">Quantidade</Label>
-                                <Input id="quantidade" value={formData.quantidade || ''} onChange={e => handleInputChange('quantidade', e.target.value)} placeholder="Ex: 270,00000 TON" />
+                                <Input id="quantidade" value={formData.quantidade || ''} onChange={handleQuantityChange} placeholder="Ex: 270,00000 TON" />
                             </div>
                         </div>
                         
