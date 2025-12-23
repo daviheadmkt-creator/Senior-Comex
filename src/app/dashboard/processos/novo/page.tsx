@@ -733,7 +733,7 @@ useEffect(() => {
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                                 <Combobox 
-                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: `${p.nome_fantasia} | ${p.cnpj || 'N/A'}` })) || []}
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia)).map(p => ({ value: p.id, label: `${p.nome_fantasia} | ${p.cnpj || 'N/A'}` })) || []}
                                      value={formData.exportadorId}
                                      onValueChange={(value) => handleInputChange('exportadorId', value)}
                                      placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o parceiro"}
