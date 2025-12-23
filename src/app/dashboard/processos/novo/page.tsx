@@ -556,24 +556,51 @@ useEffect(() => {
 
     const generatePdf = () => {
         const doc = new jsPDF();
+        const systemLogo = localStorage.getItem('system_logo');
 
-        // BL Draft
-        doc.setFontSize(14);
-        doc.text('DRAFT - BILL OF LADING', 14, 20);
+        // ======== DRAFT BL ========
+        doc.setFontSize(16);
+        doc.setFont('helvetica', 'bold');
+        doc.text('BILL OF LADING - DRAFT', 105, 15, { align: 'center' });
+
+        if (systemLogo) {
+            try {
+                const img = new Image();
+                img.src = systemLogo;
+                // Get image type from data URI
+                const mimeType = systemLogo.substring(systemLogo.indexOf(":")+1, systemLogo.indexOf(";"));
+                const imageType = mimeType.split('/')[1].toUpperCase();
+                doc.addImage(img, imageType, 15, 8, 40, 10);
+            } catch (e) {
+                console.error("Error adding logo to PDF:", e);
+            }
+        }
+
+        doc.setFontSize(8);
+        doc.setFont('helvetica', 'normal');
         (doc as any).autoTable({
-            startY: 25, theme: 'grid',
+            startY: 25,
+            theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2 },
             body: [
-                ['Shipper', formData.draft_bl_shipper || ''],
-                ['Consignee', formData.draft_bl_consignee || ''],
-                ['Notify Party', formData.draft_bl_notify || ''],
-                ['Port of Loading', formData.portoEmbarqueNome || ''],
-                ['Port of Discharge', formData.portoDescargaNome || ''],
-                ['Marks and Numbers', formData.draft_bl_marks || ''],
-                ['Description of Goods', formData.draft_bl_description || ''],
+                [{ content: 'Shipper', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_shipper || '', 120) }],
+                [{ content: 'Consignee', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_consignee || '', 120) }],
+                [{ content: 'Notify Party', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_notify || '', 120) }],
+                [{ content: 'Port of Loading', styles: { fontStyle: 'bold' } }, { content: formData.portoEmbarqueNome || '' }],
+                [{ content: 'Port of Discharge', styles: { fontStyle: 'bold' } }, { content: formData.portoDescargaNome || '' }],
+                [{ content: 'Vessel/Voyage', styles: { fontStyle: 'bold' } }, { content: `${formData.navio || ''} / ${formData.viagem || ''}` }],
+                [{ content: 'Marks and Numbers', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_marks || '', 120) }],
+                [{ content: 'Description of Goods', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_bl_description || '', 120) }],
+                [{ content: 'Gross Weight', styles: { fontStyle: 'bold' } }, { content: formData.quantidade || '' }],
             ],
+            didDrawPage: (data) => {
+                doc.setFontSize(8);
+                doc.text('Page ' + doc.internal.getNumberOfPages(), data.settings.margin.left, doc.internal.pageSize.height - 10);
+            }
         });
 
-        // Phyto Certificate Draft
+
+        // ======== DRAFT FITO ========
         doc.addPage();
         doc.setFontSize(10);
         doc.setFont('helvetica', 'bold');
@@ -582,117 +609,33 @@ useEffect(() => {
         doc.text('PHYTOSANITARY CERTIFICATE', 105, 20, { align: 'center' });
         doc.setFontSize(8);
         doc.text('MINISTÉRIO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO', 105, 25, { align: 'center' });
-        doc.text('DEPARTAMENTO DE SANIDADE VEGETAL', 105, 29, { align: 'center' });
-        doc.text('ORGANIZAÇÃO NACIONAL DE PROTEÇÃO FITOSSANITÁRIA DO BRASIL', 105, 33, { align: 'center' });
-        doc.text('PLANT PROTECTION ORGANIZATION OF BRAZIL', 105, 37, { align: 'center' });
-        doc.text('Nº', 190, 20);
+        (doc as any).autoTable({
+             startY: 35,
+             theme: 'grid',
+             styles: { fontSize: 8, cellPadding: 2 },
+             body: [
+                 [{ content: 'Consignee', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_fito_consignee || '', 120) }],
+                 [{ content: 'Description of Goods', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_fito_description || '', 120) }],
+                 [{ content: 'Treatment', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_treatment || '' }],
+                 [{ content: 'Chemical (active ingredient)', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_chemical || '' }],
+                 [{ content: 'Concentration', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_concentration || '' }],
+                 [{ content: 'Date', styles: { fontStyle: 'bold' } }, { content: formData.draft_fito_date || '' }],
+             ]
+        });
 
-        // Box 1
-        doc.rect(10, 40, 95, 10);
-        doc.setFontSize(7);
-        doc.text('1. Para: Organização Nacional de Proteção Fitossanitária de / To: Plant Protection Organization(s) of', 12, 43);
-        doc.setFontSize(10);
-        doc.text(formData.draft_fito_destination_country || 'INDIA', 55, 48, { align: 'center'});
-
-        // Box DESCRIÇÃO DO ENVIO
-        doc.rect(10, 52, 190, 80);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DESCRIÇÃO DO ENVIO / DESCRIPTION OF CONSIGNMENT', 12, 56);
-        
-        // Box 2
-        doc.rect(10, 58, 95, 25);
-        doc.setFontSize(7);
-        doc.text('2. Nome e endereço do exportador / Name and address of exporter', 12, 61);
-        doc.setFontSize(9);
-        doc.text(doc.splitTextToSize(formData.draft_bl_shipper || '', 90), 12, 65);
-
-        // Box 3
-        doc.rect(105, 58, 95, 25);
-        doc.setFontSize(7);
-        doc.text('3. Nome e endereço do destinatário declarado / Declared name and address of consignee', 107, 61);
-        doc.setFontSize(9);
-        doc.text(doc.splitTextToSize(formData.draft_fito_consignee || '', 90), 107, 65);
-
-        // Box 4, 5, 6
-        doc.rect(10, 83, 63, 10).text('4. Lugar de Origem / Place of Origin', 12, 86, {maxWidth: 60});
-        doc.rect(73, 83, 64, 10).text('5. Meios de transporte declarados / Declared means of conveyance', 75, 86);
-        doc.rect(137, 83, 63, 10).text('6. Porto de entrada declarado / Declared point of entry', 139, 86);
-        doc.setFontSize(9);
-        doc.text("MATO GROSSO-BRASIL", 41, 91, { align: 'center' });
-        doc.text("MARITIMO / MARITIME", 105, 91, { align: 'center' });
-        doc.text(formData.portoDescargaNome || '', 168, 91, { align: 'center' });
-
-        // Box 7, 8, 9, 10
-        doc.rect(10, 93, 63, 39);
-        doc.text('7. Número e descrição dos volumes / Number and description of packages', 12, 96, {maxWidth: 60});
-        doc.text('9. Marcas distintivas / Distinguishing marks', 12, 110, {maxWidth: 60});
-
-        doc.rect(73, 93, 127, 39);
-        doc.text('8. Nome do produto e quantidade declarada / Name of product and quantity declared', 75, 96);
-        doc.text('10. Nome científico das vegetais / Botanical name of plants', 75, 118);
-
-        doc.setFontSize(9);
-        doc.text(formData.draft_bl_marks || '', 41, 100, { align: 'center' }); // Marks
-        doc.text(formData.navio_final || '', 41, 114, { align: 'center' });
-        doc.text(`CONHECIMENTO DE EMBARQUE / BILL OF LADING: ${formData.bls?.[0]?.numero || ''}`, 41, 120, { align: 'center' });
-
-        doc.text(doc.splitTextToSize(formData.draft_fito_description || '', 120), 75, 100); // Product Name
-        doc.text(`PESO LIQUIDO / NET WEIGHT: ${formData.quantidade || ''}`, 75, 110);
-        doc.text(formData.draft_fito_botanical_name || 'Sesamum indicum', 105, 122); // Botanical Name
-
-
-        // Box 11
-        doc.rect(10, 132, 190, 20);
-        doc.setFontSize(7);
-        doc.text("11. Pelo presente certifica-se que as vegetais, seus produtos ou outros artigos regulamentados aqui descritos foram inspecionados e/ou analisados, de acordo com os procedimentos oficiais adequados e considerados livres de pragas quarentenárias especificadas pela parte contratante importadora e que cumprem os requisitos fitossanitários vigentes da parte contratante importadora, incluídos os relativos às pragas quarentenárias não-regulamentadas.\nThis is to certify that the plants, plant products or other regulated articles described herein have been inspected and/or tested according to appropriate official procedures and are considered to be free from the quarantine pests specified by the importing contracting party and to conform with the current phytosanitary requirements of the importing contracting party, including those for regulated non-quarantine pests.", 12, 135, { maxWidth: 186 });
-
-        // Box Declaração Adicional
-        doc.rect(10, 154, 190, 40);
-        doc.setFontSize(8).setFont('helvetica', 'bold').text('DECLARAÇÃO ADICIONAL / ADDITIONAL DECLARATION', 105, 158, { align: 'center' });
-        doc.setFontSize(9).setFont('helvetica', 'normal').text('DATA DE INSPENÇÃO...: XX/NOV/2025\nINSPECTION DATE......: NOV/XX/2025\n\nThe consigment is free from quarantine weed seeds and soil contamination.\nFIT FOR HUMAN CONSUMPTION.', 12, 162);
-
-
-        // Box Tratamento
-        doc.rect(10, 196, 190, 40);
-        doc.setFontSize(8).setFont('helvetica', 'bold').text('TRATAMENTO DE DESINFESTAÇÃO E/OU DESINFECÇÃO / DISINFESTATION AND/OR DISINFECTION TREATMENT', 105, 200, { align: 'center' });
-        doc.setFontSize(9).setFont('helvetica', 'normal');
-        doc.rect(10, 202, 38, 10).text('12. Data do Tratamento\nDate of Tratment', 12, 205);
-        doc.rect(48, 202, 38, 10).text('13. Tratamento\nTreatment', 50, 205);
-        doc.rect(86, 202, 38, 10).text('14. Produto químico\nChemical (active ingredient)', 88, 205);
-        doc.rect(124, 202, 38, 10).text('15. Concentração\nConcentration', 126, 205);
-        doc.rect(162, 202, 38, 10).text('16. Duração e Temperatura\nDuration and Temperature', 164, 205);
-        doc.text('NONE', 29, 218, {align: 'center'});
-        doc.text('NONE', 67, 218, {align: 'center'});
-        doc.text('NONE', 105, 218, {align: 'center'});
-        doc.text('NONE', 143, 218, {align: 'center'});
-        doc.text('NONE', 181, 218, {align: 'center'});
-
-        doc.rect(10, 212, 190, 10);
-        doc.text('17. Informação adicional / Additional Information', 12, 218);
-        doc.text('NONE', 105, 226, {align: 'center'});
-
-
-        // Footer boxes
-        doc.rect(10, 238, 63, 20).text('18. Carimbo da Organização\nStamp of organization', 12, 241);
-        doc.rect(73, 238, 64, 20).text('19. Lugar de Expedição / Place of issue', 75, 241);
-        doc.rect(137, 238, 63, 20).text('20. Data de emissão / Date of issue', 139, 241);
-        
-        doc.rect(10, 258, 95, 20).text('21. Nome do Fiscal Federal Agropecuário autorizado / Name of authorised officer', 12, 261);
-        doc.rect(105, 258, 95, 20).text('22. Assinatura do Fiscal Federal Agropecuário autorizado / Signature of authorised officer', 107, 261);
-
-
-        // COO Draft
+        // ======== DRAFT COO ========
         doc.addPage();
         doc.setFontSize(14);
-        doc.text('DRAFT - CERTIFICATE OF ORIGIN', 14, 20);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DRAFT - CERTIFICATE OF ORIGIN', 105, 20, { align: 'center' });
         (doc as any).autoTable({
             startY: 25, theme: 'grid',
+            styles: { fontSize: 8, cellPadding: 2 },
             body: [
-                ['Consigned to', formData.draft_co_consignee || ''],
-                ['Description of Goods', formData.draft_co_description || ''],
-                ['HS Code', formData.draft_co_hs_code || ''],
-                ['Invoice No.', formData.draft_co_invoice || ''],
+                [{ content: 'Consigned to', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_co_consignee || '', 120) }],
+                [{ content: 'Description of Goods', styles: { fontStyle: 'bold' } }, { content: doc.splitTextToSize(formData.draft_co_description || '', 120) }],
+                [{ content: 'HS Code', styles: { fontStyle: 'bold' } }, { content: formData.draft_co_hs_code || '' }],
+                [{ content: 'Invoice No.', styles: { fontStyle: 'bold' } }, { content: formData.draft_co_invoice || '' }],
             ],
         });
         
