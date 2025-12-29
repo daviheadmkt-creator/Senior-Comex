@@ -36,6 +36,7 @@ import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocum
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Combobox } from '@/components/ui/combobox';
+import * as XLSX from 'xlsx';
 
 
 const processStatusOptions = [
@@ -185,7 +186,9 @@ export default function NovoProcessoPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const containerFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | { type: 'documento', index: number } | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
 
   
   const isEditing = searchParams.has('edit');
@@ -790,6 +793,70 @@ const handleCreateContact = (contactName: string) => {
         doc.save(`Documentos_Originais_${formData.processo_interno || 'processo'}.pdf`);
     };
 
+    const handleContainerImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                const newContainers = json.map(row => ({
+                    id: Date.now() + Math.random(),
+                    numero: String(row.numero || ''),
+                    lacre: String(row.lacre || ''),
+                    tare: String(row.tare || ''),
+                    qty_especie: String(row.qty_especie || ''),
+                    gross_weight: String(row.gross_weight || ''),
+                    net_weight: String(row.net_weight || ''),
+                    m3: String(row.m3 || ''),
+                    vgm: String(row.vgm || ''),
+                    inspecionado: false,
+                    novo_lacre: ''
+                }));
+
+                setFormData(prev => ({...prev, containers: [...prev.containers, ...newContainers]}));
+                
+                toast({
+                    title: 'Importação Concluída',
+                    description: `${newContainers.length} contêineres foram importados com sucesso.`,
+                });
+            } catch (error) {
+                console.error("Erro ao importar planilha:", error);
+                toast({
+                    title: 'Erro na Importação',
+                    description: 'Houve um problema ao ler o ficheiro. Verifique o formato e tente novamente.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsImporting(false);
+                if (containerFileInputRef.current) {
+                    containerFileInputRef.current.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleImportClick = () => {
+        containerFileInputRef.current?.click();
+    };
+
+    const handleDownloadTemplate = () => {
+        const ws = XLSX.utils.json_to_sheet([
+            { numero: "MSCU1234567", lacre: "SEAL123", tare: "2200", qty_especie: "540", gross_weight: "27000", net_weight: "24800", m3: "33", vgm: "27000" },
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Containers");
+        XLSX.writeFile(wb, "template_containers.xlsx");
+    };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore) return;
@@ -859,6 +926,13 @@ const handleCreateContact = (contactName: string) => {
             </div>
         </div>
         <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xml,.pdf" />
+        <input
+            type="file"
+            ref={containerFileInputRef}
+            onChange={handleContainerImport}
+            className="hidden"
+            accept=".xlsx, .xls"
+        />
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
           {/* Etapa 1 */}
@@ -1269,9 +1343,13 @@ const handleCreateContact = (contactName: string) => {
                             <div className="flex justify-between items-center mb-4">
                                 <h3 className="text-md font-medium">Dados dos Contêineres</h3>
                                 <div className='flex items-center gap-2'>
-                                    <Button type="button" variant="outline" size="sm">
-                                        <FileUp className="mr-2 h-4 w-4" />
-                                        Importar Planilha (XLSX)
+                                    <Button onClick={handleImportClick} disabled={isImporting} type="button" variant="outline" size="sm">
+                                        {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                                        {isImporting ? 'A Importar...' : 'Importar Planilha (XLSX)'}
+                                    </Button>
+                                    <Button onClick={handleDownloadTemplate} type="button" variant="secondary" size="sm">
+                                        <Download className="mr-2 h-4 w-4" />
+                                        Descarregar Template
                                     </Button>
                                     <Button type="button" variant="outline" size="sm" onClick={addContainer}>
                                         <PlusCircle className="mr-2 h-4 w-4" />
