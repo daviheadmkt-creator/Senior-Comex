@@ -545,7 +545,8 @@ useEffect(() => {
         status, booking_number, due_status, mapa_status, bls, documentos_originais, awb_courier,
         draft_bl_shipper, draft_bl_consignee, draft_bl_description,
         draft_fito_consignee, draft_fito_description,
-        draft_co_consignee, draft_co_description
+        draft_co_consignee, draft_co_description,
+        notas_fiscais, containers
     } = formData;
     
     const allOriginalDocsDone = documentos_originais.every(d => d.done);
@@ -559,13 +560,20 @@ useEffect(() => {
              return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         case 2: // Drafts
             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (areDraftsFilled || (status && status.includes('APROVADOS'))) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (areDraftsFilled || (status && (status.includes('DRAFTS_APROVADOS') || status.includes('AGUARDANDO_EMISSAO_NF')))) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação Fiscal e Inspeção
-            if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <CheckCircle className="h-5 w-5 text-green-500" />;
-            if (mapa_status === 'Indeferido') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+             const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
+            const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
+            const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every(nf => nf.chave);
+            const areContainersOk = containers.length > 0 && containers.every(c => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
+
+            if (isDueOk && isMapaOk && areNFsOk && areContainersOk) {
+                return <CheckCircle className="h-5 w-5 text-green-500" />;
+            }
+            if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
+            if (status && status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Embarque
             if (bls && bls.length > 0 && bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -597,7 +605,8 @@ const handleCreateContact = (contactName: string) => {
     setDocumentNonBlocking(partnerRef, { contatos: updatedContacts }, { merge: true });
     
     const newContactId = String(updatedContacts.length - 1);
-    setExporterContacts(updatedContacts.map((c, i) => ({...c, id: String(i) })));
+    const enrichedContacts = updatedContacts.map((c, i) => ({ ...c, id: String(i) }));
+    setExporterContacts(enrichedContacts);
 
     setFormData(prev => ({
         ...prev,
@@ -616,7 +625,7 @@ const handleCreateContact = (contactName: string) => {
         
         // ======== DRAFT FITO (Phytosanitary Certificate) ========
         doc.addPage();
-        const govLogo = 'data:image/png;base64,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';
+        const govLogo = 'data:image/png;base64,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';
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
@@ -1488,3 +1497,4 @@ const handleCreateContact = (contactName: string) => {
     </div>
   );
 }
+
