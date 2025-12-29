@@ -296,9 +296,41 @@ useEffect(() => {
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
-  const handleInputChange = (id: string, value: any) => {
-    setFormData(prev => ({ ...prev, [id]: value ?? '' }));
-  };
+    const handleInputChange = (id: string, value: any) => {
+        setFormData(prev => {
+            const newState = { ...prev, [id]: value ?? '' };
+
+            // Logic to automatically update status
+            const currentStatus = newState.status;
+            let nextStatus = currentStatus;
+
+            const areDraftsFilled = newState.draft_bl_shipper && newState.draft_bl_consignee && newState.draft_bl_description &&
+                                newState.draft_fito_consignee && newState.draft_fito_description &&
+                                newState.draft_co_consignee && newState.draft_co_description;
+
+            if (currentStatus === "Iniciado / Aguardando Booking" && newState.booking_number) {
+                nextStatus = "Booking Confirmado / Aguardando Draft";
+            } else if ((currentStatus === "Booking Confirmado / Aguardando Draft" || currentStatus === "CORRECAO_DE_DRAFT_SOLICITADA") && areDraftsFilled) {
+                nextStatus = "DRAFTS_EM_APROVAÇÃO";
+            } else if (id === 'status' && value === 'DRAFTS_APROVADOS') { // Manual trigger
+                nextStatus = "AGUARDANDO_EMISSAO_NF_EXPORTACAO";
+            } else if (currentStatus.startsWith("AGUARDANDO_EMISSAO_NF") && newState.due_status === "DESEMBARAÇADA" && newState.mapa_status === "DEFERIDA") {
+                nextStatus = "PRONTO_PARA_EMBARQUE";
+            } else if (currentStatus === "PRONTO_PARA_EMBARQUE" && newState.bls?.length > 0 && newState.bls.every((bl: any) => bl.numero)) {
+                nextStatus = "Em trânsito";
+            } else if (currentStatus === "Em trânsito" && newState.documentos_originais?.every((doc: any) => doc.done)) {
+                nextStatus = "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO";
+            } else if (currentStatus.startsWith("DOCUMENTOS_ORIGINAIS_COLETADOS") && newState.awb_courier) {
+                nextStatus = "Concluído";
+            }
+
+            if (nextStatus !== currentStatus) {
+                return { ...newState, status: nextStatus };
+            }
+
+            return newState;
+        });
+    };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
