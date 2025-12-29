@@ -272,7 +272,7 @@ export default function NovoProcessoPage() {
     if (formData.exportadorId && parceiros) {
         const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c: any, index: number) => ({...c, id: String(index) })) || [];
-        setExporterContacts(newContacts);
+        setExporterContacts(enrichedContacts);
     } else if (!formData.exportadorId) {
         setExporterContacts([]);
     }
@@ -582,8 +582,8 @@ useEffect(() => {
             if (status && statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Embarque
-            const isBlOk = bls && bls.length > 0 && bls.every((bl:any) => bl.numero);
-            if (navio_final && viagem_final && etd && eta && isBlOk) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            const isBlOkForStep4 = bls && bls.length > 0 && bls.every((bl:any) => bl.numero);
+            if (navio_final && viagem_final && etd && eta && isBlOkForStep4) return <CheckCircle className="h-5 w-5 text-green-500" />;
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
@@ -1549,3 +1549,6 @@ const handleCreateContact = (contactName: string) => {
   );
 }
 
+
+
+    
