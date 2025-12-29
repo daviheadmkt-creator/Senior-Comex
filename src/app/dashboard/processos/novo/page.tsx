@@ -570,7 +570,7 @@ useEffect(() => {
              if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
              if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
              return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 3: // Liberação Fiscal e Inspeção
+        case 3: // Liberação Física, Fiscal e Inspeção
             const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
             const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
@@ -583,8 +583,7 @@ useEffect(() => {
             if (status && statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Embarque
-            const isBlOkForStep4 = bls && bls.length > 0 && bls.every((bl:any) => bl.numero);
-            if (navio_final && viagem_final && etd && eta && isBlOkForStep4) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (navio_final && viagem_final) return <CheckCircle className="h-5 w-5 text-green-500" />;
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
