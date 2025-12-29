@@ -281,7 +281,6 @@ export default function NovoProcessoPage() {
     }
 }, [formData.exportadorId, parceiros]);
 
-
 useEffect(() => {
     if (formData.analistaId && exporterContacts.length > 0) {
         const contact = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
@@ -1479,11 +1478,11 @@ const handleCreateContact = (contactName: string) => {
                             <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="navio_final">Navio Final</Label>
-                                    <Input id="navio_final" value={formData.navio_final || formData.navio || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Nome final do navio" />
+                                    <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Nome final do navio" />
                                 </div>
                                 <div className="space-y-2">
                                     <Label htmlFor="viagem_final">Viagem Final</Label>
-                                    <Input id="viagem_final" value={formData.viagem_final || formData.viagem || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Viagem final" />
+                                    <Input id="viagem_final" value={formData.viagem_final || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Viagem final" />
                                 </div>
                             </div>
                              <div className="grid md:grid-cols-2 gap-4">
