@@ -553,28 +553,23 @@ useEffect(() => {
  const getStepStatusIcon = (step: number) => {
     const { 
         status, booking_number, due_status, mapa_status, bls, documentos_originais, awb_courier,
-        draft_bl_shipper, draft_bl_consignee, draft_bl_description,
-        draft_fito_consignee, draft_fito_description,
-        draft_co_consignee, draft_co_description,
         notas_fiscais, containers
     } = formData;
-    
-    const allOriginalDocsDone = documentos_originais.every((d:any) => d.done);
-    const areDraftsFilled = draft_bl_shipper && draft_bl_consignee && draft_bl_description &&
-                                draft_fito_consignee && draft_fito_description &&
-                                draft_co_consignee && draft_co_description;
 
+    const allOriginalDocsDone = documentos_originais.every((d:any) => d.done);
+    const step2Completed = status !== "Iniciado / Aguardando Booking" && status !== "Booking Confirmado / Aguardando Draft";
+    
     switch (step) {
         case 1: // Nomeação + Booking
             if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
-             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         case 2: // Drafts
             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (areDraftsFilled && (status.includes('DRAFTS_APROVADOS') || status.includes('AGUARDANDO_EMISSAO_NF'))) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (step2Completed) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação Fiscal e Inspeção
-             const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
+            const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
             const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
             const areContainersOk = containers.length > 0 && containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
@@ -592,7 +587,7 @@ useEffect(() => {
         case 5: // Docs Originais
             if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (bls && bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-             return <XCircle className="h-5 w-5 text-gray-400" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
         case 6: // Encerramento
             if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (allOriginalDocsDone) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
@@ -675,7 +670,9 @@ const handleCreateContact = (contactName: string) => {
         drawTextBox(105, 70, 45, 10, '5. Meios de transporte declarados / Declared means of conveyance', 'MARÍTIMO / MARITIME');
         drawTextBox(150, 70, 45, 10, '6. Porto de descarga / Declared point of entry', formData.portoDescargaNome || '');
 
-        drawTextBox(15, 80, 90, 20, '7. Número e descrição dos volumes / Number and description of packages', '2700 BOLSAS / BAGS');
+        
+        const packageDesc = `SACAS DE POLIPROPILENO USADAS, LIMPAS E EM BOM ESTADO DE CONSERVAÇÃO CONTENDO ${formData.produtoNome.toUpperCase()} / USED POLYPROPYLENE BAGS, CLEAN AND IN GOOD STATE OF CONSERVATION CONTAINING ${formData.produtoNome.toUpperCase()}`
+        drawTextBox(15, 80, 90, 20, '7. Número e descrição dos volumes / Number and description of packages', packageDesc);
         
         doc.rect(105, 80, 90, 20);
         doc.setFontSize(6);
