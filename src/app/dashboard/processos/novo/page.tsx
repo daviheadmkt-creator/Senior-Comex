@@ -185,7 +185,7 @@ export default function NovoProcessoPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | { type: 'documento', index: number } | null>(null);
 
   
   const isEditing = searchParams.has('edit');
@@ -359,34 +359,40 @@ useEffect(() => {
     
     if (typeof uploadTarget === 'string') {
         handleInputChange(uploadTarget, fileData);
-    } else if (typeof uploadTarget === 'object' && uploadTarget.type === 'nota_fiscal') {
-        const { index } = uploadTarget;
-        handleNotaFiscalChange(index, 'file', fileData);
+    } else if (typeof uploadTarget === 'object') {
+        if (uploadTarget.type === 'nota_fiscal') {
+            const { index } = uploadTarget;
+            handleNotaFiscalChange(index, 'file', fileData);
 
-        if (file.name.toLowerCase().endsWith('.xml')) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                const xmlText = event.target?.result as string;
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
-                if (infNFe) {
-                    const idAttr = infNFe.getAttribute('Id');
-                    if (idAttr && idAttr.startsWith('NFe')) {
-                        const chave = idAttr.substring(3);
-                        if (chave.length === 44) {
-                            handleNotaFiscalChange(index, 'chave', chave);
-                            toast({
-                                title: "Chave da NF-e Extraída!",
-                                description: "A chave de acesso foi lida do XML e preenchida automaticamente.",
-                            });
+            if (file.name.toLowerCase().endsWith('.xml')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const xmlText = event.target?.result as string;
+                    const parser = new DOMParser();
+                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                    const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
+                    if (infNFe) {
+                        const idAttr = infNFe.getAttribute('Id');
+                        if (idAttr && idAttr.startsWith('NFe')) {
+                            const chave = idAttr.substring(3);
+                            if (chave.length === 44) {
+                                handleNotaFiscalChange(index, 'chave', chave);
+                                toast({
+                                    title: "Chave da NF-e Extraída!",
+                                    description: "A chave de acesso foi lida do XML e preenchida automaticamente.",
+                                });
+                            }
                         }
                     }
-                }
-            };
-            reader.readAsText(file);
+                };
+                reader.readAsText(file);
+            }
+        } else if (uploadTarget.type === 'documento') {
+            const { index } = uploadTarget;
+            handleDocumentChange(index, 'file', fileData);
         }
     }
+
 
     toast({
         title: "Ficheiro Anexado",
@@ -402,11 +408,15 @@ useEffect(() => {
     fileInputRef.current?.click();
   };
 
-  const removeFile = (target: string | {type: 'nota_fiscal', index: number}) => {
+  const removeFile = (target: string | {type: 'nota_fiscal', index: number} | {type: 'documento', index: number}) => {
     if (typeof target === 'string') {
       handleInputChange(target, null);
-    } else if (typeof target === 'object' && target.type === 'nota_fiscal') {
-        handleNotaFiscalChange(target.index, 'file', null);
+    } else if (typeof target === 'object') {
+        if (target.type === 'nota_fiscal') {
+            handleNotaFiscalChange(target.index, 'file', null);
+        } else if (target.type === 'documento') {
+            handleDocumentChange(target.index, 'file', null);
+        }
     }
     toast({
       title: "Anexo Removido",
@@ -429,13 +439,13 @@ useEffect(() => {
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
   
-  const handleBlChange = (index: number, field: string, value: string) => {
+  const handleBlChange = (index: number, field: string, value: string | null) => {
     const updatedBls = [...formData.bls];
     (updatedBls[index] as any)[field] = value;
     setFormData(prev => ({...prev, bls: updatedBls}));
   };
 
-  const handleDocumentChange = (index: number, field: string, value: string) => {
+  const handleDocumentChange = (index: number, field: string, value: any) => {
     const updatedDocuments = [...formData.documentos];
     (updatedDocuments[index] as any)[field] = value;
     setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
@@ -508,7 +518,7 @@ useEffect(() => {
   const addBl = () => {
     setFormData(prev => ({
         ...prev,
-        bls: [...prev.bls, { id: Date.now(), numero: '', tipo: 'BL', data_emissao: '', data_liberacao: '', data_retirada: '' }]
+        bls: [...prev.bls, { id: Date.now(), numero: '', tipo: 'BL', data_emissao: null, data_liberacao: null, data_retirada: null }]
     }));
   };
 
@@ -549,7 +559,7 @@ useEffect(() => {
         notas_fiscais, containers
     } = formData;
     
-    const allOriginalDocsDone = documentos_originais.every(d => d.done);
+    const allOriginalDocsDone = documentos_originais.every((d:any) => d.done);
     const areDraftsFilled = draft_bl_shipper && draft_bl_consignee && draft_bl_description &&
                                 draft_fito_consignee && draft_fito_description &&
                                 draft_co_consignee && draft_co_description;
@@ -560,14 +570,14 @@ useEffect(() => {
              return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         case 2: // Drafts
             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (areDraftsFilled || (status && (status.includes('DRAFTS_APROVADOS') || status.includes('AGUARDANDO_EMISSAO_NF')))) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (areDraftsFilled && (status.includes('DRAFTS_APROVADOS') || status.includes('AGUARDANDO_EMISSAO_NF'))) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação Fiscal e Inspeção
-             const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
+             const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
-            const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every(nf => nf.chave);
-            const areContainersOk = containers.length > 0 && containers.every(c => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
+            const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
+            const areContainersOk = containers.length > 0 && containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
 
             if (isDueOk && isMapaOk && areNFsOk && areContainersOk) {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -576,7 +586,7 @@ useEffect(() => {
             if (status && status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Embarque
-            if (bls && bls.length > 0 && bls.every(bl => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (bls && bls.length > 0 && bls.every((bl:any) => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 5: // Docs Originais
@@ -620,12 +630,11 @@ const handleCreateContact = (contactName: string) => {
     });
 };
 
-    const generatePdf = () => {
+    const generatePdf = async () => {
         const doc = new jsPDF();
         
         // ======== DRAFT FITO (Phytosanitary Certificate) ========
-        doc.addPage();
-        const govLogo = 'data:image/png;base64,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';
+        const govLogo = 'data:image/png;base64,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';
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
@@ -703,10 +712,52 @@ const handleCreateContact = (contactName: string) => {
         drawTextBox(75, 175, 60, 10, '21. Nome do Fiscal Federal Agropecuário autorizado / Name of authorized officer', '');
         drawTextBox(135, 175, 60, 10, '22. Assinatura do Fiscal Federal Agropecuário autorizado / Signature of authorized officer', '');
 
-        doc.save(`Draft_FITO_${formData.processo_interno || 'processo'}.pdf`);
+
+        // ======== DRAFT BL (Bill of Lading) ========
+        doc.addPage();
+        const logoUrl = localStorage.getItem('system_logo');
+
+        if (logoUrl) {
+            try {
+                doc.addImage(logoUrl, 'PNG', 15, 10, 50, 10);
+            } catch (e) {
+                console.error("Error adding company logo:", e);
+            }
+        }
+        
+        doc.setFontSize(18);
+        doc.setFont('helvetica', 'bold');
+        doc.text('DRAFT - BILL OF LADING', 105, 20, { align: 'center' });
+
+        const drawBlBox = (x: number, y: number, width: number, height: number, label: string, text: string) => {
+            doc.rect(x, y, width, height);
+            doc.setFontSize(8);
+            doc.setFont('helvetica', 'bold');
+            doc.text(label, x + 1, y + 4);
+            doc.setFontSize(10);
+            doc.setFont('helvetica', 'normal');
+            doc.text(doc.splitTextToSize(text, width - 4), x + 2, y + 10);
+        };
+        
+        drawBlBox(15, 30, 90, 30, '1. Shipper', formData.draft_bl_shipper || '');
+        drawBlBox(105, 30, 90, 30, '2. B/L No.', formData.bls?.[0]?.numero || '');
+        drawBlBox(15, 60, 90, 30, '3. Consignee', formData.draft_bl_consignee || '');
+        drawBlBox(105, 60, 90, 30, '4. Notify Party', formData.draft_bl_notify || '');
+        drawBlBox(15, 90, 90, 20, '5. Vessel and Voyage', `${formData.navio || ''} / ${formData.viagem || ''}`);
+        drawBlBox(105, 90, 90, 20, '6. Port of Loading', formData.portoEmbarqueNome || '');
+        drawBlBox(15, 110, 90, 20, '7. Port of Discharge', formData.portoDescargaNome || '');
+        drawBlBox(105, 110, 90, 20, '8. Final Destination', formData.portoDescargaNome || '');
+        
+        const containerText = formData.containers.map((c: any) => `${c.numero} / ${c.lacre} / ${c.gross_weight} KGS`).join('\n');
+        drawBlBox(15, 130, 90, 40, '9. Container(s) and Seal(s)', containerText);
+        drawBlBox(105, 130, 90, 40, '10. Marks and Numbers', formData.draft_bl_marks || '');
+        drawBlBox(15, 170, 180, 40, '11. Description of Goods', `${formData.quantidade || ''}\n${formData.draft_bl_description || ''}`);
+
+
+        doc.save(`Drafts_${formData.processo_interno || 'processo'}.pdf`);
         toast({
-            title: "PDF Gerado!",
-            description: "O draft do Certificado Fitossanitário foi gerado.",
+            title: "PDFs Gerados!",
+            description: "Os drafts foram gerados com sucesso.",
         });
     };
 
@@ -1360,11 +1411,11 @@ const handleCreateContact = (contactName: string) => {
                              <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Data de Saída (ETD)</Label>
-                                    <DatePicker showTime />
+                                    <DatePicker date={formData.etd} onDateChange={date => handleInputChange('etd', date)} showTime />
                                 </div>
                                 <div className="space-y-2">
                                     <Label>Data de Chegada (ETA)</Label>
-                                    <DatePicker showTime />
+                                    <DatePicker date={formData.eta} onDateChange={date => handleInputChange('eta', date)} showTime />
                                 </div>
                             </div>
                         </CardContent>
@@ -1418,9 +1469,9 @@ const handleCreateContact = (contactName: string) => {
                                                 </Select>
                                             </TableCell>
                                             <TableCell><Input value={bl.numero || ''} onChange={e => handleBlChange(index, 'numero', e.target.value)} /></TableCell>
-                                            <TableCell><DatePicker/></TableCell>
-                                            <TableCell><DatePicker/></TableCell>
-                                            <TableCell><DatePicker/></TableCell>
+                                            <TableCell><DatePicker date={bl.data_emissao} onDateChange={date => handleBlChange(index, 'data_emissao', date)} /></TableCell>
+                                            <TableCell><DatePicker date={bl.data_liberacao} onDateChange={date => handleBlChange(index, 'data_liberacao', date)}/></TableCell>
+                                            <TableCell><DatePicker date={bl.data_retirada} onDateChange={date => handleBlChange(index, 'data_retirada', date)}/></TableCell>
                                             <TableCell>
                                                 <Button type="button" variant="ghost" size="icon" onClick={() => removeBl(index)}>
                                                     <Trash2 className="h-4 w-4 text-destructive" />

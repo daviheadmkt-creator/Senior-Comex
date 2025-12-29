@@ -29,14 +29,19 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
 
   React.useEffect(() => {
     if (propDate) {
-        const parsedDate = typeof propDate === 'string' ? parseISO(propDate) : propDate;
-        if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
-            setDate(parsedDate);
-            if (showTime) {
-              setTime(format(parsedDate, 'HH:mm'));
+        try {
+            const parsedDate = typeof propDate === 'string' ? parseISO(propDate) : propDate;
+            if (parsedDate instanceof Date && !isNaN(parsedDate.getTime())) {
+                setDate(parsedDate);
+                if (showTime) {
+                  setTime(format(parsedDate, 'HH:mm'));
+                }
+            } else {
+                 setDate(undefined);
             }
-        } else {
-             setDate(undefined);
+        } catch (error) {
+            setDate(undefined);
+            console.error("Invalid date prop:", propDate);
         }
     } else {
         setDate(undefined);
