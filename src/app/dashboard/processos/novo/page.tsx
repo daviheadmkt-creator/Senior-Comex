@@ -585,7 +585,9 @@ useEffect(() => {
             if (status && statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Embarque
-            if (navio_final && viagem_final) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (navio_final && viagem_final) {
+                return <CheckCircle className="h-5 w-5 text-green-500" />;
+            }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
@@ -1022,6 +1024,24 @@ const handleCreateContact = (contactName: string) => {
                                 <Input id="quantidade" value={formData.quantidade || ''} onChange={handleQuantityChange} placeholder="Ex: 270,00000 TON" />
                             </div>
                         </div>
+
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="booking_number">Nº do Booking</Label>
+                                <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="armadorId">Armador</Label>
+                                <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
+                                    <SelectTrigger id="armadorId">
+                                        <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o armador"} />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
                         
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
@@ -1047,32 +1067,15 @@ const handleCreateContact = (contactName: string) => {
                                  />
                             </div>
                         </div>
-
-                         <div className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
-                                <Label htmlFor="booking_number">Nº do Booking</Label>
-                                <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="armadorId">Armador</Label>
-                                <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
-                                    <SelectTrigger id="armadorId">
-                                        <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o armador"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
-                            </div>
-                        </div>
+                        
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label htmlFor="navio">Navio</Label>
-                                <Input id="navio" value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC EUGENIA" />
+                                <Label htmlFor="navio">Navio / Viagem</Label>
+                                <Input id="navio" value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC EUGENIA / NAS21R" />
                             </div>
                             <div className="space-y-2">
-                                <Label htmlFor="viagem">Viagem</Label>
-                                <Input id="viagem" value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: NAS21R" />
+                                <Label htmlFor="viagem">Armazém</Label>
+                                <Input id="viagem" value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: TCP" />
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
