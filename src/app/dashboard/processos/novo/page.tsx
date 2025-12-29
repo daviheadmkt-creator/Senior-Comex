@@ -272,7 +272,7 @@ export default function NovoProcessoPage() {
     if (formData.exportadorId && parceiros) {
         const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
         const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c: any, index: number) => ({...c, id: String(index) })) || [];
-        setExporterContacts(enrichedContacts);
+        setExporterContacts(newContacts);
     } else if (!formData.exportadorId) {
         setExporterContacts([]);
     }
@@ -304,17 +304,18 @@ useEffect(() => {
             const currentStatus = newState.status;
             let nextStatus = currentStatus;
 
-            const areDraftsFilled = newState.draft_bl_shipper && newState.draft_bl_consignee && newState.draft_bl_description &&
-                                newState.draft_fito_consignee && newState.draft_fito_description &&
-                                newState.draft_co_consignee && newState.draft_co_description;
+            const statusNumber = processStatusOptions.indexOf(currentStatus);
+            const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
 
             if (currentStatus === "Iniciado / Aguardando Booking" && newState.booking_number) {
                 nextStatus = "Booking Confirmado / Aguardando Draft";
-            } else if ((currentStatus === "Booking Confirmado / Aguardando Draft" || currentStatus === "CORRECAO_DE_DRAFT_SOLICITADA") && areDraftsFilled) {
-                nextStatus = "DRAFTS_EM_APROVAÇÃO";
+            } else if (currentStatus === "Booking Confirmado / Aguardando Draft" || currentStatus === "CORRECAO_DE_DRAFT_SOLICITADA") {
+                 if(newState.draft_bl_shipper || newState.draft_bl_consignee || newState.draft_bl_description || newState.draft_fito_consignee || newState.draft_fito_description || newState.draft_co_consignee || newState.draft_co_description) {
+                    nextStatus = "DRAFTS_EM_APROVAÇÃO";
+                 }
             } else if (id === 'status' && value === 'DRAFTS_APROVADOS') { // Manual trigger
                 nextStatus = "AGUARDANDO_EMISSAO_NF_EXPORTACAO";
-            } else if (currentStatus.startsWith("AGUARDANDO_EMISSAO_NF") && newState.due_status === "DESEMBARAÇADA" && newState.mapa_status === "DEFERIDA") {
+            } else if (draftsApprovedOrLater && newState.due_status === "DESEMBARAÇADA" && newState.mapa_status === "DEFERIDA") {
                 nextStatus = "PRONTO_PARA_EMBARQUE";
             } else if (currentStatus === "PRONTO_PARA_EMBARQUE" && newState.bls?.length > 0 && newState.bls.every((bl: any) => bl.numero)) {
                 nextStatus = "Em trânsito";
