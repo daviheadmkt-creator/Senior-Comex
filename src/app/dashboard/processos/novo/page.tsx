@@ -553,21 +553,22 @@ useEffect(() => {
  const getStepStatusIcon = (step: number) => {
     const { 
         status, booking_number, due_status, mapa_status, bls, documentos_originais, awb_courier,
-        notas_fiscais, containers
+        notas_fiscais, containers, navio_final, viagem_final, etd, eta
     } = formData;
 
     const allOriginalDocsDone = documentos_originais.every((d:any) => d.done);
-    const step2Completed = status !== "Iniciado / Aguardando Booking" && status !== "Booking Confirmado / Aguardando Draft";
+    const statusNumber = processStatusOptions.indexOf(status);
     
     switch (step) {
         case 1: // Nomeação + Booking
             if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         case 2: // Drafts
-            if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (step2Completed) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-            return <XCircle className="h-5 w-5 text-gray-400" />;
+             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
+             const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
+             if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
+             if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação Fiscal e Inspeção
             const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
@@ -578,11 +579,13 @@ useEffect(() => {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (status && status.includes('APROVADOS')) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            if (status && statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Embarque
-            if (bls && bls.length > 0 && bls.every((bl:any) => bl.numero)) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            if (due_status === 'Desembaraçada' && mapa_status === 'Deferido') return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            const isBlOk = bls && bls.length > 0 && bls.every((bl:any) => bl.numero);
+            if (navio_final && viagem_final && etd && eta && isBlOk) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
+            if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 5: // Docs Originais
             if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
