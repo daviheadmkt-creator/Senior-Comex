@@ -100,15 +100,6 @@ const documentTypes = [
 ];
 
 
-const initialDocuments: any[] = [];
-
-const initialOriginalDocs = [
-    { id: 'bl_original', name: 'Coletar Bill of Lading (B/L) Original', done: false, isSubtask: false, completionDate: null },
-    { id: 'coo_original', name: 'Emitir Certificado de Origem (COO) Original', done: false, isSubtask: false, completionDate: null },
-    { id: 'fito_original', name: 'Emitir Certificado Fitossanitário (FITO) Original', done: false, isSubtask: false, completionDate: null },
-    { id: 'pagamento_cert', name: 'Processar Pagamento de Certificados', done: false, isSubtask: true, completionDate: null },
-]
-
 const initialFormData = {
     id: '',
     processo_interno: '',
@@ -132,9 +123,8 @@ const initialFormData = {
     armadorId: '',
     navio: '',
     viagem: '',
-    documentos: initialDocuments,
     containers: [] as any[],
-    bls: [] as any[],
+    documentos_pos_embarque: [] as any[],
     notas_fiscais: [] as any[],
     due_numero: '',
     due_status: 'RASCUNHO SALVO',
@@ -142,7 +132,6 @@ const initialFormData = {
     mapa_status: 'RASCUNHO SALVO',
     navio_final: '',
     viagem_final: '',
-    documentos_originais: initialOriginalDocs,
     awb_courier: '',
     analistaId: '',
     analistaNome: '',
@@ -191,7 +180,7 @@ export default function NovoProcessoPage() {
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerFileInputRef = useRef<HTMLInputElement>(null);
-  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | { type: 'documento', index: number } | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | { type: 'documento_pos_embarque', index: number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
   
@@ -257,11 +246,9 @@ export default function NovoProcessoPage() {
         deadline_carga: processoData.deadline_carga || null,
         etd: processoData.etd || null,
         eta: processoData.eta || null,
-        documentos: processoData.documentos || initialDocuments,
         containers: processoData.containers || [],
-        bls: processoData.bls || [],
+        documentos_pos_embarque: processoData.documentos_pos_embarque || [],
         notas_fiscais: processoData.notas_fiscais || [],
-        documentos_originais: processoData.documentos_originais || initialOriginalDocs,
         analistaId: String(processoData.analistaId || ''),
         analistaNome: String(processoData.analistaNome || ''),
         portoEmbarqueId: String(processoData.portoEmbarqueId || ''),
@@ -323,9 +310,9 @@ useEffect(() => {
                 nextStatus = "AGUARDANDO_EMISSAO_NF_EXPORTACAO";
             } else if (draftsApprovedOrLater && newState.due_status === "DESEMBARAÇADA" && newState.mapa_status === "DEFERIDA") {
                 nextStatus = "PRONTO_PARA_EMBARQUE";
-            } else if (currentStatus === "PRONTO_PARA_EMBARQUE" && newState.bls?.length > 0 && newState.bls.every((bl: any) => bl.numero)) {
+            } else if (currentStatus === "PRONTO_PARA_EMBARQUE" && newState.documentos_pos_embarque?.length > 0 && newState.documentos_pos_embarque.some((doc: any) => doc.nome === 'BL' && doc.file)) {
                 nextStatus = "Em trânsito";
-            } else if (currentStatus === "Em trânsito" && newState.documentos_originais?.every((doc: any) => doc.done)) {
+            } else if (currentStatus === "Em trânsito" && newState.documentos_pos_embarque?.length > 0 && newState.documentos_pos_embarque.every((doc: any) => doc.file)) {
                 nextStatus = "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO";
             } else if (currentStatus.startsWith("DOCUMENTOS_ORIGINAIS_COLETADOS") && newState.awb_courier) {
                 nextStatus = "Concluído";
@@ -394,9 +381,9 @@ useEffect(() => {
                 };
                 reader.readAsText(file);
             }
-        } else if (uploadTarget.type === 'documento') {
+        } else if (uploadTarget.type === 'documento_pos_embarque') {
             const { index } = uploadTarget;
-            handleDocumentChange(index, 'file', fileData);
+            handlePostShipmentDocChange(index, 'file', fileData);
         }
     }
 
@@ -415,14 +402,14 @@ useEffect(() => {
     fileInputRef.current?.click();
   };
 
-  const removeFile = (target: string | {type: 'nota_fiscal', index: number} | {type: 'documento', index: number}) => {
+  const removeFile = (target: string | {type: 'nota_fiscal', index: number} | {type: 'documento_pos_embarque', index: number}) => {
     if (typeof target === 'string') {
       handleInputChange(target, null);
     } else if (typeof target === 'object') {
         if (target.type === 'nota_fiscal') {
             handleNotaFiscalChange(target.index, 'file', null);
-        } else if (target.type === 'documento') {
-            handleDocumentChange(target.index, 'file', null);
+        } else if (target.type === 'documento_pos_embarque') {
+            handlePostShipmentDocChange(target.index, 'file', null);
         }
     }
     toast({
@@ -445,29 +432,23 @@ useEffect(() => {
     (updatedContainers[index] as any)[field] = value;
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
-  
-  const handleBlChange = (index: number, field: string, value: string | null) => {
-    const updatedBls = [...formData.bls];
-    (updatedBls[index] as any)[field] = value;
-    setFormData(prev => ({...prev, bls: updatedBls}));
-  };
 
-  const handleDocumentChange = (index: number, field: string, value: any) => {
-    const updatedDocuments = [...formData.documentos];
+  const handlePostShipmentDocChange = (index: number, field: string, value: any) => {
+    const updatedDocuments = [...formData.documentos_pos_embarque];
     (updatedDocuments[index] as any)[field] = value;
-    setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
+    setFormData(prev => ({ ...prev, documentos_pos_embarque: updatedDocuments }));
   };
 
-  const addDocument = () => {
+  const addPostShipmentDoc = () => {
     setFormData(prev => ({
         ...prev,
-        documentos: [...prev.documentos, { id: Date.now(), name: '', status: 'Aguardando Envio', date: '', file: null }]
+        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', tipo: 'Cópia', data_emissao: null, file: null }]
     }));
   };
 
-  const removeDocument = (index: number) => {
-    const updatedDocuments = formData.documentos.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
+  const removePostShipmentDoc = (index: number) => {
+    const updatedDocuments = formData.documentos_pos_embarque.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, documentos_pos_embarque: updatedDocuments }));
   };
   
   const handleNotaFiscalChange = (index: number, field: string, value: any) => {
@@ -489,13 +470,6 @@ useEffect(() => {
   const removeNotaFiscal = (index: number) => {
     const updatedNotas = formData.notas_fiscais.filter((_: any, i: number) => i !== index);
     setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
-  };
-  
-  const handleOriginalDocChange = (docId: string, checked: boolean) => {
-    const updatedDocs = formData.documentos_originais.map(doc => 
-        doc.id === docId ? {...doc, done: checked, completionDate: checked ? new Date().toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : null } : doc
-    );
-     setFormData(prev => ({...prev, documentos_originais: updatedDocs}));
   };
 
   const addContainer = () => {
@@ -521,62 +495,27 @@ useEffect(() => {
     const updatedContainers = formData.containers.filter((_, i) => i !== index);
     setFormData(prev => ({...prev, containers: updatedContainers}));
   };
-  
-  const addBl = () => {
-    setFormData(prev => ({
-        ...prev,
-        bls: [...prev.bls, { id: Date.now(), numero: '', tipo: 'BL', data_emissao: null, data_liberacao: null, data_retirada: null }]
-    }));
-  };
-
-  const removeBl = (index: number) => {
-    const updatedBls = formData.bls.filter((_, i) => i !== index);
-    setFormData(prev => ({...prev, bls: updatedBls}));
-  };
-
-  const handleDocumentStatusChange = (index: number, newStatus: string) => {
-      const updatedDocuments = [...formData.documentos];
-      updatedDocuments[index].status = newStatus;
-      updatedDocuments[index].date = new Date().toLocaleDateString('pt-BR');
-      setFormData(prev => ({ ...prev, documentos: updatedDocuments }));
-      toast({ title: `Status do documento "${updatedDocuments[index].name}" atualizado para ${newStatus}!` });
-  }
-
-  const getDocStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    switch (status) {
-        case 'Aprovado':
-            return 'default';
-        case 'Em Análise':
-            return 'secondary';
-        case 'Rejeitado':
-            return 'destructive';
-        case 'Aguardando Envio':
-            return 'outline';
-        default:
-            return 'outline';
-    }
-  }
 
  const getStepStatusIcon = (step: number) => {
     const { 
-        status, booking_number, due_status, mapa_status, bls, documentos_originais, awb_courier,
-        notas_fiscais, containers, navio_final, viagem_final, etd, eta
+        status, booking_number, due_status, mapa_status, documentos_pos_embarque, awb_courier,
+        notas_fiscais, containers, navio_final, viagem_final
     } = formData;
 
-    const allOriginalDocsDone = documentos_originais.every((d:any) => d.done);
+    const allOriginalDocsSent = awb_courier && documentos_pos_embarque.every((d:any) => d.file);
     const statusNumber = processStatusOptions.indexOf(status);
     
     switch (step) {
-        case 1: // Nomeação + Booking
+        case 1:
             if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-        case 2: // Drafts
+        case 2:
              const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
              if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
              if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
              if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
              return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 3: // Liberação Física, Fiscal e Inspeção
+        case 3:
             const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
             const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
@@ -588,20 +527,20 @@ useEffect(() => {
             if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
             if (status && statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 4: // Embarque
+        case 4:
             if (navio_final && viagem_final) {
-                return <CheckCircle className="h-5 w-5 text-green-500" />;
+                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 5: // Docs Originais
-            if (allOriginalDocsDone) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            if (bls && bls.length > 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+        case 5:
+            if (documentos_pos_embarque && documentos_pos_embarque.length > 0 && documentos_pos_embarque.every((d:any) => d.file)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 6: // Encerramento
+        case 6:
             if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            if (allOriginalDocsDone) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            if (allOriginalDocsSent) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         default:
             return null;
@@ -640,7 +579,7 @@ const handleCreateContact = (contactName: string) => {
         const doc = new jsPDF();
         
         // ======== DRAFT FITO (Phytosanitary Certificate) ========
-        const govLogo = 'data:image/png;base64,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';
+        const govLogo = 'data:image/png;base64,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';
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
@@ -694,7 +633,7 @@ const handleCreateContact = (contactName: string) => {
         doc.text(doc.splitTextToSize(formData.draft_fito_description || '', 86), 107, 87);
         doc.text(doc.splitTextToSize(formData.quantidade || '', 86), 160, 95, {align: 'right'});
 
-        drawTextBox(15, 100, 90, 10, '9. Marcas distintas / Distinguishing marks', `NAVIO / VESSEL:\n${formData.navio || ''}\n\nCONHECIMENTO DE EMBARQUE / BILL OF LADING: ${formData.bls?.[0]?.numero || ''}`);
+        drawTextBox(15, 100, 90, 10, '9. Marcas distintas / Distinguishing marks', `NAVIO / VESSEL:\n${formData.navio || ''}\n\nCONHECIMENTO DE EMBARQUE / BILL OF LADING: ${formData.documentos_pos_embarque?.find(d => d.nome === 'BL')?.numero || ''}`);
         drawTextBox(105, 100, 90, 10, '10. Nome científico das plantas / Botanical name of plants', 'Sesamum indicum');
 
         drawTextBox(15, 110, 180, 20, '11. Pelo presente certifica-se que os vegetais, seus produtos ou outros artigos regulamentados aqui descritos foram inspecionados e/ou testados de acordo com os procedimentos oficiais adequados e considerados livres de pragas quarentenárias especificadas pela parte contratante importadora e que cumprem os requisitos fitossanitários vigentes da parte contratante importadora, incluídos os relativos às pragas não quarentenárias regulamentadas. / This is to certify that the plants, plant products or other regulated articles described herein have been inspected and/or tested according to appropriate official procedures and are considered to be free from the quarantine pests specified by the importing contracting party and to conform with the current phytosanitary requirements of the importing contracting party, including those for regulated non-quarantine pests.', '');
@@ -748,7 +687,7 @@ const handleCreateContact = (contactName: string) => {
         };
         
         drawBlBox(15, 30, 90, 30, '1. Shipper', formData.draft_bl_shipper || '');
-        drawBlBox(105, 30, 90, 30, '2. B/L No.', formData.bls?.[0]?.numero || '');
+        drawBlBox(105, 30, 90, 30, '2. B/L No.', formData.documentos_pos_embarque?.find(d => d.nome === 'BL')?.numero || '');
         drawBlBox(15, 60, 90, 30, '3. Consignee', formData.draft_bl_consignee || '');
         drawBlBox(105, 60, 90, 30, '4. Notify Party', formData.draft_bl_notify || '');
         drawBlBox(15, 90, 90, 20, '5. Vessel and Voyage', `${formData.navio || ''} / ${formData.viagem || ''}`);
@@ -772,30 +711,66 @@ const handleCreateContact = (contactName: string) => {
     const generateOriginalDocsPdf = () => {
         const doc = new jsPDF();
         
-        doc.setFontSize(18);
-        doc.text(`Documentos Originais - Processo: ${formData.processo_interno || 'N/A'}`, 14, 22);
+        const originalsCount = formData.documentos_pos_embarque.filter((doc: any) => doc.tipo === 'Original' && doc.file).length;
+        const copiesCount = formData.documentos_pos_embarque.filter((doc: any) => doc.tipo === 'Cópia' && doc.file).length;
 
-        doc.setFontSize(14);
-        doc.text('Conhecimentos de Embarque (BLs)', 14, 40);
-        const blBody = formData.bls.map((bl: any) => [
-            bl.numero,
-            bl.data_emissao ? new Date(bl.data_emissao).toLocaleDateString('pt-BR') : '',
-            bl.data_liberacao ? new Date(bl.data_liberacao).toLocaleDateString('pt-BR') : '',
-        ]);
+        // Cover Page
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PACOTE DE DOCUMENTOS DE EMBARQUE', 105, 40, { align: 'center' });
+        
+        doc.setFontSize(16);
+        doc.text(`Processo: ${formData.processo_interno || 'N/A'}`, 105, 60, { align: 'center' });
+
+        if (formData.awb_courier) {
+            doc.setFontSize(14);
+            doc.setFont('helvetica', 'normal');
+            doc.text(`AWB do Courier: ${formData.awb_courier}`, 105, 70, { align: 'center' });
+        }
+
         (doc as any).autoTable({
-            startY: 45,
-            head: [['Nº do BL', 'Data Emissão', 'Data Liberação']],
-            body: blBody,
-            theme: 'grid',
-            styles: { fontSize: 10 },
+            startY: 90,
+            head: [['Resumo do Pacote']],
+            body: [
+                [`Total de Documentos Originais: ${originalsCount}`],
+                [`Total de Documentos em Cópia: ${copiesCount}`],
+            ],
+            theme: 'plain',
+            headStyles: { fontStyle: 'bold', fontSize: 14, halign: 'center' },
+            bodyStyles: { fontSize: 12, halign: 'center' },
         });
 
-        const finalY = (doc as any).lastAutoTable.finalY;
+        (doc as any).autoTable({
+            startY: (doc as any).lastAutoTable.finalY + 10,
+            head: [['Documento', 'Tipo', 'Data de Emissão', 'Ficheiro']],
+            body: formData.documentos_pos_embarque
+                .filter((doc: any) => doc.file)
+                .map((doc: any) => [
+                    doc.nome,
+                    doc.tipo,
+                    doc.data_emissao ? new Date(doc.data_emissao).toLocaleDateString('pt-BR') : 'N/A',
+                    doc.file.name
+                ]),
+            theme: 'striped',
+            headStyles: { fillColor: [34, 107, 72] }, // Dark green
+        });
+
+        // This is a placeholder for appending actual PDFs. jsPDF client-side cannot merge existing PDFs.
+        // This part of the request requires server-side processing or a different library.
+        // For now, we add a note about it.
+        doc.addPage();
         doc.setFontSize(12);
-        doc.text('Outros documentos serão adicionados aqui em futuras implementações.', 14, finalY + 10);
+        doc.text("Páginas de Anexos", 14, 20);
+        doc.text("Esta secção conteria todos os PDFs anexados, um após o outro.", 14, 30);
+        doc.text("A funcionalidade de fundir PDFs existentes não é suportada diretamente no navegador.", 14, 36);
+        formData.documentos_pos_embarque.forEach((docItem: any, index: number) => {
+            if (docItem.file) {
+                doc.text(`[Placeholder para o ficheiro ${index + 1}: ${docItem.file.name}]`, 14, 50 + (index * 10));
+            }
+        });
 
 
-        doc.save(`Documentos_Originais_${formData.processo_interno || 'processo'}.pdf`);
+        doc.save(`Malote_Documentos_${formData.processo_interno || 'processo'}.pdf`);
     };
 
     const handleContainerImport = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -930,7 +905,7 @@ const handleCreateContact = (contactName: string) => {
                 <Button type="submit">Salvar Alterações</Button>
             </div>
         </div>
-        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xml,.pdf" />
+        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xml,.pdf,image/*" />
         <input
             type="file"
             ref={containerFileInputRef}
@@ -1536,18 +1511,18 @@ const handleCreateContact = (contactName: string) => {
                  <div className='flex items-center gap-3'>
                     {getStepStatusIcon(5)}
                     <div className='text-left'>
-                        <h3 className="text-lg font-semibold">Etapa 5: Obtenção dos Documentos Originais</h3>
-                        <p className='text-sm text-muted-foreground'>Gerencie a coleta e o envio dos documentos de pós-embarque.</p>
+                        <h3 className="text-lg font-semibold">Etapa 5: Gestão de Documentos Pós-Embarque</h3>
+                        <p className='text-sm text-muted-foreground'>Gerencie a coleta e o envio dos documentos finais.</p>
                     </div>
                 </div>
             </AccordionTrigger>
             <AccordionContent>
                 <Card>
                     <CardContent className="space-y-6 pt-6">
-                         <div>
+                        <div>
                             <div className="flex justify-between items-center mb-4">
-                                <h3 className="text-md font-medium">Dados dos Documentos (BL, Fito, etc.)</h3>
-                                <Button type="button" variant="outline" size="sm" onClick={addBl}>
+                                <h3 className="text-md font-medium">Documentos Finais</h3>
+                                <Button type="button" variant="outline" size="sm" onClick={addPostShipmentDoc}>
                                     <PlusCircle className="mr-2 h-4 w-4" />
                                     Adicionar Documento
                                 </Button>
@@ -1555,20 +1530,19 @@ const handleCreateContact = (contactName: string) => {
                             <Table>
                                 <TableHeader>
                                     <TableRow>
+                                        <TableHead>Documento</TableHead>
                                         <TableHead>Tipo</TableHead>
-                                        <TableHead>Número</TableHead>
                                         <TableHead>Data Emissão</TableHead>
-                                        <TableHead>Data Liberação</TableHead>
-                                        <TableHead>Data Retirada</TableHead>
+                                        <TableHead>Anexo</TableHead>
                                         <TableHead>Ação</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {formData.bls.map((bl:any, index:number) => (
-                                        <TableRow key={bl.id}>
+                                    {formData.documentos_pos_embarque.map((docItem: any, index: number) => (
+                                        <TableRow key={docItem.id}>
                                             <TableCell>
-                                                <Select value={bl.tipo || 'BL'} onValueChange={value => handleBlChange(index, 'tipo', value)}>
-                                                    <SelectTrigger><SelectValue /></SelectTrigger>
+                                                <Select value={docItem.nome || ''} onValueChange={value => handlePostShipmentDocChange(index, 'nome', value)}>
+                                                    <SelectTrigger className="min-w-[180px]"><SelectValue placeholder="Selecione"/></SelectTrigger>
                                                     <SelectContent>
                                                         {documentTypes.map(type => (
                                                             <SelectItem key={type} value={type}>{type}</SelectItem>
@@ -1576,12 +1550,36 @@ const handleCreateContact = (contactName: string) => {
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
-                                            <TableCell><Input value={bl.numero || ''} onChange={e => handleBlChange(index, 'numero', e.target.value)} /></TableCell>
-                                            <TableCell><DatePicker date={bl.data_emissao} onDateChange={date => handleBlChange(index, 'data_emissao', date)} /></TableCell>
-                                            <TableCell><DatePicker date={bl.data_liberacao} onDateChange={date => handleBlChange(index, 'data_liberacao', date)}/></TableCell>
-                                            <TableCell><DatePicker date={bl.data_retirada} onDateChange={date => handleBlChange(index, 'data_retirada', date)}/></TableCell>
                                             <TableCell>
-                                                <Button type="button" variant="ghost" size="icon" onClick={() => removeBl(index)}>
+                                                 <Select value={docItem.tipo || 'Cópia'} onValueChange={value => handlePostShipmentDocChange(index, 'tipo', value)}>
+                                                    <SelectTrigger className="min-w-[120px]"><SelectValue /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Cópia">Cópia</SelectItem>
+                                                        <SelectItem value="Original">Original</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                            </TableCell>
+                                            <TableCell><DatePicker date={docItem.data_emissao} onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)} /></TableCell>
+                                            <TableCell>
+                                                 {docItem.file ? (
+                                                    <div className="flex items-center gap-1">
+                                                        <a href={docItem.file.url} target="_blank" rel="noopener noreferrer">
+                                                            <Button variant="outline" size="icon" type="button" title={docItem.file.name}>
+                                                                <Check className="h-4 w-4 text-green-600" />
+                                                            </Button>
+                                                        </a>
+                                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className="text-destructive hover:text-destructive">
+                                                            <XCircle className="h-4 w-4" />
+                                                        </Button>
+                                                    </div>
+                                                ) : (
+                                                    <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', index })}>
+                                                        <Upload className="h-4 w-4" />
+                                                    </Button>
+                                                )}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(index)}>
                                                     <Trash2 className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </TableCell>
