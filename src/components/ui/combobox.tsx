@@ -2,7 +2,7 @@
 "use client"
 
 import * as React from "react"
-import { Check, ChevronsUpDown } from "lucide-react"
+import { Check, ChevronsUpDown, PlusCircle } from "lucide-react"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,6 +29,8 @@ interface ComboboxProps {
     noResultsText?: string;
     noResultsContent?: React.ReactNode;
     disabled?: boolean;
+    creatable?: boolean;
+    onCreate?: (value: string) => void;
 }
 
 export function Combobox({ 
@@ -39,9 +41,20 @@ export function Combobox({
     searchPlaceholder = "Buscar item...",
     noResultsText = "Nenhum item encontrado.",
     noResultsContent,
-    disabled = false
+    disabled = false,
+    creatable = false,
+    onCreate,
 }: ComboboxProps) {
   const [open, setOpen] = React.useState(false)
+  const [search, setSearch] = React.useState("")
+
+  const handleCreate = () => {
+    if (onCreate && search) {
+      onCreate(search)
+      setSearch("")
+      setOpen(false)
+    }
+  }
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -61,10 +74,21 @@ export function Combobox({
       </PopoverTrigger>
       <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
         <Command>
-          <CommandInput placeholder={searchPlaceholder} />
+          <CommandInput 
+            placeholder={searchPlaceholder} 
+            value={search}
+            onValueChange={setSearch}
+          />
           <CommandList>
             <CommandEmpty>
-              {noResultsContent || noResultsText}
+              {creatable ? (
+                <Button variant="ghost" className="w-full justify-start" onClick={handleCreate}>
+                    <PlusCircle className="mr-2 h-4 w-4" />
+                    Criar "{search}"
+                </Button>
+              ) : (
+                noResultsContent || noResultsText
+              )}
             </CommandEmpty>
             <CommandGroup>
               {items.map((item) => (
