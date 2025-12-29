@@ -119,9 +119,13 @@ const initialFormData = {
     exportadorId: '',
     portoEmbarqueId: '',
     portoDescargaId: '',
+    terminalDespachoId: '',
+    terminalEmbarqueId: '',
     exportadorNome: '',
     portoEmbarqueNome: '',
     portoDescargaNome: '',
+    terminalDespachoNome: '',
+    terminalEmbarqueNome: '',
     destino: '',
     status: 'Iniciado / Aguardando Booking',
     booking_number: '',
@@ -567,9 +571,9 @@ useEffect(() => {
             if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         case 2: // Drafts
-             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
              const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
              if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
+             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
              if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
              return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação Física, Fiscal e Inspeção
@@ -1025,7 +1029,7 @@ const handleCreateContact = (contactName: string) => {
                             </div>
                         </div>
 
-                        <div className="grid md:grid-cols-2 gap-4">
+                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="booking_number">Nº do Booking</Label>
                                 <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
@@ -1076,6 +1080,30 @@ const handleCreateContact = (contactName: string) => {
                             <div className="space-y-2">
                                 <Label htmlFor="viagem">Armazém</Label>
                                 <Input id="viagem" value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Ex: TCP" />
+                            </div>
+                        </div>
+                         <div className="grid md:grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                                <Label htmlFor="terminalDespachoId">Terminal de Despacho</Label>
+                                 <Combobox 
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                                     value={formData.terminalDespachoId}
+                                     onValueChange={(value) => handleInputChange('terminalDespachoId', value)}
+                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o terminal"}
+                                     searchPlaceholder="Buscar terminal..."
+                                     noResultsText="Nenhum terminal encontrado."
+                                 />
+                            </div>
+                            <div className="space-y-2">
+                                <Label htmlFor="terminalEmbarqueId">Terminal de Embarque</Label>
+                                 <Combobox 
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                                     value={formData.terminalEmbarqueId}
+                                     onValueChange={(value) => handleInputChange('terminalEmbarqueId', value)}
+                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o terminal"}
+                                     searchPlaceholder="Buscar terminal..."
+                                     noResultsText="Nenhum terminal encontrado."
+                                 />
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
