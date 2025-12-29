@@ -621,8 +621,8 @@ const handleCreateContact = (contactName: string) => {
     setDocumentNonBlocking(partnerRef, { contatos: updatedContacts }, { merge: true });
     
     const newContactId = String(updatedContacts.length - 1);
-    const enrichedContacts = updatedContacts.map((c, i) => ({ ...c, id: String(i) }));
-    setExporterContacts(enrichedContacts);
+    const newContactsForState = updatedContacts.map((c, i) => ({ ...c, id: String(i) }));
+    setExporterContacts(newContactsForState);
 
     setFormData(prev => ({
         ...prev,
@@ -1590,26 +1590,7 @@ const handleCreateContact = (contactName: string) => {
                                 </TableBody>
                             </Table>
                          </div>
-                        <div>
-                            <h3 className="text-md font-medium mb-4">Checklist de Coleta</h3>
-                            <div className="space-y-3">
-                                {formData.documentos_originais.map((doc:any) => (
-                                    <div key={doc.id} className={`flex items-center justify-between gap-4 ${doc.isSubtask ? 'pl-6' : ''}`}>
-                                        <div className="flex items-center gap-4">
-                                            <Checkbox
-                                                id={doc.id}
-                                                checked={doc.done}
-                                                onCheckedChange={(checked) => handleOriginalDocChange(doc.id, !!checked)}
-                                            />
-                                            <Label htmlFor={doc.id} className="font-normal text-sm">{doc.name}</Label>
-                                        </div>
-                                        {doc.done && doc.completionDate && (
-                                            <span className="text-xs text-muted-foreground">{doc.completionDate}</span>
-                                        )}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
+                        
                         <div className='flex items-end gap-4'>
                             <div className="space-y-2 flex-1">
                                 <Label htmlFor="awb_courier">AWB do Courier (Envio)</Label>
