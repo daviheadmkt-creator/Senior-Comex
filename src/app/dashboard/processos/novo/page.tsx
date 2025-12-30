@@ -308,7 +308,7 @@ useEffect(() => {
             } else if (id === 'status' && value === 'DRAFTS_APROVADOS') { // Manual trigger
                 nextStatus = "AGUARDANDO_EMISSAO_NF_EXPORTACAO";
             } else if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) {
-                const isDueOk = newState.due_status === 'DESEMBARAÇADA' || newState.due_status === 'AVERBADA';
+                const isDueOk = newState.due_status === 'DESEMABRAÇADA' || newState.due_status === 'AVERBADA';
                 const isMapaOk = newState.mapa_status === 'DEFERIDA' || newState.mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
                 const areNFsOk = newState.notas_fiscais.length > 0 && newState.notas_fiscais.every((nf:any) => nf.chave);
                 const areContainersOk = newState.containers.length > 0 && newState.containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
@@ -319,7 +319,7 @@ useEffect(() => {
             }
             
             if (newState.navio_final && newState.viagem_final) {
-                 const hasBL = newState.documentos_pos_embarque?.some((doc: any) => doc.nome === 'BL' && doc.file);
+                 const hasBL = newState.documentos_pos_embarque?.some((d: any) => d.nome === 'BL' && d.file);
                  if (hasBL) {
                     nextStatus = "Em trânsito";
                  }
@@ -460,7 +460,7 @@ useEffect(() => {
   const addPostShipmentDoc = () => {
     setFormData(prev => ({
         ...prev,
-        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', tipo: 'Cópia', data_emissao: null, file: null }]
+        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', qtd_originais: 0, qtd_copias: 0, data_emissao: null, file: null }]
     }));
   };
 
@@ -729,8 +729,13 @@ const handleCreateContact = (contactName: string) => {
     const generateOriginalDocsPdf = async () => {
         const doc = new jsPDF();
         
-        const originalsCount = formData.documentos_pos_embarque.filter((doc: any) => doc.tipo === 'Original' && doc.file).length;
-        const copiesCount = formData.documentos_pos_embarque.filter((doc: any) => doc.tipo === 'Cópia' && doc.file).length;
+        let originalsCount = 0;
+        let copiesCount = 0;
+
+        formData.documentos_pos_embarque.forEach((doc: any) => {
+            originalsCount += Number(doc.qtd_originais) || 0;
+            copiesCount += Number(doc.qtd_copias) || 0;
+        });
 
         // Cover Page
         doc.setFontSize(22);
@@ -760,14 +765,13 @@ const handleCreateContact = (contactName: string) => {
 
         (doc as any).autoTable({
             startY: (doc as any).lastAutoTable.finalY + 10,
-            head: [['Documento', 'Tipo', 'Data de Emissão', 'Ficheiro']],
+            head: [['Documento', 'Qtd. Originais', 'Qtd. Cópias', 'Ficheiro Anexado']],
             body: formData.documentos_pos_embarque
-                .filter((doc: any) => doc.file)
                 .map((doc: any) => [
                     doc.nome,
-                    doc.tipo,
-                    doc.data_emissao ? new Date(doc.data_emissao).toLocaleDateString('pt-BR') : 'N/A',
-                    doc.file.name
+                    doc.qtd_originais || '0',
+                    doc.qtd_copias || '0',
+                    doc.file ? doc.file.name : 'Nenhum'
                 ]),
             theme: 'striped',
             headStyles: { fillColor: [34, 107, 72] }, // Dark green
@@ -781,16 +785,14 @@ const handleCreateContact = (contactName: string) => {
                 doc.text(`Anexo: ${docItem.nome} (${docItem.file.name})`, 14, 20);
 
                 try {
-                    // If it's an image, add it directly
                     if (docItem.file.type && docItem.file.type.startsWith('image/')) {
-                        const img = new Image();
-                        img.src = docItem.file.url;
-                        // We can't use await here, so we add a placeholder if image is not loaded
-                        // A more robust solution would use callbacks or promises if jsPDF supported it easily.
-                        doc.addImage(img, 'JPEG', 15, 40, 180, 160); 
+                        const imgData = await fetch(docItem.file.url).then(res => res.blob());
+                        const reader = new FileReader();
+                        reader.readAsDataURL(imgData);
+                        await new Promise(resolve => reader.onload = resolve);
+                        doc.addImage(reader.result as string, 'JPEG', 15, 40, 180, 160, undefined, 'FAST');
                     } else if (docItem.file.type === 'application/pdf') {
-                        // For PDF files, add a placeholder page indicating it's a separate document.
-                        doc.rect(14, 40, 182, 217); // A4-ish size box
+                        doc.rect(14, 40, 182, 217);
                         doc.setFontSize(16);
                         doc.setTextColor(150);
                         doc.text('Documento PDF Anexado', 105, 140, { align: 'center' });
@@ -798,7 +800,6 @@ const handleCreateContact = (contactName: string) => {
                         doc.text(`Ficheiro: ${docItem.file.name}`, 105, 150, { align: 'center' });
                         doc.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, {align: 'center'});
                     } else {
-                        // For other file types, add a generic placeholder.
                         doc.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
                     }
                 } catch (e) {
@@ -1570,7 +1571,8 @@ const handleCreateContact = (contactName: string) => {
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Documento</TableHead>
-                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Qtd. Originais</TableHead>
+                                        <TableHead>Qtd. Cópias</TableHead>
                                         <TableHead>Data Emissão</TableHead>
                                         <TableHead>Anexo</TableHead>
                                         <TableHead>Ação</TableHead>
@@ -1590,13 +1592,20 @@ const handleCreateContact = (contactName: string) => {
                                                 </Select>
                                             </TableCell>
                                             <TableCell>
-                                                 <Select value={docItem.tipo || 'Cópia'} onValueChange={value => handlePostShipmentDocChange(index, 'tipo', value)}>
-                                                    <SelectTrigger className="min-w-[120px]"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Cópia">Cópia</SelectItem>
-                                                        <SelectItem value="Original">Original</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <Input 
+                                                    type="number" 
+                                                    className="w-20"
+                                                    value={docItem.qtd_originais || 0}
+                                                    onChange={e => handlePostShipmentDocChange(index, 'qtd_originais', parseInt(e.target.value))}
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Input 
+                                                    type="number" 
+                                                    className="w-20"
+                                                    value={docItem.qtd_copias || 0}
+                                                    onChange={e => handlePostShipmentDocChange(index, 'qtd_copias', parseInt(e.target.value))}
+                                                />
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
