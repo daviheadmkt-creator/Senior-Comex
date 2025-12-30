@@ -234,18 +234,18 @@ export default function NovoProcessoPage() {
     useEffect(() => {
     if (isEditing && processoData) {
       const selectedExporter = parceiros?.find(p => p.id === processoData.exportadorId);
-      const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({...c, id: index })) || [];
+      const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({...c, id: String(index) })) || [];
       setExporterContacts(newContacts);
 
       setFormData({
         ...initialFormData,
         ...processoData,
         data_nomeacao: processoData.data_nomeacao || null,
-        deadline_draft: processoData.deadline_draft || null,
-        deadline_vgm: processoData.deadline_vgm || null,
-        deadline_carga: processoData.deadline_carga || null,
-        etd: processoData.etd || null,
-        eta: processoData.eta || null,
+        deadline_draft: processoData.deadline_draft,
+        deadline_vgm: processoData.deadline_vgm,
+        deadline_carga: processoData.deadline_carga,
+        etd: processoData.etd,
+        eta: processoData.eta,
         containers: processoData.containers || [],
         documentos_pos_embarque: processoData.documentos_pos_embarque || [],
         notas_fiscais: processoData.notas_fiscais || [],
@@ -298,8 +298,7 @@ useEffect(() => {
             let nextStatus = currentStatus;
 
             const statusNumber = processStatusOptions.indexOf(currentStatus);
-            const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
-
+            
             if (currentStatus === "Iniciado / Aguardando Booking" && newState.booking_number) {
                 nextStatus = "Booking Confirmado / Aguardando Draft";
             } else if (currentStatus === "Booking Confirmado / Aguardando Draft" || currentStatus === "CORRECAO_DE_DRAFT_SOLICITADA") {
@@ -308,13 +307,31 @@ useEffect(() => {
                  }
             } else if (id === 'status' && value === 'DRAFTS_APROVADOS') { // Manual trigger
                 nextStatus = "AGUARDANDO_EMISSAO_NF_EXPORTACAO";
-            } else if (draftsApprovedOrLater && newState.due_status === "DESEMBARAÇADA" && newState.mapa_status === "DEFERIDA") {
-                nextStatus = "PRONTO_PARA_EMBARQUE";
-            } else if (currentStatus === "PRONTO_PARA_EMBARQUE" && newState.documentos_pos_embarque?.length > 0 && newState.documentos_pos_embarque.some((doc: any) => doc.nome === 'BL' && doc.file)) {
-                nextStatus = "Em trânsito";
-            } else if (currentStatus === "Em trânsito" && newState.documentos_pos_embarque?.length > 0 && newState.documentos_pos_embarque.every((doc: any) => doc.file)) {
-                nextStatus = "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO";
-            } else if (currentStatus.startsWith("DOCUMENTOS_ORIGINAIS_COLETADOS") && newState.awb_courier) {
+            } else if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) {
+                const isDueOk = newState.due_status === 'DESEMBARAÇADA' || newState.due_status === 'AVERBADA';
+                const isMapaOk = newState.mapa_status === 'DEFERIDA' || newState.mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
+                const areNFsOk = newState.notas_fiscais.length > 0 && newState.notas_fiscais.every((nf:any) => nf.chave);
+                const areContainersOk = newState.containers.length > 0 && newState.containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
+
+                if(isDueOk && isMapaOk && areNFsOk && areContainersOk) {
+                    nextStatus = "PRONTO_PARA_EMBARQUE";
+                }
+            }
+            
+            if (statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE")) {
+                const hasBL = newState.documentos_pos_embarque?.some((doc: any) => doc.nome === 'BL' && doc.file);
+                if (hasBL) {
+                    nextStatus = "Em trânsito";
+                }
+            }
+            
+            if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) {
+                 if (newState.documentos_pos_embarque?.length > 0 && newState.documentos_pos_embarque.every((doc: any) => doc.file)) {
+                    nextStatus = "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO";
+                 }
+            }
+            
+            if (currentStatus.startsWith("DOCUMENTOS_ORIGINAIS_COLETADOS") && newState.awb_courier) {
                 nextStatus = "Concluído";
             }
 
@@ -349,6 +366,7 @@ useEffect(() => {
     const fileData = {
         name: file.name,
         url: URL.createObjectURL(file), 
+        type: file.type
     };
     
     if (typeof uploadTarget === 'string') {
@@ -525,7 +543,7 @@ useEffect(() => {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (status && statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4:
             if (navio_final && viagem_final) {
@@ -708,7 +726,7 @@ const handleCreateContact = (contactName: string) => {
         });
     };
 
-    const generateOriginalDocsPdf = () => {
+    const generateOriginalDocsPdf = async () => {
         const doc = new jsPDF();
         
         const originalsCount = formData.documentos_pos_embarque.filter((doc: any) => doc.tipo === 'Original' && doc.file).length;
@@ -755,19 +773,38 @@ const handleCreateContact = (contactName: string) => {
             headStyles: { fillColor: [34, 107, 72] }, // Dark green
         });
 
-        // This is a placeholder for appending actual PDFs. jsPDF client-side cannot merge existing PDFs.
-        // This part of the request requires server-side processing or a different library.
-        // For now, we add a note about it.
-        doc.addPage();
-        doc.setFontSize(12);
-        doc.text("Páginas de Anexos", 14, 20);
-        doc.text("Esta secção conteria todos os PDFs anexados, um após o outro.", 14, 30);
-        doc.text("A funcionalidade de fundir PDFs existentes não é suportada diretamente no navegador.", 14, 36);
-        formData.documentos_pos_embarque.forEach((docItem: any, index: number) => {
-            if (docItem.file) {
-                doc.text(`[Placeholder para o ficheiro ${index + 1}: ${docItem.file.name}]`, 14, 50 + (index * 10));
+        // Loop through attached files and add them to the PDF
+        for (const docItem of formData.documentos_pos_embarque) {
+            if (docItem.file && docItem.file.url) {
+                doc.addPage();
+                doc.setFontSize(12);
+                doc.text(`Anexo: ${docItem.nome} (${docItem.file.name})`, 14, 20);
+
+                try {
+                    // If it's an image, add it directly
+                    if (docItem.file.type && docItem.file.type.startsWith('image/')) {
+                        const img = new Image();
+                        img.src = docItem.file.url;
+                        // We can't use await here, so we add a placeholder if image is not loaded
+                        // A more robust solution would use callbacks or promises if jsPDF supported it easily.
+                        doc.addImage(img, 'JPEG', 15, 40, 180, 160); 
+                    } else {
+                         // For other files (like PDFs), add a placeholder
+                        doc.rect(14, 40, 182, 217); // A4-ish size box
+                        doc.setFontSize(16);
+                        doc.setTextColor(150);
+                        doc.text('Placeholder de Documento Anexado', 105, 140, { align: 'center' });
+                        doc.setFontSize(12);
+                        doc.text(`Ficheiro: ${docItem.file.name}`, 105, 150, { align: 'center' });
+                        doc.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, {align: 'center'});
+
+                    }
+                } catch (e) {
+                     console.error("Error adding file to PDF:", e);
+                     doc.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
+                }
             }
-        });
+        }
 
 
         doc.save(`Malote_Documentos_${formData.processo_interno || 'processo'}.pdf`);
@@ -1559,7 +1596,12 @@ const handleCreateContact = (contactName: string) => {
                                                     </SelectContent>
                                                 </Select>
                                             </TableCell>
-                                            <TableCell><DatePicker date={docItem.data_emissao} onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)} /></TableCell>
+                                            <TableCell>
+                                                <DatePicker 
+                                                    date={docItem.data_emissao} 
+                                                    onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)} 
+                                                />
+                                            </TableCell>
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
