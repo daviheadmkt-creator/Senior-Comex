@@ -318,11 +318,11 @@ useEffect(() => {
                 }
             }
             
-            if (statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE")) {
-                const hasBL = newState.documentos_pos_embarque?.some((doc: any) => doc.nome === 'BL' && doc.file);
-                if (hasBL) {
+            if (newState.navio_final && newState.viagem_final) {
+                 const hasBL = newState.documentos_pos_embarque?.some((doc: any) => doc.nome === 'BL' && doc.file);
+                 if (hasBL) {
                     nextStatus = "Em trânsito";
-                }
+                 }
             }
             
             if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) {
@@ -517,24 +517,24 @@ useEffect(() => {
  const getStepStatusIcon = (step: number) => {
     const { 
         status, booking_number, due_status, mapa_status, documentos_pos_embarque, awb_courier,
-        notas_fiscais, containers, navio_final, viagem_final
+        notas_fiscais, containers, navio_final, viagem_final,
     } = formData;
 
     const allOriginalDocsSent = awb_courier && documentos_pos_embarque.every((d:any) => d.file);
     const statusNumber = processStatusOptions.indexOf(status);
     
     switch (step) {
-        case 1:
+        case 1: // Processo e Booking
             if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-        case 2:
+        case 2: // Drafts
              const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
              if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
              if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
              if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
              return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 3:
-            const isDueOk = due_status === 'DESEMBARAÇADA' || due_status === 'AVERBADA';
+        case 3: // Liberação
+            const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
             const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
             const areContainersOk = containers.length > 0 && containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
@@ -545,18 +545,18 @@ useEffect(() => {
             if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
             if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 4:
+        case 4: // Confirmação de Embarque
             if (navio_final && viagem_final) {
                  return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 5:
+        case 5: // Docs Pós-Embarque
             if (documentos_pos_embarque && documentos_pos_embarque.length > 0 && documentos_pos_embarque.every((d:any) => d.file)) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
-        case 6:
+        case 6: // Encerramento
             if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (allOriginalDocsSent) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
@@ -788,16 +788,18 @@ const handleCreateContact = (contactName: string) => {
                         // We can't use await here, so we add a placeholder if image is not loaded
                         // A more robust solution would use callbacks or promises if jsPDF supported it easily.
                         doc.addImage(img, 'JPEG', 15, 40, 180, 160); 
-                    } else {
-                         // For other files (like PDFs), add a placeholder
+                    } else if (docItem.file.type === 'application/pdf') {
+                        // For PDF files, add a placeholder page indicating it's a separate document.
                         doc.rect(14, 40, 182, 217); // A4-ish size box
                         doc.setFontSize(16);
                         doc.setTextColor(150);
-                        doc.text('Placeholder de Documento Anexado', 105, 140, { align: 'center' });
+                        doc.text('Documento PDF Anexado', 105, 140, { align: 'center' });
                         doc.setFontSize(12);
                         doc.text(`Ficheiro: ${docItem.file.name}`, 105, 150, { align: 'center' });
                         doc.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, {align: 'center'});
-
+                    } else {
+                        // For other file types, add a generic placeholder.
+                        doc.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
                     }
                 } catch (e) {
                      console.error("Error adding file to PDF:", e);
@@ -1040,8 +1042,7 @@ const handleCreateContact = (contactName: string) => {
                                 <Input id="quantidade" value={formData.quantidade || ''} onChange={handleQuantityChange} placeholder="Ex: 270,00000 TON" />
                             </div>
                         </div>
-
-                         <div className="grid md:grid-cols-2 gap-4">
+                        <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="booking_number">Nº do Booking</Label>
                                 <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
@@ -1058,6 +1059,7 @@ const handleCreateContact = (contactName: string) => {
                                 </Select>
                             </div>
                         </div>
+
                         
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
