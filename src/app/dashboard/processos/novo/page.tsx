@@ -542,7 +542,7 @@ useEffect(() => {
             if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Confirmação de Embarque
-            if (navio_final && viagem_final) {
+            if (formData.navio_final && formData.viagem_final) {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
@@ -616,6 +616,32 @@ const handleCreatePartner = (partnerName: string) => {
         description: `"${partnerName}" foi adicionado à base de dados de parceiros.`
     });
 };
+
+const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem' | 'Terminal de Embarque') => {
+    if (!firestore) return;
+    
+    const newPartnerId = doc(collection(firestore, 'partners')).id;
+    const newPartnerData = {
+        id: newPartnerId,
+        nome_fantasia: terminalName,
+        tipo_parceiro: tipo
+    };
+
+    const partnerRef = doc(firestore, 'partners', newPartnerId);
+    setDocumentNonBlocking(partnerRef, newPartnerData, { merge: true });
+
+    const fieldId = tipo === 'Terminal de Estufagem' ? 'terminalDespachoId' : 'terminalEmbarqueId';
+    setFormData(prev => ({
+        ...prev,
+        [fieldId]: newPartnerId,
+    }));
+    
+    toast({
+        title: "Terminal Criado",
+        description: `"${terminalName}" foi adicionado à base de dados de parceiros como ${tipo}.`
+    });
+};
+
 
     const generatePdf = async () => {
         const doc = new jsPDF();
@@ -1068,7 +1094,7 @@ const handleCreatePartner = (partnerName: string) => {
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
-                            <div className="space-y-2">
+                             <div className="space-y-2">
                                 <Label htmlFor="booking_number">Nº do Booking</Label>
                                 <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
                             </div>
@@ -1131,8 +1157,10 @@ const handleCreatePartner = (partnerName: string) => {
                                      value={formData.terminalDespachoId}
                                      onValueChange={(value) => handleInputChange('terminalDespachoId', value)}
                                      placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o terminal"}
-                                     searchPlaceholder="Buscar terminal..."
+                                     searchPlaceholder="Buscar ou criar terminal..."
                                      noResultsText="Nenhum terminal encontrado."
+                                     creatable
+                                     onCreate={(name) => handleCreateTerminal(name, 'Terminal de Estufagem')}
                                  />
                             </div>
                             <div className="space-y-2">
@@ -1142,8 +1170,10 @@ const handleCreatePartner = (partnerName: string) => {
                                      value={formData.terminalEmbarqueId}
                                      onValueChange={(value) => handleInputChange('terminalEmbarqueId', value)}
                                      placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o terminal"}
-                                     searchPlaceholder="Buscar terminal..."
+                                     searchPlaceholder="Buscar ou criar terminal..."
                                      noResultsText="Nenhum terminal encontrado."
+                                     creatable
+                                     onCreate={(name) => handleCreateTerminal(name, 'Terminal de Embarque')}
                                  />
                             </div>
                         </div>
