@@ -291,7 +291,11 @@ useEffect(() => {
 
     const handleInputChange = (id: string, value: any) => {
         setFormData(prev => {
-            const newState = { ...prev, [id]: value ?? '' };
+            let newState = { ...prev, [id]: value ?? '' };
+
+            if (id === 'navio') {
+                newState.navio_final = value ?? '';
+            }
 
             // Logic to automatically update status
             const currentStatus = newState.status;
@@ -1094,7 +1098,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                             </div>
                         </div>
                         <div className="grid md:grid-cols-2 gap-4">
-                             <div className="space-y-2">
+                            <div className="space-y-2">
                                 <Label htmlFor="booking_number">Nº do Booking</Label>
                                 <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
                             </div>
