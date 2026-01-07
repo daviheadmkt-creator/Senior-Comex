@@ -515,29 +515,26 @@ useEffect(() => {
   };
 
  const getStepStatusIcon = (step: number) => {
-    const { 
-        status, booking_number, due_status, mapa_status, documentos_pos_embarque, awb_courier,
-        notas_fiscais, containers, navio_final, viagem_final,
-    } = formData;
-
-    const statusNumber = processStatusOptions.indexOf(status);
+    const { status, booking_number, due_status, mapa_status, documentos_pos_embarque, awb_courier,
+            notas_fiscais, containers, navio_final, viagem_final } = formData;
     
+    const statusNumber = processStatusOptions.indexOf(status);
+
     switch (step) {
         case 1: // Processo e Booking
             if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
             return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         case 2: // Drafts
-             const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
-             if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
-             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-             if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-             return <XCircle className="h-5 w-5 text-gray-400" />;
+            const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
+            if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
+            if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação
             const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
             const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
             const areContainersOk = containers.length > 0 && containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
-
             if (isDueOk && isMapaOk && areNFsOk && areContainersOk) {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
@@ -1081,7 +1078,7 @@ const handleCreatePartner = (partnerName: string) => {
                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                                     value={formData.armadorId}
                                     onValueChange={(value) => handleInputChange('armadorId', value)}
-                                    placeholder={isLoadingParceiros ? "Carregando..." : "Selecione ou crie um armador"}
+                                    placeholder={isLoadingParceiros ? "Carregando..." : "Selecionar os armadores.."}
                                     searchPlaceholder="Buscar armador..."
                                     noResultsText="Nenhum armador encontrado."
                                     creatable
