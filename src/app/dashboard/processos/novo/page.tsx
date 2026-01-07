@@ -520,7 +520,6 @@ useEffect(() => {
         notas_fiscais, containers, navio_final, viagem_final,
     } = formData;
 
-    const allOriginalDocsSent = awb_courier && documentos_pos_embarque.every((d:any) => d.file);
     const statusNumber = processStatusOptions.indexOf(status);
     
     switch (step) {
@@ -547,18 +546,22 @@ useEffect(() => {
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Confirmação de Embarque
             if (navio_final && viagem_final) {
-                 return <CheckCircle className="h-5 w-5 text-green-500" />;
+                return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 5: // Docs Pós-Embarque
-            if (documentos_pos_embarque && documentos_pos_embarque.length > 0 && documentos_pos_embarque.every((d:any) => d.file)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            const hasBlWithFile = documentos_pos_embarque && documentos_pos_embarque.some((d: any) => d.nome === 'BL' && d.file);
+            if (hasBlWithFile && statusNumber >= processStatusOptions.indexOf("Em trânsito")) {
+                 if (documentos_pos_embarque.every((d:any) => d.file)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+                 return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            }
             if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 6: // Encerramento
-            if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            if (allOriginalDocsSent) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            if (status === "Concluído") return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (awb_courier) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         default:
             return null;
@@ -590,6 +593,30 @@ const handleCreateContact = (contactName: string) => {
     toast({
         title: "Contato Criado",
         description: `"${contactName}" foi adicionado a ${selectedExporter.nome_fantasia}.`
+    });
+};
+
+const handleCreatePartner = (partnerName: string) => {
+    if (!firestore) return;
+    
+    const newPartnerId = doc(collection(firestore, 'partners')).id;
+    const newPartnerData = {
+        id: newPartnerId,
+        nome_fantasia: partnerName,
+        tipo_parceiro: "Armador"
+    };
+
+    const partnerRef = doc(firestore, 'partners', newPartnerId);
+    setDocumentNonBlocking(partnerRef, newPartnerData, { merge: true });
+
+    setFormData(prev => ({
+        ...prev,
+        armadorId: newPartnerId,
+    }));
+    
+    toast({
+        title: "Armador Criado",
+        description: `"${partnerName}" foi adicionado à base de dados de parceiros.`
     });
 };
 
@@ -1050,14 +1077,16 @@ const handleCreateContact = (contactName: string) => {
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="armadorId">Armador</Label>
-                                <Select value={String(formData.armadorId || '')} onValueChange={value => handleInputChange('armadorId', value)}>
-                                    <SelectTrigger id="armadorId">
-                                        <SelectValue placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o armador"} />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        {parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => <SelectItem key={p.id} value={String(p.id)}>{p.nome_fantasia}</SelectItem>)}
-                                    </SelectContent>
-                                </Select>
+                                <Combobox 
+                                    items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                                    value={formData.armadorId}
+                                    onValueChange={(value) => handleInputChange('armadorId', value)}
+                                    placeholder={isLoadingParceiros ? "Carregando..." : "Selecione ou crie um armador"}
+                                    searchPlaceholder="Buscar armador..."
+                                    noResultsText="Nenhum armador encontrado."
+                                    creatable
+                                    onCreate={handleCreatePartner}
+                                />
                             </div>
                         </div>
 
