@@ -297,6 +297,10 @@ useEffect(() => {
                 newState.navio_final = value ?? '';
             }
 
+            if (id === 'viagem') {
+                newState.viagem_final = value ?? '';
+            }
+
             // Logic to automatically update status
             const currentStatus = newState.status;
             let nextStatus = currentStatus;
