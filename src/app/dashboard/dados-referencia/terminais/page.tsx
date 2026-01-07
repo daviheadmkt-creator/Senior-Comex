@@ -19,12 +19,13 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Edit, PlusCircle, Trash2, Loader2 } from 'lucide-react';
-import { useState, useEffect, useMemo } from 'react';
+import { Edit, PlusCircle, Trash2, Loader2, FileUp, Download } from 'lucide-react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
+import * as XLSX from 'xlsx';
 
 
 export default function TerminaisPage() {
@@ -39,6 +40,8 @@ export default function TerminaisPage() {
 
     const [formData, setFormData] = useState({ name: '', portoId: '' });
     const [editingId, setEditingId] = useState<string | null>(null);
+    const [isImporting, setIsImporting] = useState(false);
+    const fileInputRef = useRef<HTMLInputElement>(null);
 
     const terminalsWithPortNames = useMemo(() => {
         if (!terminals || !ports) return [];
@@ -100,6 +103,75 @@ export default function TerminaisPage() {
         setEditingId(null);
     }
 
+    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (!file || !firestore || !ports) return;
+
+        setIsImporting(true);
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+                const json: any[] = XLSX.utils.sheet_to_json(worksheet);
+
+                let importedCount = 0;
+                json.forEach(row => {
+                    const portName = String(row.porto_nome || '').trim();
+                    const terminalName = String(row.name || '').trim();
+                    
+                    if (terminalName && portName) {
+                        const port = ports.find(p => p.name.toLowerCase() === portName.toLowerCase());
+                        if (port) {
+                            const docId = doc(collection(firestore, 'terminals')).id;
+                            const terminalRef = doc(firestore, 'terminals', docId);
+                            setDocumentNonBlocking(terminalRef, { 
+                                id: docId,
+                                name: terminalName, 
+                                portoId: port.id 
+                            }, { merge: true });
+                            importedCount++;
+                        }
+                    }
+                });
+
+                toast({
+                    title: 'Importação Concluída',
+                    description: `${importedCount} terminais foram importados com sucesso.`,
+                });
+            } catch (error) {
+                console.error("Erro ao importar planilha:", error);
+                toast({
+                    title: 'Erro na Importação',
+                    description: 'Houve um problema ao ler o ficheiro. Verifique o formato e tente novamente.',
+                    variant: 'destructive',
+                });
+            } finally {
+                setIsImporting(false);
+                if (fileInputRef.current) {
+                    fileInputRef.current.value = '';
+                }
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    };
+
+    const handleImportClick = () => {
+        fileInputRef.current?.click();
+    };
+
+    const handleDownloadTemplate = () => {
+        const ws = XLSX.utils.json_to_sheet([
+            { name: "Terminal Exemplo A", porto_nome: "Paranaguá" },
+            { name: "Terminal Exemplo B", porto_nome: "Shanghai" },
+        ]);
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, "Terminais");
+        XLSX.writeFile(wb, "template_terminais.xlsx");
+    };
+
   return (
     <div className="space-y-6">
       <div className="grid lg:grid-cols-3 gap-6">
@@ -142,7 +214,7 @@ export default function TerminaisPage() {
                 </CardContent>
             </Card>
         </div>
-        <div>
+        <div className="space-y-6">
             <Card>
                 <CardHeader>
                     <CardTitle>{editingId ? 'Editar Terminal' : 'Novo Terminal'}</CardTitle>
@@ -183,6 +255,29 @@ export default function TerminaisPage() {
                             )}
                         </div>
                     </form>
+                </CardContent>
+            </Card>
+            <Card>
+                <CardHeader>
+                    <CardTitle>Cadastro em Massa</CardTitle>
+                    <CardDescription>Importe múltiplos terminais de um ficheiro XLSX.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                     <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        className="hidden"
+                        accept=".xlsx, .xls"
+                    />
+                    <Button onClick={handleImportClick} disabled={isImporting} className="w-full">
+                        {isImporting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                        {isImporting ? 'A Importar...' : 'Importar em Massa (XLSX)'}
+                    </Button>
+                     <Button onClick={handleDownloadTemplate} variant="secondary" className="w-full">
+                        <Download className="mr-2 h-4 w-4" />
+                        Descarregar Template
+                    </Button>
                 </CardContent>
             </Card>
         </div>
