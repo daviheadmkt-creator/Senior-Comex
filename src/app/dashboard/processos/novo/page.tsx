@@ -468,7 +468,7 @@ useEffect(() => {
   const addPostShipmentDoc = () => {
     setFormData(prev => ({
         ...prev,
-        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', qtd_originais: 0, qtd_copias: 0, data_emissao: null, file: null }]
+        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', qtd_originais: 0, qtd_copias: 0, data_emissao: null, data_liberacao: null, file: null }]
     }));
   };
 
@@ -1113,7 +1113,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                     value={formData.armadorId}
                                     onValueChange={(value) => handleInputChange('armadorId', value)}
                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecionar os armadores.."}
-                                    searchPlaceholder="Buscar armador..."
+                                    searchPlaceholder="Buscar ou criar armador..."
                                     noResultsText="Nenhum armador encontrado."
                                     creatable
                                     onCreate={handleCreatePartner}
@@ -1638,6 +1638,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                         <TableHead>Qtd. Originais</TableHead>
                                         <TableHead>Qtd. Cópias</TableHead>
                                         <TableHead>Data Emissão</TableHead>
+                                        <TableHead>Data Liberação</TableHead>
                                         <TableHead>Anexo</TableHead>
                                         <TableHead>Ação</TableHead>
                                     </TableRow>
@@ -1675,6 +1676,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                                 <DatePicker 
                                                     date={docItem.data_emissao} 
                                                     onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)} 
+                                                />
+                                            </TableCell>
+                                            <TableCell>
+                                                <DatePicker 
+                                                    date={docItem.data_liberacao} 
+                                                    onDateChange={date => handlePostShipmentDocChange(index, 'data_liberacao', date)} 
                                                 />
                                             </TableCell>
                                             <TableCell>
