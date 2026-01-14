@@ -124,7 +124,7 @@ const initialFormData = {
     navio: '',
     viagem: '',
     containers: [] as any[],
-    documentos_pos_embarque: [] as { id: number; nome: string; originais: number; copias: number; data_emissao: string | null; file: any }[],
+    documentos_pos_embarque: [] as { id: number; nome: string; originais: number; copias: number; data_emissao: string | null; data_liberacao: string | null; file: any }[],
     notas_fiscais: [] as any[],
     due_numero: '',
     due_status: 'RASCUNHO SALVO',
@@ -471,7 +471,7 @@ useEffect(() => {
   const addPostShipmentDoc = () => {
     setFormData(prev => ({
         ...prev,
-        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, data_emissao: null, file: null }]
+        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, data_emissao: null, data_liberacao: null, file: null }]
     }));
   };
 
@@ -1550,7 +1550,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                     <div className="space-y-2 col-span-2">
                                     <Label>Chave de Acesso / Anexo</Label>
                                     <div className='flex gap-2'>
-                                        <Input value={nota.chave || ''} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Chave da NF..." />
+                                        <Input 
+                                            value={nota.chave || (nota.file ? nota.file.name : '')} 
+                                            onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} 
+                                            placeholder="Chave da NF ou nome do ficheiro" 
+                                            disabled={!nota.chave && !!nota.file}
+                                        />
                                         {nota.file ? (
                                             <a href={nota.file.url} target="_blank" rel="noopener noreferrer">
                                                 <Button variant="outline" size="icon" type="button" title={nota.file.name}>
