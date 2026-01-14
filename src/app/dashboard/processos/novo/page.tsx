@@ -124,12 +124,14 @@ const initialFormData = {
     navio: '',
     viagem: '',
     containers: [] as any[],
-    documentos_pos_embarque: [] as any[],
+    documentos_pos_embarque: [] as { id: number; nome: string; originais: number; copias: number; data_emissao: string | null; file: any }[],
     notas_fiscais: [] as any[],
     due_numero: '',
     due_status: 'RASCUNHO SALVO',
+    due_file: null as { name: string; url: string } | null,
     lpco_protocolo: '',
     mapa_status: 'RASCUNHO SALVO',
+    lpco_file: null as { name: string; url: string } | null,
     navio_final: '',
     viagem_final: '',
     awb_courier: '',
@@ -469,7 +471,7 @@ useEffect(() => {
   const addPostShipmentDoc = () => {
     setFormData(prev => ({
         ...prev,
-        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', tipo: 'Cópia', data_emissao: null, data_liberacao: null, file: null }]
+        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, data_emissao: null, file: null }]
     }));
   };
 
@@ -710,7 +712,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         const doc = new jsPDF();
         
         // ======== DRAFT FITO (Phytosanitary Certificate) ========
-        const govLogo = 'data:image/png;base64,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';
+        const govLogo = 'data:image/png;base64,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';
 
         doc.setFontSize(16);
         doc.setFont('helvetica', 'bold');
@@ -842,16 +844,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     const generateOriginalDocsPdf = async () => {
         const doc = new jsPDF();
         
-        let originalsCount = 0;
-        let copiesCount = 0;
-
-        formData.documentos_pos_embarque.forEach((doc: any) => {
-            if (doc.tipo === 'Original') {
-                originalsCount++;
-            } else if (doc.tipo === 'Cópia') {
-                copiesCount++;
-            }
-        });
+        let originalsCount = formData.documentos_pos_embarque.reduce((acc: number, doc: any) => acc + (Number(doc.originais) || 0), 0);
+        let copiesCount = formData.documentos_pos_embarque.reduce((acc: number, doc: any) => acc + (Number(doc.copias) || 0), 0);
 
         // Cover Page
         doc.setFontSize(22);
@@ -881,11 +875,14 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
         (doc as any).autoTable({
             startY: (doc as any).lastAutoTable.finalY + 10,
-            head: [['Documento', 'Tipo', 'Ficheiro Anexado']],
+            head: [['Documento', 'Qtd. Originais', 'Qtd. Cópias', 'Data Emissão', 'Data Liberação', 'Ficheiro Anexado']],
             body: formData.documentos_pos_embarque
                 .map((doc: any) => [
                     doc.nome,
-                    doc.tipo || 'N/A',
+                    doc.originais || '0',
+                    doc.copias || '0',
+                    doc.data_emissao ? new Date(doc.data_emissao).toLocaleDateString('pt-BR') : 'N/A',
+                    doc.data_liberacao ? new Date(doc.data_liberacao).toLocaleDateString('pt-BR') : 'N/A',
                     doc.file ? doc.file.name : 'Nenhum'
                 ]),
             theme: 'striped',
@@ -1290,7 +1287,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                      items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                                      value={formData.terminalDespachoId}
                                      onValueChange={(value) => handleInputChange('terminalDespachoId', value)}
-                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o terminal"}
+                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione ou crie um terminal"}
                                      searchPlaceholder="Buscar ou criar terminal..."
                                      noResultsText="Nenhum terminal encontrado."
                                      creatable
@@ -1303,7 +1300,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                      items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                                      value={formData.terminalEmbarqueId}
                                      onValueChange={(value) => handleInputChange('terminalEmbarqueId', value)}
-                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione o terminal"}
+                                     placeholder={isLoadingParceiros ? "Carregando..." : "Selecione ou crie um terminal"}
                                      searchPlaceholder="Buscar ou criar terminal..."
                                      noResultsText="Nenhum terminal encontrado."
                                      creatable
@@ -1638,13 +1635,14 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Table>
                             </div>
                         </div>
-                        <div className='grid md:grid-cols-2 gap-4'>
+                        <div className='grid md:grid-cols-2 gap-4 items-end'>
                             <div className="space-y-2">
                                 <Label htmlFor="due_numero">Nº da DUE</Label>
                                 <Input id="due_numero" value={formData.due_numero || ''} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="due_status">Status da DUE</Label>
+                                <div className='flex items-center gap-2'>
                                 <Select value={formData.due_status || ''} onValueChange={value => handleInputChange('due_status', value)}>
                                     <SelectTrigger id="due_status">
                                         <SelectValue placeholder="Selecione o status" />
@@ -1655,15 +1653,33 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {formData.due_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.due_file.url} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="icon" type="button" title={formData.due_file.name}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar DUE" onClick={() => triggerFileUpload('due_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                </div>
                             </div>
                         </div>
-                         <div className="grid md:grid-cols-2 gap-4">
+                         <div className="grid md:grid-cols-2 gap-4 items-end">
                             <div className="space-y-2">
                                 <Label htmlFor="lpco_protocolo">Protocolo LPCO</Label>
                                 <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="mapa_status">Status da Inspeção MAPA (LPCO)</Label>
+                                <div className="flex items-center gap-2">
                                 <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
                                     <SelectTrigger id="mapa_status">
                                         <SelectValue placeholder="Selecione o status" />
@@ -1674,6 +1690,23 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                         ))}
                                     </SelectContent>
                                 </Select>
+                                {formData.lpco_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.lpco_file.url} target="_blank" rel="noopener noreferrer">
+                                            <Button variant="outline" size="icon" type="button" title={formData.lpco_file.name}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar LPCO" onClick={() => triggerFileUpload('lpco_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                </div>
                             </div>
                         </div>
                         <div>
@@ -1770,7 +1803,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Documento</TableHead>
-                                        <TableHead>Tipo</TableHead>
+                                        <TableHead>Qtd. Originais</TableHead>
+                                        <TableHead>Qtd. Cópias</TableHead>
                                         <TableHead>Data Emissão</TableHead>
                                         <TableHead>Data Liberação</TableHead>
                                         <TableHead>Anexo</TableHead>
@@ -1791,13 +1825,10 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                                 </Select>
                                             </TableCell>
                                             <TableCell>
-                                                <Select value={docItem.tipo || ''} onValueChange={value => handlePostShipmentDocChange(index, 'tipo', value)}>
-                                                    <SelectTrigger className="w-[120px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Cópia">Cópia</SelectItem>
-                                                        <SelectItem value="Original">Original</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
+                                                <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(index, 'originais', e.target.value)} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <Input className="w-24" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(index, 'copias', e.target.value)} />
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
