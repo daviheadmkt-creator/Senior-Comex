@@ -1837,12 +1837,14 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
+                                                    compact
                                                     date={docItem.data_emissao} 
                                                     onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)} 
                                                 />
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
+                                                    compact
                                                     date={docItem.data_liberacao} 
                                                     onDateChange={date => handlePostShipmentDocChange(index, 'data_liberacao', date)} 
                                                 />

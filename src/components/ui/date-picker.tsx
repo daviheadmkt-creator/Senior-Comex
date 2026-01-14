@@ -20,9 +20,10 @@ interface DatePickerProps {
     showTime?: boolean;
     date?: Date | string | null;
     onDateChange?: (date: string | null) => void;
+    compact?: boolean;
 }
 
-export function DatePicker({ showTime = false, date: propDate, onDateChange }: DatePickerProps) {
+export function DatePicker({ showTime = false, date: propDate, onDateChange, compact = false }: DatePickerProps) {
   const [date, setDate] = React.useState<Date | undefined>();
   const [time, setTime] = React.useState("00:00");
   const [isOpen, setIsOpen] = React.useState(false);
@@ -91,6 +92,43 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange }: D
   }
   
   const displayFormat = showTime ? "PPP HH:mm" : "PPP";
+
+  if (compact) {
+    return (
+       <Popover open={isOpen} onOpenChange={setIsOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant={"outline"}
+            size="icon"
+            className={cn(
+              "w-10 h-10",
+              !date && "text-muted-foreground"
+            )}
+          >
+            <CalendarIcon className="h-4 w-4" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-auto p-0">
+          <Calendar
+            mode="single"
+            selected={date}
+            onSelect={handleDateSelect}
+            initialFocus
+            locale={ptBR}
+          />
+          {showTime && (
+              <div className="p-3 border-t">
+                  <Input 
+                      type="time" 
+                      value={time}
+                      onChange={handleTimeChange}
+                  />
+              </div>
+          )}
+        </PopoverContent>
+      </Popover>
+    )
+  }
 
   return (
     <Popover open={isOpen} onOpenChange={setIsOpen}>
