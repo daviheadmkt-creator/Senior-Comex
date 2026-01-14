@@ -180,6 +180,7 @@ export default function NovoProcessoPage() {
   const { user: currentUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerFileInputRef = useRef<HTMLInputElement>(null);
+  const nfFileInputRef = useRef<HTMLInputElement>(null);
   const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | { type: 'documento_pos_embarque', index: number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
 
@@ -468,7 +469,7 @@ useEffect(() => {
   const addPostShipmentDoc = () => {
     setFormData(prev => ({
         ...prev,
-        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', qtd_originais: 0, qtd_copias: 0, data_emissao: null, data_liberacao: null, file: null }]
+        documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', tipo: 'Cópia', data_emissao: null, data_liberacao: null, file: null }]
     }));
   };
 
@@ -483,15 +484,69 @@ useEffect(() => {
     setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
   };
 
-  const addNotaFiscal = () => {
-    setFormData(prev => ({
-      ...prev,
-      notas_fiscais: [
-        ...prev.notas_fiscais,
-        { id: Date.now(), tipo: 'Remessa', chave: '', file: null }
-      ]
-    }));
+  const handleMultipleNFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const files = e.target.files;
+      if (!files || files.length === 0) return;
+
+      const newNotas = Array.from(files).map(file => {
+          const newNota = {
+              id: Date.now() + Math.random(),
+              tipo: 'Remessa',
+              chave: '',
+              data_pedido: null,
+              data_recebida: null,
+              file: {
+                  name: file.name,
+                  url: URL.createObjectURL(file),
+                  type: file.type
+              }
+          };
+
+          if (file.name.toLowerCase().endsWith('.xml')) {
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                  try {
+                      const xmlText = event.target?.result as string;
+                      const parser = new DOMParser();
+                      const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                      const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
+                      if (infNFe) {
+                          const idAttr = infNFe.getAttribute('Id');
+                          if (idAttr && idAttr.startsWith('NFe')) {
+                              const chave = idAttr.substring(3);
+                              if (chave.length === 44) {
+                                  // Update the specific nota fiscal with the extracted key
+                                  setFormData(prev => ({
+                                      ...prev,
+                                      notas_fiscais: prev.notas_fiscais.map(nf => 
+                                          nf.id === newNota.id ? { ...nf, chave } : nf
+                                      )
+                                  }));
+                              }
+                          }
+                      }
+                  } catch (error) {
+                      console.error("Error parsing XML:", error);
+                  }
+              };
+              reader.readAsText(file);
+          }
+          return newNota;
+      });
+
+      setFormData(prev => ({
+          ...prev,
+          notas_fiscais: [...prev.notas_fiscais, ...newNotas]
+      }));
+
+      toast({
+          title: "Ficheiros Carregados",
+          description: `${files.length} nota(s) fiscal(is) foram adicionadas.`
+      });
+
+      if (nfFileInputRef.current) nfFileInputRef.current.value = '';
   };
+
 
   const removeNotaFiscal = (index: number) => {
     const updatedNotas = formData.notas_fiscais.filter((_: any, i: number) => i !== index);
@@ -791,8 +846,11 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         let copiesCount = 0;
 
         formData.documentos_pos_embarque.forEach((doc: any) => {
-            originalsCount += Number(doc.qtd_originais) || 0;
-            copiesCount += Number(doc.qtd_copias) || 0;
+            if (doc.tipo === 'Original') {
+                originalsCount++;
+            } else if (doc.tipo === 'Cópia') {
+                copiesCount++;
+            }
         });
 
         // Cover Page
@@ -823,12 +881,11 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
         (doc as any).autoTable({
             startY: (doc as any).lastAutoTable.finalY + 10,
-            head: [['Documento', 'Qtd. Originais', 'Qtd. Cópias', 'Ficheiro Anexado']],
+            head: [['Documento', 'Tipo', 'Ficheiro Anexado']],
             body: formData.documentos_pos_embarque
                 .map((doc: any) => [
                     doc.nome,
-                    doc.qtd_originais || '0',
-                    doc.qtd_copias || '0',
+                    doc.tipo || 'N/A',
                     doc.file ? doc.file.name : 'Nenhum'
                 ]),
             theme: 'striped',
@@ -870,6 +927,67 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
         doc.save(`Malote_Documentos_${formData.processo_interno || 'processo'}.pdf`);
     };
+
+    const generateNFsPdf = async () => {
+        const doc = new jsPDF();
+        
+        // Cover Page
+        doc.setFontSize(22);
+        doc.setFont('helvetica', 'bold');
+        doc.text('PACOTE DE NOTAS FISCAIS', 105, 40, { align: 'center' });
+        
+        doc.setFontSize(16);
+        doc.text(`Processo: ${formData.processo_interno || 'N/A'}`, 105, 60, { align: 'center' });
+        
+        (doc as any).autoTable({
+            startY: 80,
+            head: [['Tipo', 'Chave de Acesso', 'Ficheiro', 'Data Pedido', 'Data Recebida']],
+            body: formData.notas_fiscais.map((nf: any) => [
+                nf.tipo,
+                nf.chave || 'N/A',
+                nf.file ? nf.file.name : 'Nenhum',
+                nf.data_pedido ? new Date(nf.data_pedido).toLocaleDateString('pt-BR') : 'N/A',
+                nf.data_recebida ? new Date(nf.data_recebida).toLocaleDateString('pt-BR') : 'N/A',
+            ]),
+            theme: 'striped',
+            headStyles: { fillColor: [34, 107, 72] },
+        });
+
+        // Loop through attached files and add them to the PDF
+        for (const nf of formData.notas_fiscais) {
+            if (nf.file && nf.file.url) {
+                doc.addPage();
+                doc.setFontSize(12);
+                doc.text(`Anexo: ${nf.tipo} - ${nf.file.name}`, 14, 20);
+
+                try {
+                    if (nf.file.type && nf.file.type.startsWith('image/')) {
+                        const imgData = await fetch(nf.file.url).then(res => res.blob());
+                        const reader = new FileReader();
+                        reader.readAsDataURL(imgData);
+                        await new Promise(resolve => reader.onload = resolve);
+                        doc.addImage(reader.result as string, 'JPEG', 15, 40, 180, 160, undefined, 'FAST');
+                    } else if (nf.file.type === 'application/pdf') {
+                         doc.rect(14, 40, 182, 217);
+                        doc.setFontSize(16);
+                        doc.setTextColor(150);
+                        doc.text('Documento PDF Anexado', 105, 140, { align: 'center' });
+                        doc.setFontSize(12);
+                        doc.text(`Ficheiro: ${nf.file.name}`, 105, 150, { align: 'center' });
+                        doc.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, {align: 'center'});
+                    } else {
+                        doc.text(`Não foi possível pré-visualizar o ficheiro: ${nf.file.name}`, 14, 40);
+                    }
+                } catch (e) {
+                     console.error("Error adding NF file to PDF:", e);
+                     doc.text(`Não foi possível pré-visualizar o ficheiro: ${nf.file.name}`, 14, 40);
+                }
+            }
+        }
+
+        doc.save(`Pacote_NFs_${formData.processo_interno || 'processo'}.pdf`);
+    };
+
 
     const handleContainerImport = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -1010,6 +1128,14 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             onChange={handleContainerImport}
             className="hidden"
             accept=".xlsx, .xls"
+        />
+        <input
+            type="file"
+            ref={nfFileInputRef}
+            onChange={handleMultipleNFUpload}
+            className="hidden"
+            accept=".xml,.pdf"
+            multiple
         />
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
@@ -1395,57 +1521,66 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 <Card>
                     <CardContent className="space-y-6 pt-6">
                         <div>
-                          <div className="flex justify-between items-center mb-4">
-                            <h3 className="text-md font-medium">Notas Fiscais</h3>
-                            <Button type="button" variant="outline" size="sm" onClick={addNotaFiscal}>
-                              <PlusCircle className="mr-2 h-4 w-4" />
-                              Adicionar Nota Fiscal
-                            </Button>
-                          </div>
-                          <div className="space-y-4">
-                            {formData.notas_fiscais.map((nota: any, index: number) => (
-                              <div key={nota.id} className="grid md:grid-cols-3 gap-2 items-end p-2 border rounded-md">
-                                <div className="space-y-2">
-                                  <Label htmlFor={`nf-tipo-${index}`}>Tipo</Label>
-                                  <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(index, 'tipo', value)}>
-                                    <SelectTrigger id={`nf-tipo-${index}`}>
-                                      <SelectValue placeholder="Selecione o tipo" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      <SelectItem value="Remessa">Remessa</SelectItem>
-                                      <SelectItem value="Retorno">NF do Produtor</SelectItem>
-                                      <SelectItem value="Exportação">Exportação</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="space-y-2">
-                                  <Label htmlFor={`nf-chave-${index}`}>Chave de Acesso</Label>
-                                  <Input id={`nf-chave-${index}`} value={nota.chave || ''} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Insira a chave da NF..." />
-                                </div>
+                            <div className="flex justify-between items-center mb-4">
+                                <h3 className="text-md font-medium">Notas Fiscais</h3>
                                 <div className="flex items-center gap-2">
-                                    {nota.file ? (
-                                        <div className="flex items-center gap-1">
+                                    {formData.notas_fiscais.length > 0 && (
+                                        <Button type="button" variant="secondary" size="sm" onClick={generateNFsPdf}>
+                                            <FileDown className="mr-2 h-4 w-4" />
+                                            Baixar Pacote de NFs
+                                        </Button>
+                                    )}
+                                    <Button type="button" variant="outline" size="sm" onClick={() => nfFileInputRef.current?.click()}>
+                                        <Upload className="mr-2 h-4 w-4" />
+                                        Carregar Notas Fiscais
+                                    </Button>
+                                </div>
+                            </div>
+                            <div className="space-y-4">
+                                {formData.notas_fiscais.map((nota: any, index: number) => (
+                                <div key={nota.id} className="grid md:grid-cols-4 gap-4 items-end p-3 border rounded-md">
+                                    <div className="space-y-2">
+                                    <Label>Tipo</Label>
+                                    <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(index, 'tipo', value)}>
+                                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                        <SelectContent>
+                                        <SelectItem value="Remessa">Remessa</SelectItem>
+                                        <SelectItem value="Retorno">NF do Produtor</SelectItem>
+                                        <SelectItem value="Exportação">Exportação</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                    </div>
+                                    <div className="space-y-2 col-span-2">
+                                    <Label>Chave de Acesso / Anexo</Label>
+                                    <div className='flex gap-2'>
+                                        <Input value={nota.chave || ''} onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} placeholder="Chave da NF..." />
+                                        {nota.file ? (
                                             <a href={nota.file.url} target="_blank" rel="noopener noreferrer">
                                                 <Button variant="outline" size="icon" type="button" title={nota.file.name}>
                                                     <Check className="h-4 w-4 text-green-600" />
                                                 </Button>
                                             </a>
-                                            <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'nota_fiscal', index })} className="text-destructive hover:text-destructive">
-                                                <XCircle className="h-4 w-4" />
-                                            </Button>
+                                        ) : (
+                                            <Button disabled variant="outline" size="icon" type="button"><FileUp className="h-4 w-4" /></Button>
+                                        )}
+                                    </div>
+                                    </div>
+                                    <div className='flex items-end gap-2'>
+                                        <div className="space-y-2 flex-grow">
+                                            <Label>Datas</Label>
+                                            <div className='flex gap-2'>
+                                                <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} />
+                                                <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
+                                            </div>
                                         </div>
-                                    ) : (
-                                        <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}>
-                                            <FileUp className="h-4 w-4" />
+                                        <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
-                                    )}
-                                  <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
-                                    <Trash2 className="h-4 w-4 text-destructive" />
-                                  </Button>
+                                    </div>
                                 </div>
-                              </div>
-                            ))}
-                          </div>
+                                ))}
+                                {formData.notas_fiscais.length === 0 && <p className='text-sm text-center text-muted-foreground py-4'>Nenhuma nota fiscal adicionada.</p>}
+                            </div>
                         </div>
 
                         <div>
@@ -1635,8 +1770,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <TableHeader>
                                     <TableRow>
                                         <TableHead>Documento</TableHead>
-                                        <TableHead>Qtd. Originais</TableHead>
-                                        <TableHead>Qtd. Cópias</TableHead>
+                                        <TableHead>Tipo</TableHead>
                                         <TableHead>Data Emissão</TableHead>
                                         <TableHead>Data Liberação</TableHead>
                                         <TableHead>Anexo</TableHead>
@@ -1657,20 +1791,13 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                                 </Select>
                                             </TableCell>
                                             <TableCell>
-                                                <Input 
-                                                    type="number" 
-                                                    className="w-20"
-                                                    value={docItem.qtd_originais || 0}
-                                                    onChange={e => handlePostShipmentDocChange(index, 'qtd_originais', parseInt(e.target.value))}
-                                                />
-                                            </TableCell>
-                                            <TableCell>
-                                                <Input 
-                                                    type="number" 
-                                                    className="w-20"
-                                                    value={docItem.qtd_copias || 0}
-                                                    onChange={e => handlePostShipmentDocChange(index, 'qtd_copias', parseInt(e.target.value))}
-                                                />
+                                                <Select value={docItem.tipo || ''} onValueChange={value => handlePostShipmentDocChange(index, 'tipo', value)}>
+                                                    <SelectTrigger className="w-[120px]"><SelectValue placeholder="Tipo" /></SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="Cópia">Cópia</SelectItem>
+                                                        <SelectItem value="Original">Original</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
