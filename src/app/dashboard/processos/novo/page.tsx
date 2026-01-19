@@ -1535,46 +1535,47 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                             </div>
                             <div className="space-y-4">
                                 {formData.notas_fiscais.map((nota: any, index: number) => (
-                                <div key={nota.id} className="grid md:grid-cols-4 gap-4 items-end p-3 border rounded-md">
+                                <div key={nota.id} className="grid md:grid-cols-6 gap-4 items-end p-3 border rounded-md">
                                     <div className="space-y-2">
-                                    <Label>Tipo</Label>
-                                    <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(index, 'tipo', value)}>
-                                        <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                                        <SelectContent>
-                                        <SelectItem value="Remessa">Remessa</SelectItem>
-                                        <SelectItem value="Retorno">NF do Produtor</SelectItem>
-                                        <SelectItem value="Exportação">Exportação</SelectItem>
-                                        </SelectContent>
-                                    </Select>
+                                        <Label>Tipo</Label>
+                                        <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(index, 'tipo', value)}>
+                                            <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                            <SelectContent>
+                                            <SelectItem value="Remessa">Remessa</SelectItem>
+                                            <SelectItem value="Retorno">NF do Produtor</SelectItem>
+                                            <SelectItem value="Exportação">Exportação</SelectItem>
+                                            </SelectContent>
+                                        </Select>
                                     </div>
                                     <div className="space-y-2 col-span-2">
-                                    <Label>Chave de Acesso / Anexo</Label>
-                                    <div className='flex gap-2'>
-                                        <Input 
-                                            value={nota.chave || (nota.file ? nota.file.name : '')} 
-                                            onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} 
-                                            placeholder="Chave da NF ou nome do ficheiro" 
-                                            disabled={!nota.chave && !!nota.file}
-                                        />
-                                        {nota.file ? (
-                                            <a href={nota.file.url} target="_blank" rel="noopener noreferrer">
-                                                <Button variant="outline" size="icon" type="button" title={nota.file.name}>
-                                                    <Check className="h-4 w-4 text-green-600" />
-                                                </Button>
-                                            </a>
-                                        ) : (
-                                            <Button disabled variant="outline" size="icon" type="button"><FileUp className="h-4 w-4" /></Button>
-                                        )}
-                                    </div>
-                                    </div>
-                                    <div className='flex items-end gap-2'>
-                                        <div className="space-y-2 flex-grow">
-                                            <Label>Datas</Label>
-                                            <div className='flex gap-2'>
-                                                <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} />
-                                                <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
-                                            </div>
+                                        <Label>Chave de Acesso / Anexo</Label>
+                                        <div className='flex gap-2'>
+                                            <Input 
+                                                value={nota.chave || (nota.file ? nota.file.name : '')} 
+                                                onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} 
+                                                placeholder="Chave da NF ou nome do ficheiro" 
+                                                disabled={!!(!nota.chave && nota.file)}
+                                            />
+                                            {nota.file ? (
+                                                <a href={nota.file.url} target="_blank" rel="noopener noreferrer">
+                                                    <Button variant="outline" size="icon" type="button" title={nota.file.name}>
+                                                        <Check className="h-4 w-4 text-green-600" />
+                                                    </Button>
+                                                </a>
+                                            ) : (
+                                                <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}><FileUp className="h-4 w-4" /></Button>
+                                            )}
                                         </div>
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Data Solicitação</Label>
+                                        <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <Label>Data Recebimento</Label>
+                                        <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
+                                    </div>
+                                    <div className='flex items-end'>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>
