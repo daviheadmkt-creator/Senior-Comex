@@ -1325,12 +1325,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 {formData.deadline_draft_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_draft_file.url} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="icon" type="button" title={formData.deadline_draft_file.name}>
+                                        <a href={formData.deadline_draft_file.url} download={formData.deadline_draft_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_draft_file.name}`}>
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive">
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -1347,12 +1347,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                  {formData.deadline_vgm_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_vgm_file.url} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="icon" type="button" title={formData.deadline_vgm_file.name}>
+                                        <a href={formData.deadline_vgm_file.url} download={formData.deadline_vgm_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_vgm_file.name}`}>
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive">
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -1369,12 +1369,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                   {formData.deadline_carga_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_carga_file.url} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="icon" type="button" title={formData.deadline_carga_file.name}>
+                                        <a href={formData.deadline_carga_file.url} download={formData.deadline_carga_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_carga_file.name}`}>
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive">
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -1551,29 +1551,33 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                         <Label>Chave de Acesso / Anexo</Label>
                                         <div className='flex gap-2'>
                                             <Input 
-                                                value={nota.chave || (nota.file ? nota.file.name : '')} 
-                                                onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)} 
-                                                placeholder="Chave da NF ou nome do ficheiro" 
-                                                disabled={!!(!nota.chave && nota.file)}
+                                                value={nota.chave || ''}
+                                                onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)}
+                                                placeholder="Chave da NF (auto-preenchida)"
                                             />
                                             {nota.file ? (
-                                                <a href={nota.file.url} target="_blank" rel="noopener noreferrer">
-                                                    <Button variant="outline" size="icon" type="button" title={nota.file.name}>
-                                                        <Check className="h-4 w-4 text-green-600" />
+                                                <div className="flex items-center gap-1">
+                                                    <a href={nota.file.url} download={nota.file.name}>
+                                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${nota.file.name}`}>
+                                                            <Check className="h-4 w-4 text-green-600" />
+                                                        </Button>
+                                                    </a>
+                                                    <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => handleNotaFiscalChange(index, 'file', null)} className="text-destructive hover:text-destructive">
+                                                        <XCircle className="h-4 w-4" />
                                                     </Button>
-                                                </a>
+                                                </div>
                                             ) : (
-                                                <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}><FileUp className="h-4 w-4" /></Button>
+                                                <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}><FileUp className="h-4 w-4" /></Button>
                                             )}
                                         </div>
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Data Solicitação</Label>
-                                        <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} />
+                                        <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} compact />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Data Recebimento</Label>
-                                        <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
+                                        <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} compact />
                                     </div>
                                     <div className='flex items-end'>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
@@ -1661,12 +1665,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.due_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.due_file.url} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="icon" type="button" title={formData.due_file.name}>
+                                        <a href={formData.due_file.url} download={formData.due_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.due_file.name}`}>
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive">
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -1698,12 +1702,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.lpco_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.lpco_file.url} target="_blank" rel="noopener noreferrer">
-                                            <Button variant="outline" size="icon" type="button" title={formData.lpco_file.name}>
+                                        <a href={formData.lpco_file.url} download={formData.lpco_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.lpco_file.name}`}>
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive">
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
                                     </div>
@@ -1853,12 +1857,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
-                                                        <a href={docItem.file.url} target="_blank" rel="noopener noreferrer">
-                                                            <Button variant="outline" size="icon" type="button" title={docItem.file.name}>
+                                                        <a href={docItem.file.url} download={docItem.file.name}>
+                                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${docItem.file.name}`}>
                                                                 <Check className="h-4 w-4 text-green-600" />
                                                             </Button>
                                                         </a>
-                                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className="text-destructive hover:text-destructive">
+                                                        <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className="text-destructive hover:text-destructive">
                                                             <XCircle className="h-4 w-4" />
                                                         </Button>
                                                     </div>
