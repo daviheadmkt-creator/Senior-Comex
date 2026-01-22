@@ -1551,9 +1551,10 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                         <Label>Chave de Acesso / Anexo</Label>
                                         <div className='flex gap-2'>
                                             <Input 
-                                                value={nota.chave || ''}
+                                                value={nota.chave || (nota.file ? nota.file.name : '')}
                                                 onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)}
                                                 placeholder="Chave da NF (auto-preenchida)"
+                                                disabled={!nota.chave && !!nota.file}
                                             />
                                             {nota.file ? (
                                                 <div className="flex items-center gap-1">
