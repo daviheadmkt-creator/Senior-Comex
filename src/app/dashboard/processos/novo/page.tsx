@@ -137,23 +137,9 @@ const initialFormData = {
     awb_courier: '',
     analistaId: '',
     analistaNome: '',
-    draft_bl_shipper: '',
-    draft_bl_consignee: '',
-    draft_bl_notify: '',
-    draft_bl_marks: '',
-    draft_bl_port_loading: '',
-    draft_bl_port_discharge: '',
-    draft_bl_description: '',
-    draft_fito_consignee: '',
-    draft_fito_description: '',
-    draft_fito_treatment: '',
-    draft_fito_chemical: '',
-    draft_fito_concentration: '',
-    draft_fito_date: '',
-    draft_co_consignee: '',
-    draft_co_description: '',
-    draft_co_hs_code: '',
-    draft_co_invoice: '',
+    draft_bl_file: null as { name: string; url: string } | null,
+    draft_fito_file: null as { name: string; url: string } | null,
+    draft_co_file: null as { name: string; url: string } | null,
     deadline_draft: null as string | null,
     deadline_vgm: null as string | null,
     deadline_carga: null as string | null,
@@ -313,7 +299,7 @@ useEffect(() => {
             if (currentStatus === "Iniciado / Aguardando Booking" && newState.booking_number) {
                 nextStatus = "Booking Confirmado / Aguardando Draft";
             } else if (currentStatus === "Booking Confirmado / Aguardando Draft" || currentStatus === "CORRECAO_DE_DRAFT_SOLICITADA") {
-                 if(newState.draft_bl_shipper || newState.draft_bl_consignee || newState.draft_bl_description || newState.draft_fito_consignee || newState.draft_fito_description || newState.draft_co_consignee || newState.draft_co_description) {
+                 if(newState.draft_bl_file || newState.draft_fito_file || newState.draft_co_file) {
                     nextStatus = "DRAFTS_EM_APROVAÇÃO";
                  }
             } else if (id === 'status' && value === 'DRAFTS_APROVADOS') { // Manual trigger
@@ -707,139 +693,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     });
 };
 
-
-    const generatePdf = async () => {
-        const doc = new jsPDF();
-        
-        // ======== DRAFT FITO (Phytosanitary Certificate) ========
-        const govLogo = 'data:image/png;base64,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';
-
-        doc.setFontSize(16);
-        doc.setFont('helvetica', 'bold');
-        doc.text('CERTIFICADO FITOSSANITÁRIO', 105, 15, { align: 'center' });
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'bold');
-        doc.text('PHYTOSANITARY CERTIFICATE', 105, 20, { align: 'center' });
-        
-        try {
-            doc.addImage(govLogo, 'PNG', 15, 8, 20, 20);
-        } catch (e) {
-            console.error("Error adding govLogo:", e);
-        }
-
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text('MINISTÉRIO DA AGRICULTURA, PECUÁRIA E ABASTECIMENTO', 105, 25, { align: 'center' });
-        doc.text('DEPARTAMENTO DE SANIDADE VEGETAL', 105, 29, { align: 'center' });
-        doc.text('ORGANIZAÇÃO NACIONAL DE PROTEÇÃO FITOSSANITÁRIA DO BRASIL', 105, 33, { align: 'center' });
-        doc.text('PLANT PROTECTION ORGANIZATION OF BRAZIL', 105, 37, { align: 'center' });
-
-
-        const drawTextBox = (x: number, y: number, width: number, height: number, label: string, text: string) => {
-            doc.rect(x, y, width, height);
-            doc.setFontSize(6);
-            doc.setFont('helvetica', 'bold');
-            doc.text(label, x + 1, y + 3);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'normal');
-            doc.text(doc.splitTextToSize(text, width - 4), x + 2, y + 7);
-        };
-        
-        // Fields
-        drawTextBox(15, 40, 180, 10, '1. Para: Organização Nacional de Proteção Fitossanitária de / To: Plant Protection Organization(s) of', 'INDIA');
-        drawTextBox(15, 50, 90, 20, '2. Nome e endereço do exportador / Name and address of exporter', formData.draft_bl_shipper || '');
-        drawTextBox(105, 50, 90, 20, '3. Nome e endereço do destinatário declarado / Declared name and address of consignee', formData.draft_fito_consignee || '');
-        drawTextBox(15, 70, 90, 10, '4. Lugar de Origem / Place of Origin', 'MATO GROSSO - BRASIL');
-        drawTextBox(105, 70, 45, 10, '5. Meios de transporte declarados / Declared means of conveyance', 'MARÍTIMO / MARITIME');
-        drawTextBox(150, 70, 45, 10, '6. Porto de descarga / Declared point of entry', formData.portoDescargaNome || '');
-
-        
-        const packageDesc = `SACAS DE POLIPROPILENO USADAS, LIMPAS E EM BOM ESTADO DE CONSERVAÇÃO CONTENDO ${formData.produtoNome.toUpperCase()} / USED POLYPROPYLENE BAGS, CLEAN AND IN GOOD STATE OF CONSERVATION CONTAINING ${formData.produtoNome.toUpperCase()}`
-        drawTextBox(15, 80, 90, 20, '7. Número e descrição dos volumes / Number and description of packages', packageDesc);
-        
-        doc.rect(105, 80, 90, 20);
-        doc.setFontSize(6);
-        doc.setFont('helvetica', 'bold');
-        doc.text('8. Nome do produto e quantidade declarada / Name of product and quantity declared', 106, 83);
-        doc.setFontSize(8);
-        doc.setFont('helvetica', 'normal');
-        doc.text(doc.splitTextToSize(formData.draft_fito_description || '', 86), 107, 87);
-        doc.text(doc.splitTextToSize(formData.quantidade || '', 86), 160, 95, {align: 'right'});
-
-        drawTextBox(15, 100, 90, 10, '9. Marcas distintas / Distinguishing marks', `NAVIO / VESSEL:\n${formData.navio || ''}\n\nCONHECIMENTO DE EMBARQUE / BILL OF LADING: ${formData.documentos_pos_embarque?.find(d => d.nome === 'BL')?.numero || ''}`);
-        drawTextBox(105, 100, 90, 10, '10. Nome científico das plantas / Botanical name of plants', 'Sesamum indicum');
-
-        drawTextBox(15, 110, 180, 20, '11. Pelo presente certifica-se que os vegetais, seus produtos ou outros artigos regulamentados aqui descritos foram inspecionados e/ou testados de acordo com os procedimentos oficiais adequados e considerados livres de pragas quarentenárias especificadas pela parte contratante importadora e que cumprem os requisitos fitossanitários vigentes da parte contratante importadora, incluídos os relativos às pragas não quarentenárias regulamentadas. / This is to certify that the plants, plant products or other regulated articles described herein have been inspected and/or tested according to appropriate official procedures and are considered to be free from the quarantine pests specified by the importing contracting party and to conform with the current phytosanitary requirements of the importing contracting party, including those for regulated non-quarantine pests.', '');
-
-        // Additional Declaration
-        drawTextBox(15, 130, 180, 20, 'DECLARAÇÃO ADICIONAL / ADDITIONAL DECLARATION', `DATA DE INSPEÇÃO...: ${formData.draft_fito_date || 'XX/NOV/2025'}\nINSPECTION DATE......: ${formData.draft_fito_date || 'NOV/XX/2025'}\n\nThe consignment is free from quarantine weed seeds and soil contamination.\nFIT FOR HUMAN CONSUMPTION.`);
-
-        // Disinfection Treatment
-        doc.rect(15, 150, 180, 5);
-        doc.setFontSize(8).setFont('helvetica', 'bold').text('TRATAMENTO DE DESINFESTAÇÃO E/OU DESINFECÇÃO / DISINFESTATION AND/OR DISINFECTION TREATMENT', 105, 153.5, { align: 'center' });
-
-        drawTextBox(15, 155, 30, 10, '12. Data do Tratamento / Date of Treatment', 'NONE');
-        drawTextBox(45, 155, 30, 10, '13. Tratamento / Treatment', 'NONE');
-        drawTextBox(75, 155, 30, 10, '14. Produto químico / Chemical (active ingredient)', 'NONE');
-        drawTextBox(105, 155, 30, 10, '15. Concentração / Concentration', 'NONE');
-        drawTextBox(135, 155, 30, 10, '16. Duração e Temperatura / Duration and Temperature', 'NONE');
-        drawTextBox(165, 155, 30, 10, '17. Informação adicional / Additional information', 'NONE');
-        
-        // Footer
-        drawTextBox(15, 165, 60, 20, '18. Carimbo da Organização / Stamp of organization', '');
-        drawTextBox(75, 165, 60, 10, '19. Lugar de Expedição / Place of issue', '');
-        drawTextBox(135, 165, 60, 10, '20. Data de emissão / Date of issue', '');
-        drawTextBox(75, 175, 60, 10, '21. Nome do Fiscal Federal Agropecuário autorizado / Name of authorized officer', '');
-        drawTextBox(135, 175, 60, 10, '22. Assinatura do Fiscal Federal Agropecuário autorizado / Signature of authorized officer', '');
-
-
-        // ======== DRAFT BL (Bill of Lading) ========
-        doc.addPage();
-        const logoUrl = localStorage.getItem('system_logo');
-
-        if (logoUrl) {
-            try {
-                doc.addImage(logoUrl, 'PNG', 15, 10, 50, 10);
-            } catch (e) {
-                console.error("Error adding company logo:", e);
-            }
-        }
-        
-        doc.setFontSize(18);
-        doc.setFont('helvetica', 'bold');
-        doc.text('DRAFT - BILL OF LADING', 105, 20, { align: 'center' });
-
-        const drawBlBox = (x: number, y: number, width: number, height: number, label: string, text: string) => {
-            doc.rect(x, y, width, height);
-            doc.setFontSize(8);
-            doc.setFont('helvetica', 'bold');
-            doc.text(label, x + 1, y + 4);
-            doc.setFontSize(10);
-            doc.setFont('helvetica', 'normal');
-            doc.text(doc.splitTextToSize(text, width - 4), x + 2, y + 10);
-        };
-        
-        drawBlBox(15, 30, 90, 30, '1. Shipper', formData.draft_bl_shipper || '');
-        drawBlBox(105, 30, 90, 30, '2. B/L No.', formData.documentos_pos_embarque?.find(d => d.nome === 'BL')?.numero || '');
-        drawBlBox(15, 60, 90, 30, '3. Consignee', formData.draft_bl_consignee || '');
-        drawBlBox(105, 60, 90, 30, '4. Notify Party', formData.draft_bl_notify || '');
-        drawBlBox(15, 90, 90, 20, '5. Vessel and Voyage', `${formData.navio || ''} / ${formData.viagem || ''}`);
-        drawBlBox(105, 90, 90, 20, '6. Port of Loading', formData.portoEmbarqueNome || '');
-        drawBlBox(15, 110, 90, 20, '7. Port of Discharge', formData.portoDescargaNome || '');
-        drawBlBox(105, 110, 90, 20, '8. Final Destination', formData.portoDescargaNome || '');
-        
-        const containerText = formData.containers.map((c: any) => `${c.numero} / ${c.lacre} / ${c.gross_weight} KGS`).join('\n');
-        drawBlBox(15, 130, 90, 40, '9. Container(s) and Seal(s)', containerText);
-        drawBlBox(105, 130, 90, 40, '10. Marks and Numbers', formData.draft_bl_marks || '');
-        drawBlBox(15, 170, 180, 40, '11. Description of Goods', `${formData.quantidade || ''}\n${formData.draft_bl_description || ''}`);
-
-
-        doc.save(`Drafts_${formData.processo_interno || 'processo'}.pdf`);
-        toast({
-            title: "PDFs Gerados!",
-            description: "Os drafts foram gerados com sucesso.",
-        });
-    };
 
     const generateOriginalDocsPdf = async () => {
         const doc = new jsPDF();
@@ -1405,100 +1258,90 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             <AccordionContent>
                 <Card>
                     <CardHeader>
-                        <div className="flex justify-between items-center">
-                            <CardTitle className='text-base'>Dados para Geração de Drafts</CardTitle>
-                             <Button size="sm" variant="outline" type="button" onClick={generatePdf}>
-                                <FileDown className="mr-2 h-4 w-4" /> Gerar Pacote de Drafts (PDF)
-                            </Button>
-                        </div>
+                        <CardTitle className='text-base'>Anexar Documentos de Draft</CardTitle>
+                        <CardDescription>Carregue os ficheiros PDF para os drafts do BL, Fito e Certificado de Origem.</CardDescription>
                     </CardHeader>
-                    <CardContent className='space-y-6'>
-                       <Tabs defaultValue="bl" className="w-full">
-                            <TabsList className="grid w-full grid-cols-3">
-                                <TabsTrigger value="bl">Draft BL</TabsTrigger>
-                                <TabsTrigger value="fito">Draft Fito</TabsTrigger>
-                                <TabsTrigger value="co">Draft Origem</TabsTrigger>
-                            </TabsList>
-                            <TabsContent value="bl">
-                                <div className="p-4 border rounded-lg space-y-4 mt-4">
-                                     <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2">
-                                            <Label htmlFor="draft_bl_shipper">Shipper (Exportador)</Label>
-                                            <Textarea id="draft_bl_shipper" value={formData.draft_bl_shipper || ''} onChange={e => handleInputChange('draft_bl_shipper', e.target.value)} placeholder="Nome completo e endereço do exportador" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="draft_bl_consignee">Consignee (Importador)</Label>
-                                            <Textarea id="draft_bl_consignee" value={formData.draft_bl_consignee || ''} onChange={e => handleInputChange('draft_bl_consignee', e.target.value)} placeholder="Nome completo e endereço do importador" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="draft_bl_notify">Notify Party (Notificar)</Label>
-                                            <Textarea id="draft_bl_notify" value={formData.draft_bl_notify || ''} onChange={e => handleInputChange('draft_bl_notify', e.target.value)} placeholder="A quem notificar na chegada" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="draft_bl_marks">Marks and Numbers</Label>
-                                            <Textarea id="draft_bl_marks" value={formData.draft_bl_marks || ''} onChange={e => handleInputChange('draft_bl_marks', e.target.value)} placeholder="Marcas e números dos pacotes" />
-                                        </div>
-                                         <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="draft_bl_description">Description of Goods</Label>
-                                            <Textarea id="draft_bl_description" value={formData.draft_bl_description || ''} onChange={e => handleInputChange('draft_bl_description', e.target.value)} placeholder="Descrição detalhada da mercadoria" />
-                                        </div>
+                    <CardContent className='space-y-6 pt-6'>
+                         <div className="space-y-2">
+                            <Label>Draft BL (Bill of Lading)</Label>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    value={formData.draft_bl_file ? formData.draft_bl_file.name : 'Nenhum ficheiro anexado.'}
+                                    readOnly
+                                    className="flex-1"
+                                />
+                                {formData.draft_bl_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.draft_bl_file.url} download={formData.draft_bl_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_bl_file.name}`}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
                                     </div>
-                                </div>
-                            </TabsContent>
-                            <TabsContent value="fito">
-                                 <div className="p-4 border rounded-lg space-y-4 mt-4">
-                                     <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="draft_fito_consignee">To consignee</Label>
-                                            <Textarea id="draft_fito_consignee" value={formData.draft_fito_consignee || ''} onChange={e => handleInputChange('draft_fito_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="draft_fito_description">Description of Goods</Label>
-                                            <Textarea id="draft_fito_description" value={formData.draft_fito_description || ''} onChange={e => handleInputChange('draft_fito_description', e.target.value)} placeholder="Descrição da mercadoria" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="draft_fito_treatment">Treatment</Label>
-                                            <Input id="draft_fito_treatment" value={formData.draft_fito_treatment || ''} onChange={e => handleInputChange('draft_fito_treatment', e.target.value)} placeholder="Ex: PHOSPHINE" />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="draft_fito_date">Date</Label>
-                                            <Input id="draft_fito_date" value={formData.draft_fito_date || ''} onChange={e => handleInputChange('draft_fito_date', e.target.value)} placeholder="DD/MM/YYYY to DD/MM/YYYY" />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="draft_fito_concentration">Concentration</Label>
-                                            <Input id="draft_fito_concentration" value={formData.draft_fito_concentration || ''} onChange={e => handleInputChange('draft_fito_concentration', e.target.value)} placeholder="Ex: 2G/M3 - 120H" />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="draft_fito_chemical">Declared name and concentration</Label>
-                                            <Input id="draft_fito_chemical" value={formData.draft_fito_chemical || ''} onChange={e => handleInputChange('draft_fito_chemical', e.target.value)} placeholder="Ex: CALCIUM PHOSPHIDE 98%" />
-                                        </div>
-                                    </div>
-                                 </div>
-                            </TabsContent>
-                            <TabsContent value="co">
-                                <div className="p-4 border rounded-lg space-y-4 mt-4">
-                                     <div className="grid md:grid-cols-2 gap-4">
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="draft_co_consignee">Consigned to</Label>
-                                            <Textarea id="draft_co_consignee" value={formData.draft_co_consignee || ''} onChange={e => handleInputChange('draft_co_consignee', e.target.value)} placeholder="Nome e endereço do consignatário" />
-                                        </div>
-                                        <div className="space-y-2 md:col-span-2">
-                                            <Label htmlFor="draft_co_description">Description of Goods</Label>
-                                            <Textarea id="draft_co_description" value={formData.draft_co_description || ''} onChange={e => handleInputChange('draft_co_description', e.target.value)} placeholder="Descrição da mercadoria" />
-                                        </div>
-                                        <div className="space-y-2">
-                                            <Label htmlFor="draft_co_hs_code">HS Code</Label>
-                                            <Input id="draft_co_hs_code" value={formData.draft_co_hs_code || ''} onChange={e => handleInputChange('draft_co_hs_code', e.target.value)} placeholder="NCM do produto" />
-                                        </div>
-                                         <div className="space-y-2">
-                                            <Label htmlFor="draft_co_invoice">Invoice No.</Label>
-                                            <Input id="draft_co_invoice" value={formData.draft_co_invoice || ''} onChange={e => handleInputChange('draft_co_invoice', e.target.value)} placeholder="Número da Invoice" />
-                                        </div>
-                                    </div>
-                                 </div>
-                            </TabsContent>
-                        </Tabs>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar Draft BL" onClick={() => triggerFileUpload('draft_bl_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
 
+                        <div className="space-y-2">
+                            <Label>Draft Certificado Fitossanitário</Label>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    value={formData.draft_fito_file ? formData.draft_fito_file.name : 'Nenhum ficheiro anexado.'}
+                                    readOnly
+                                    className="flex-1"
+                                />
+                                {formData.draft_fito_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.draft_fito_file.url} download={formData.draft_fito_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_fito_file.name}`}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar Draft Fito" onClick={() => triggerFileUpload('draft_fito_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
+                        
+                        <div className="space-y-2">
+                            <Label>Draft Certificado de Origem</Label>
+                            <div className="flex items-center gap-2">
+                                <Input 
+                                    value={formData.draft_co_file ? formData.draft_co_file.name : 'Nenhum ficheiro anexado.'}
+                                    readOnly
+                                    className="flex-1"
+                                />
+                                {formData.draft_co_file ? (
+                                    <div className="flex items-center gap-1">
+                                        <a href={formData.draft_co_file.url} download={formData.draft_co_file.name}>
+                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_co_file.name}`}>
+                                                <Check className="h-4 w-4 text-green-600" />
+                                            </Button>
+                                        </a>
+                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                            <XCircle className="h-4 w-4" />
+                                        </Button>
+                                    </div>
+                                ) : (
+                                    <Button variant="outline" size="icon" type="button" title="Anexar Draft Origem" onClick={() => triggerFileUpload('draft_co_file')}>
+                                        <Upload className="h-4 w-4" />
+                                    </Button>
+                                )}
+                            </div>
+                        </div>
                     </CardContent>
                 </Card>
             </AccordionContent>
