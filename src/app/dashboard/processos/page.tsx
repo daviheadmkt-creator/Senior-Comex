@@ -32,18 +32,29 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
-import { collection, deleteDoc, doc, query, where } from 'firebase/firestore';
+import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { format, parseISO } from 'date-fns';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
-    if (status.includes('Aguardando') || status.includes('EM_APROVAÇÃO') || status.includes('Iniciado')) return 'secondary';
-    if (status.includes('Confirmado') || status.includes('APROVADOS') || status.includes('Desembaraçada') || status.includes('Deferido') || status.includes('Realizada') || status.includes('trânsito')) return 'default';
-    if (status.includes('Atrasado') || status.includes('Cancelado') || status.includes('CORRECAO') || status.includes('Indeferido')) return 'destructive';
-    if (status.includes('Concluído') || status.includes('PRONTO')) return 'outline';
-    return 'default';
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('trânsito') || lowerStatus.includes('confirmado') || lowerStatus.includes('aprovados') || lowerStatus.includes('desembaraçada') || lowerStatus.includes('deferido') || lowerStatus.includes('realizada')) return 'default';
+    if (lowerStatus.includes('concluído') || lowerStatus.includes('pronto')) return 'outline';
+    if (lowerStatus.includes('aguardando') || lowerStatus.includes('iniciado')) return 'secondary';
+    if (lowerStatus.includes('atrasado') || lowerStatus.includes('cancelado') || lowerStatus.includes('correcao')) return 'destructive';
+    return 'outline';
+};
+
+const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+        return format(parseISO(dateString), 'dd/MM/yyyy');
+    } catch {
+        return 'Data Inválida';
+    }
 }
 
 export default function GestaoProcessosPage() {
@@ -62,7 +73,8 @@ export default function GestaoProcessosPage() {
     if (!processos) return [];
     return processos.filter(processo => 
       (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase()))
+      (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase())) ||
+      (processo.po_number && processo.po_number.toLowerCase().includes(searchTerm.toLowerCase()))
     );
   }, [processos, searchTerm]);
 
@@ -89,7 +101,7 @@ export default function GestaoProcessosPage() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
-                placeholder="Buscar por Processo ou Cliente..." 
+                placeholder="Buscar por Processo, Cliente ou PO..." 
                 className="pl-8" 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -100,9 +112,12 @@ export default function GestaoProcessosPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Processo Interno</TableHead>
+              <TableHead>PO</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Produto</TableHead>
+              <TableHead>Navio</TableHead>
               <TableHead>Destino</TableHead>
+              <TableHead>ETA</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ação</TableHead>
             </TableRow>
@@ -110,7 +125,7 @@ export default function GestaoProcessosPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={6} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                     <div className='flex justify-center items-center p-4'>
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
@@ -120,9 +135,12 @@ export default function GestaoProcessosPage() {
             {!isLoading && filteredProcessos.map((processo) => (
               <TableRow key={processo.id}>
                 <TableCell className="font-medium">{processo.processo_interno}</TableCell>
+                <TableCell>{processo.po_number}</TableCell>
                 <TableCell>{processo.exportadorNome}</TableCell>
                 <TableCell>{processo.produtoNome}</TableCell>
+                <TableCell>{processo.navio}</TableCell>
                 <TableCell>{processo.destino}</TableCell>
+                <TableCell>{formatDate(processo.eta)}</TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(processo.status)}>
                     {processo.status}
@@ -160,7 +178,7 @@ export default function GestaoProcessosPage() {
             ))}
              {!isLoading && filteredProcessos.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={6} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
                 </TableRow>
             )}
           </TableBody>
