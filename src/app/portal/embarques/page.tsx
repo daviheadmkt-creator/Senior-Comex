@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -8,7 +9,6 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -18,79 +18,44 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
-import { Eye, ClipboardCheck } from 'lucide-react';
-import {
-    Dialog,
-    DialogContent,
-    DialogDescription,
-    DialogHeader,
-    DialogTitle,
-    DialogTrigger,
-} from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection, query, where } from 'firebase/firestore';
+import { format, parseISO } from 'date-fns';
 
-const embarques = [
-  {
-    id: 1,
-    referencia: 'SEN2378-25',
-    po: '3426B',
-    analista: 'Ana Silva',
-    cliente: 'Agrícola Exemplo LTDA',
-    produto: 'Soja em Grãos',
-    navio: 'MSC CARMEN',
-    origem: 'Santos',
-    destino: 'Xangai',
-    eta: '08/09/2024',
-    deadline: '31/07/2024',
-    status: 'Em trânsito',
-     timeline: [
-        {date: '03/07/2024', event: 'Reserva feita no CMA CGM BUZIOS'},
-        {date: '27/07/2024', event: 'Embarque previsto'},
-        {date: '31/07/2024', event: 'Carga embarcada'},
-        {date: '08/09/2024', event: 'Previsão de chegada'},
-    ]
-  },
-];
 
-const getStatusVariant = (status: string) => {
-    switch (status.toLowerCase()) {
-        case 'em trânsito':
-            return 'default';
-        case 'concluído':
-            return 'default';
-        case 'aguardando embarque':
-            return 'secondary';
-        case 'atrasado':
-            return 'destructive';
-        default:
-            return 'outline';
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+    if (!status) return 'outline';
+    const lowerStatus = status.toLowerCase();
+    if (lowerStatus.includes('trânsito') || lowerStatus.includes('confirmado') || lowerStatus.includes('aprovados') || lowerStatus.includes('desembaraçada') || lowerStatus.includes('deferido') || lowerStatus.includes('realizada')) return 'default';
+    if (lowerStatus.includes('concluído') || lowerStatus.includes('pronto')) return 'outline';
+    if (lowerStatus.includes('aguardando') || lowerStatus.includes('iniciado')) return 'secondary';
+    if (lowerStatus.includes('atrasado') || lowerStatus.includes('cancelado') || lowerStatus.includes('correcao')) return 'destructive';
+    return 'outline';
+};
+
+const formatDate = (dateString: string | null | undefined) => {
+    if (!dateString) return 'N/A';
+    try {
+        return format(parseISO(dateString), 'dd/MM/yyyy');
+    } catch {
+        return 'Data Inválida';
     }
 }
 
-const Timeline = ({ events }: { events: { date: string; event: string }[] }) => (
-  <div className="space-y-8 mt-4">
-    <ul className="space-y-6">
-      {events.map((item, index) => (
-        <li key={index} className="flex items-start gap-4">
-          <div className="flex flex-col items-center">
-            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground">
-              <ClipboardCheck className="h-4 w-4" />
-            </div>
-            {index < events.length - 1 && (
-              <div className="h-12 w-px bg-border" />
-            )}
-          </div>
-          <div>
-            <p className="font-semibold">{item.event}</p>
-            <time className="text-sm text-muted-foreground">{item.date}</time>
-          </div>
-        </li>
-      ))}
-    </ul>
-  </div>
-);
-
 
 export default function ClientEmbarquesPage() {
+  const firestore = useFirestore();
+  
+  // For now, we will assume the client can see all active processes.
+  // In a real implementation, this would be filtered by the client's ID.
+  const processosQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'processos'), where('status', 'not-in', ['Concluído', 'Cancelado']));
+  }, [firestore]);
+
+  const { data: processosAtivos, isLoading } = useCollection(processosQuery);
+
   return (
     <Card>
       <CardHeader>
@@ -109,56 +74,48 @@ export default function ClientEmbarquesPage() {
               <TableHead>Navio</TableHead>
               <TableHead>Origem / Destino</TableHead>
               <TableHead>ETA</TableHead>
-              <TableHead>Deadline</TableHead>
+              <TableHead>Deadline Draft</TableHead>
               <TableHead>Status</TableHead>
-              <TableHead>Timeline</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {embarques.map((embarque) => (
-              <TableRow key={embarque.id}>
-                <TableCell className="font-medium">{embarque.po}</TableCell>
-                 <TableCell>
-                    <div>{embarque.analista}</div>
-                    <div className="text-xs text-muted-foreground">{embarque.cliente}</div>
+            {isLoading && (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  <Loader2 className="mx-auto h-6 w-6 animate-spin" />
                 </TableCell>
-                <TableCell>{embarque.produto}</TableCell>
-                <TableCell>{embarque.navio}</TableCell>
-                <TableCell>{embarque.origem} / {embarque.destino}</TableCell>
-                <TableCell>{embarque.eta}</TableCell>
-                <TableCell>{embarque.deadline}</TableCell>
+              </TableRow>
+            )}
+            {!isLoading && processosAtivos && processosAtivos.map((processo) => (
+              <TableRow key={processo.id}>
+                <TableCell className="font-medium">{processo.po_number}</TableCell>
                 <TableCell>
-                    <Badge variant={getStatusVariant(embarque.status)} className={
-                        embarque.status === 'Em trânsito' ? 'bg-blue-100 text-blue-800' :
-                        embarque.status === 'Aguardando embarque' ? 'bg-yellow-100 text-yellow-800' :
-                        embarque.status === 'Atrasado' ? 'bg-red-100 text-red-800' : ''
-                    }>
-                        {embarque.status}
+                    <div>{processo.analistaNome || 'N/A'}</div>
+                    <div className="text-xs text-muted-foreground">{processo.exportadorNome}</div>
+                </TableCell>
+                <TableCell>{processo.produtoNome}</TableCell>
+                <TableCell>{processo.navio}</TableCell>
+                <TableCell>{processo.portoEmbarqueNome} / {processo.portoDescargaNome}</TableCell>
+                <TableCell>{formatDate(processo.eta)}</TableCell>
+                <TableCell>{formatDate(processo.deadline_draft)}</TableCell>
+                <TableCell>
+                    <Badge variant={getStatusVariant(processo.status)}>
+                        {processo.status}
                     </Badge>
-                </TableCell>
-                <TableCell>
-                    <Dialog>
-                        <DialogTrigger asChild>
-                             <Button variant="outline" size="icon" title="Visualizar Timeline">
-                                <Eye className="h-4 w-4" />
-                            </Button>
-                        </DialogTrigger>
-                        <DialogContent className="sm:max-w-md">
-                            <DialogHeader>
-                                <DialogTitle>Timeline do Embarque - {embarque.referencia}</DialogTitle>
-                                <DialogDescription>
-                                    Acompanhe os eventos do embarque em ordem cronológica.
-                                </DialogDescription>
-                            </DialogHeader>
-                            <Timeline events={embarque.timeline} />
-                        </DialogContent>
-                    </Dialog>
                 </TableCell>
               </TableRow>
             ))}
+             {!isLoading && (!processosAtivos || processosAtivos.length === 0) && (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  Nenhum embarque ativo encontrado.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>
     </Card>
   );
 }
+
