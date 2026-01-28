@@ -1417,11 +1417,11 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Data Solicitação</Label>
-                                        <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} compact />
+                                        <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} />
                                     </div>
                                     <div className="space-y-2">
                                         <Label>Data Recebimento</Label>
-                                        <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} compact />
+                                        <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
                                     </div>
                                     <div className='flex items-end'>
                                         <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
@@ -1686,14 +1686,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
-                                                    compact
                                                     date={docItem.data_emissao} 
                                                     onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)} 
                                                 />
                                             </TableCell>
                                             <TableCell>
                                                 <DatePicker 
-                                                    compact
                                                     date={docItem.data_liberacao} 
                                                     onDateChange={date => handlePostShipmentDocChange(index, 'data_liberacao', date)} 
                                                 />
