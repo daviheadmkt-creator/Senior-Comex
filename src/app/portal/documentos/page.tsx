@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -33,11 +33,10 @@ import { cn } from '@/lib/utils';
 
 function ClientDocumentsContent() {
   const firestore = useFirestore();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const processoIdFromParam = searchParams.get('processo_id');
   const exportadorIdFromParam = searchParams.get('exportadorId'); // Get client ID
-
-  const [selectedProcessoId, setSelectedProcessoId] = useState<string>('');
 
   // Query processes for the specific client
   const processosCollection = useMemoFirebase(() => {
@@ -50,13 +49,14 @@ function ClientDocumentsContent() {
 
   const { data: processos, isLoading } = useCollection(processosCollection);
 
-  useEffect(() => {
-    if (processoIdFromParam) {
-      setSelectedProcessoId(processoIdFromParam);
-    } else if (processos && processos.length > 0 && !selectedProcessoId) {
-      setSelectedProcessoId(processos[0].id);
-    }
-  }, [processoIdFromParam, processos, selectedProcessoId]);
+  // The selected ID is derived directly from the URL or the loaded data.
+  const selectedProcessoId = processoIdFromParam || (processos && processos.length > 0 ? processos[0].id : '');
+
+  // When the user selects a new process, update the URL.
+  const handleSelectChange = (newProcessoId: string) => {
+    router.push(`/portal/documentos?processo_id=${newProcessoId}&exportadorId=${exportadorIdFromParam}`);
+  };
+
 
   const selectedProcesso = useMemo(() => {
     if (!processos || !selectedProcessoId) return null;
@@ -104,7 +104,7 @@ function ClientDocumentsContent() {
                 <Label htmlFor="embarque-select">Selecione um Embarque</Label>
                  <Select 
                     value={selectedProcessoId} 
-                    onValueChange={setSelectedProcessoId}
+                    onValueChange={handleSelectChange}
                     disabled={isLoading || !processos || processos.length === 0}
                 >
                     <SelectTrigger id="embarque-select">
