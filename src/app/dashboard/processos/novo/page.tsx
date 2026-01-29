@@ -750,7 +750,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                         const reader = new FileReader();
                         reader.readAsDataURL(imgData);
                         await new Promise(resolve => reader.onload = resolve);
-                        doc.addImage(reader.result as string, 'JPEG', 15, 40, 180, 160, undefined, 'FAST');
+                        const format = docItem.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
+                        doc.addImage(reader.result as string, format, 15, 40, 180, 160, undefined, 'FAST');
                     } else if (docItem.file.type === 'application/pdf') {
                         doc.rect(14, 40, 182, 217);
                         doc.setFontSize(16);
@@ -811,7 +812,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                         const reader = new FileReader();
                         reader.readAsDataURL(imgData);
                         await new Promise(resolve => reader.onload = resolve);
-                        doc.addImage(reader.result as string, 'JPEG', 15, 40, 180, 160, undefined, 'FAST');
+                        const format = nf.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
+                        doc.addImage(reader.result as string, format, 15, 40, 180, 160, undefined, 'FAST');
                     } else if (nf.file.type === 'application/pdf') {
                          doc.rect(14, 40, 182, 217);
                         doc.setFontSize(16);
