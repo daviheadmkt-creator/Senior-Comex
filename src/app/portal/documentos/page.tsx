@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -32,7 +32,7 @@ import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@
 import { collection, query, where, doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
-function ClientDocumentsContent() {
+export default function ClientDocumentsPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,9 +50,9 @@ function ClientDocumentsContent() {
   const clientId = useMemo(() => {
     if (!currentUserData) return null;
     if (currentUserData.funcao !== 'Cliente') {
-      return exportadorIdFromParam;
+      return exportadorIdFromParam || null;
     }
-    return currentUserData.partnerId;
+    return currentUserData.partnerId || null;
   }, [currentUserData, exportadorIdFromParam]);
 
   const processosCollection = useMemoFirebase(() => {
@@ -176,12 +176,4 @@ function ClientDocumentsContent() {
         </Card>
     </div>
   );
-}
-
-export default function ClientDocumentsPage() {
-    return (
-        <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <ClientDocumentsContent />
-        </Suspense>
-    )
 }

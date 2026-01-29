@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useMemo, Suspense } from 'react';
+import { useMemo } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
@@ -43,7 +43,7 @@ const formatDate = (dateString: string | null | undefined) => {
     }
 }
 
-function ClientEmbarquesContent() {
+export default function ClientEmbarquesPage() {
   const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -61,10 +61,10 @@ function ClientEmbarquesContent() {
     if (!currentUserData) return null;
     // If the user is an admin/internal, they can view any client via URL param.
     if (currentUserData.funcao !== 'Cliente') {
-      return exportadorIdFromParams;
+      return exportadorIdFromParams || null;
     }
     // If the user is a client, they can ONLY see their own data.
-    return currentUserData.partnerId;
+    return currentUserData.partnerId || null;
   }, [currentUserData, exportadorIdFromParams]);
 
 
@@ -180,13 +180,4 @@ function ClientEmbarquesContent() {
       </CardContent>
     </Card>
   );
-}
-
-
-export default function ClientEmbarquesPage() {
-    return (
-        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
-            <ClientEmbarquesContent />
-        </Suspense>
-    )
 }
