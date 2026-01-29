@@ -1,6 +1,7 @@
-
 'use client';
 
+import { useState, useMemo, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -17,7 +18,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { DownloadCloud, UploadCloud } from 'lucide-react';
+import { DownloadCloud, Loader2 } from 'lucide-react';
 import {
   Select,
   SelectContent,
@@ -26,34 +27,59 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
+import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { collection } from 'firebase/firestore';
 
-const documents = [
-  {
-    referencia: 'SEN2378-25',
-    docs: [
-        { name: 'Commercial Invoice', file: 'INV_SEN2378-25.pdf' },
-        { name: 'Bill of Lading (BL)', file: 'BL_SEN2378-25.pdf' },
-        { name: 'Packing List', file: 'PL_SEN2378-25.pdf' },
-    ]
-  },
-  {
-    referencia: 'SEN2378-26',
-    docs: [
-         { name: 'Commercial Invoice', file: 'INV_SEN2378-26.pdf' },
-         { name: 'Bill of Lading (BL)', file: 'BL_SEN2378-26.pdf' },
-    ]
-  },
-];
+function ClientDocumentsContent() {
+  const firestore = useFirestore();
+  const searchParams = useSearchParams();
+  const processoIdFromParam = searchParams.get('processo_id');
 
-const embarques = [
-  { id: 1, referencia: 'SEN2378-25' },
-  { id: 2, referencia: 'SEN2378-26' },
-  { id: 4, referencia: 'SEN2378-28' },
-];
+  const [selectedProcessoId, setSelectedProcessoId] = useState<string>('');
+
+  const processosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'processos') : null, [firestore]);
+  const { data: processos, isLoading } = useCollection(processosCollection);
+
+  useEffect(() => {
+    if (processoIdFromParam) {
+      setSelectedProcessoId(processoIdFromParam);
+    } else if (processos && processos.length > 0 && !selectedProcessoId) {
+      setSelectedProcessoId(processos[0].id);
+    }
+  }, [processoIdFromParam, processos, selectedProcessoId]);
+
+  const selectedProcesso = useMemo(() => {
+    if (!processos || !selectedProcessoId) return null;
+    return processos.find(p => p.id === selectedProcessoId);
+  }, [processos, selectedProcessoId]);
+
+  const documents = useMemo(() => {
+    if (!selectedProcesso) return [];
+    
+    const docs: { name: string; file: { name: string; url: string } }[] = [];
+    
+    // Drafts
+    if (selectedProcesso.draft_bl_file) docs.push({ name: 'Draft: Bill of Lading (BL)', file: selectedProcesso.draft_bl_file });
+    if (selectedProcesso.draft_fito_file) docs.push({ name: 'Draft: Certificado Fitossanitário', file: selectedProcesso.draft_fito_file });
+    if (selectedProcesso.draft_co_file) docs.push({ name: 'Draft: Certificado de Origem', file: selectedProcesso.draft_co_file });
+    
+    // Official Docs
+    if (selectedProcesso.due_file) docs.push({ name: 'DUE (Declaração Única de Exportação)', file: selectedProcesso.due_file });
+    if (selectedProcesso.lpco_file) docs.push({ name: 'LPCO (Licenças, Permissões, Certificados e Outros)', file: selectedProcesso.lpco_file });
+
+    // Post-shipment docs
+    if (selectedProcesso.documentos_pos_embarque) {
+        selectedProcesso.documentos_pos_embarque.forEach((doc: any) => {
+            if (doc.file) {
+                docs.push({ name: doc.nome, file: doc.file });
+            }
+        });
+    }
+
+    return docs;
+  }, [selectedProcesso]);
 
 
-export default function ClientDocumentsPage() {
   return (
     <div className="space-y-6">
         <Card>
@@ -66,14 +92,18 @@ export default function ClientDocumentsPage() {
           <CardContent>
             <div className="max-w-sm mb-6">
                 <Label htmlFor="embarque-select">Selecione um Embarque</Label>
-                <Select defaultValue="SEN2378-25">
+                 <Select 
+                    value={selectedProcessoId} 
+                    onValueChange={setSelectedProcessoId}
+                    disabled={isLoading || !processos || processos.length === 0}
+                >
                     <SelectTrigger id="embarque-select">
-                        <SelectValue placeholder="Selecione um embarque" />
+                        <SelectValue placeholder={isLoading ? 'A carregar embarques...' : 'Selecione um embarque'} />
                     </SelectTrigger>
                     <SelectContent>
-                        {embarques.map((emb) => (
-                            <SelectItem key={emb.id} value={emb.referencia}>
-                                {emb.referencia}
+                        {processos?.map((p) => (
+                            <SelectItem key={p.id} value={p.id}>
+                                {p.processo_interno || p.po_number || p.id}
                             </SelectItem>
                         ))}
                     </SelectContent>
@@ -83,59 +113,51 @@ export default function ClientDocumentsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nome do Documento</TableHead>
-                  <TableHead>Arquivo</TableHead>
+                  <TableHead>Ficheiro</TableHead>
                   <TableHead className="text-right">Ação</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {documents.find(d => d.referencia === 'SEN2378-25')?.docs.map((doc, index) => (
+                {isLoading && (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center">
+                            <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+                        </TableCell>
+                    </TableRow>
+                )}
+                {!isLoading && documents.length > 0 && documents.map((doc, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{doc.name}</TableCell>
-                    <TableCell className="text-muted-foreground">{doc.file}</TableCell>
+                    <TableCell className="text-muted-foreground">{doc.file.name}</TableCell>
                     <TableCell className="text-right">
-                        <Button variant="outline" size="sm">
-                            <DownloadCloud className="mr-2 h-4 w-4" />
-                            Download
-                        </Button>
+                        <a href={doc.file.url} download={doc.file.name}>
+                            <Button variant="outline" size="sm">
+                                <DownloadCloud className="mr-2 h-4 w-4" />
+                                Download
+                            </Button>
+                        </a>
                     </TableCell>
                   </TableRow>
                 ))}
+                 {!isLoading && documents.length === 0 && (
+                    <TableRow>
+                        <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
+                            Nenhum documento disponível para este embarque.
+                        </TableCell>
+                    </TableRow>
+                )}
               </TableBody>
             </Table>
           </CardContent>
         </Card>
-        <Card>
-            <CardHeader>
-                <CardTitle>Anexar Documentos</CardTitle>
-                <CardDescription>
-                    Envie seus documentos para análise da nossa equipe.
-                </CardDescription>
-            </CardHeader>
-            <CardContent>
-                <form className="grid md:grid-cols-2 gap-6 items-end">
-                     <div className="space-y-2">
-                        <Label htmlFor="doc-type">Tipo de Documento</Label>
-                         <Select>
-                            <SelectTrigger id="doc-type">
-                                <SelectValue placeholder="Selecione o tipo de documento" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="nota_fiscal">Nota Fiscal</SelectItem>
-                                <SelectItem value="comprovante">Comprovante de Pagamento</SelectItem>
-                                <SelectItem value="outros">Outros</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="file-upload">Selecionar Arquivo</Label>
-                        <Input id="file-upload" type="file" />
-                    </div>
-                    <div className="md:col-span-2 flex justify-end">
-                        <Button><UploadCloud className="mr-2 h-4 w-4" />Enviar Documento</Button>
-                    </div>
-                </form>
-            </CardContent>
-        </Card>
     </div>
   );
+}
+
+export default function ClientDocumentsPage() {
+    return (
+        <Suspense fallback={<div className="flex justify-center items-center h-64"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <ClientDocumentsContent />
+        </Suspense>
+    )
 }

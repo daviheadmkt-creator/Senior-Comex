@@ -2,6 +2,7 @@
 'use client';
 
 import { useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -46,6 +47,7 @@ const formatDate = (dateString: string | null | undefined) => {
 
 export default function ClientEmbarquesPage() {
   const firestore = useFirestore();
+  const router = useRouter();
   
   // For now, we will assume the client can see all active processes.
   // In a real implementation, this would be filtered by the client's ID.
@@ -56,12 +58,16 @@ export default function ClientEmbarquesPage() {
 
   const { data: processosAtivos, isLoading } = useCollection(processosQuery);
 
+  const handleRowClick = (processoId: string) => {
+      router.push(`/portal/documentos?processo_id=${processoId}`);
+  }
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Meus Embarques Ativos</CardTitle>
         <CardDescription>
-          Acompanhe o status e os detalhes dos seus embarques em tempo real.
+          Acompanhe o status e os detalhes dos seus embarques em tempo real. Clique num embarque para ver os documentos.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -87,7 +93,11 @@ export default function ClientEmbarquesPage() {
               </TableRow>
             )}
             {!isLoading && processosAtivos && processosAtivos.map((processo) => (
-              <TableRow key={processo.id}>
+              <TableRow 
+                key={processo.id} 
+                onClick={() => handleRowClick(processo.id)}
+                className="cursor-pointer"
+              >
                 <TableCell className="font-medium">{processo.po_number}</TableCell>
                 <TableCell>
                     <div>{processo.analistaNome || 'N/A'}</div>
@@ -118,4 +128,3 @@ export default function ClientEmbarquesPage() {
     </Card>
   );
 }
-
