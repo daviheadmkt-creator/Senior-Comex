@@ -133,7 +133,6 @@ const initialFormData = {
     mapa_status: 'RASCUNHO SALVO',
     lpco_file: null as { name: string; url: string } | null,
     navio_final: '',
-    viagem_final: '',
     awb_courier: '',
     analistaId: '',
     analistaNome: '',
@@ -286,10 +285,6 @@ useEffect(() => {
                 newState.navio_final = value ?? '';
             }
 
-            if (id === 'viagem') {
-                newState.viagem_final = value ?? '';
-            }
-
             // Logic to automatically update status
             const currentStatus = newState.status;
             let nextStatus = currentStatus;
@@ -315,7 +310,7 @@ useEffect(() => {
                 }
             }
             
-            if (newState.navio_final && newState.viagem_final) {
+            if (newState.navio_final) {
                  const hasBL = newState.documentos_pos_embarque?.some((d: any) => d.nome === 'BL' && d.file);
                  if (hasBL) {
                     nextStatus = "Em trânsito";
@@ -567,7 +562,7 @@ useEffect(() => {
 
  const getStepStatusIcon = (step: number) => {
     const { status, booking_number, due_status, mapa_status, documentos_pos_embarque, awb_courier,
-            notas_fiscais, containers, navio_final, viagem_final } = formData;
+            notas_fiscais, containers, navio_final } = formData;
     
     const statusNumber = processStatusOptions.indexOf(status);
 
@@ -593,7 +588,7 @@ useEffect(() => {
             if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Confirmação de Embarque
-            if (formData.navio_final && formData.viagem_final) {
+            if (formData.navio_final) {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
@@ -1607,14 +1602,10 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 <AccordionContent>
                     <Card>
                         <CardContent className="space-y-4 pt-6">
-                            <div className="grid md:grid-cols-2 gap-4">
+                            <div className="grid md:grid-cols-1 gap-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="navio_final">Navio Final</Label>
                                     <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Nome final do navio" />
-                                </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="viagem_final">Viagem Final</Label>
-                                    <Input id="viagem_final" value={formData.viagem_final || ''} onChange={e => handleInputChange('viagem_final', e.target.value)} placeholder="Viagem final" />
                                 </div>
                             </div>
                              <div className="grid md:grid-cols-2 gap-4">
