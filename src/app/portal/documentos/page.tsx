@@ -28,17 +28,26 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection } from 'firebase/firestore';
+import { collection, query, where } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
 function ClientDocumentsContent() {
   const firestore = useFirestore();
   const searchParams = useSearchParams();
   const processoIdFromParam = searchParams.get('processo_id');
+  const exportadorIdFromParam = searchParams.get('exportadorId'); // Get client ID
 
   const [selectedProcessoId, setSelectedProcessoId] = useState<string>('');
 
-  const processosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'processos') : null, [firestore]);
+  // Query processes for the specific client
+  const processosCollection = useMemoFirebase(() => {
+    if (!firestore || !exportadorIdFromParam) return null;
+    return query(
+      collection(firestore, 'processos'),
+      where('exportadorId', '==', exportadorIdFromParam)
+    );
+  }, [firestore, exportadorIdFromParam]);
+
   const { data: processos, isLoading } = useCollection(processosCollection);
 
   useEffect(() => {
@@ -126,7 +135,7 @@ function ClientDocumentsContent() {
                         </TableCell>
                     </TableRow>
                 )}
-                {!isLoading && documents.length > 0 && documents.map((doc, index) => (
+                {!isLoading && selectedProcesso && documents.length > 0 && documents.map((doc, index) => (
                   <TableRow key={index}>
                     <TableCell className="font-medium">{doc.name}</TableCell>
                     <TableCell className="text-muted-foreground">{doc.file.name}</TableCell>
@@ -142,7 +151,7 @@ function ClientDocumentsContent() {
                     </TableCell>
                   </TableRow>
                 ))}
-                 {!isLoading && documents.length === 0 && (
+                 {!isLoading && (!selectedProcesso || documents.length === 0) && (
                     <TableRow>
                         <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
                             Nenhum documento disponível para este embarque.

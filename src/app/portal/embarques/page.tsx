@@ -1,8 +1,8 @@
 
 'use client';
 
-import { useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useMemo, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -20,10 +20,9 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
+import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { format, parseISO } from 'date-fns';
-
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
@@ -44,28 +43,43 @@ const formatDate = (dateString: string | null | undefined) => {
     }
 }
 
-
-export default function ClientEmbarquesPage() {
+function ClientEmbarquesContent() {
   const firestore = useFirestore();
   const router = useRouter();
-  
-  // For now, we will assume the client can see all active processes.
-  // In a real implementation, this would be filtered by the client's ID.
+  const searchParams = useSearchParams();
+  const { user } = useUser(); // We might need this later to distinguish admin-view from client-view
+
+  // This allows an admin to view a specific client's portal
+  const exportadorIdFromParams = searchParams.get('exportadorId');
+
+  // TODO: In a real-world scenario for a client logging in, we would get their associated 
+  // exportadorId from their user profile in Firestore. For now, we rely on the URL parameter.
+  const clientId = exportadorIdFromParams;
+
   const processosQuery = useMemoFirebase(() => {
-    if (!firestore) return null;
-    return query(collection(firestore, 'processos'), where('status', 'not-in', ['Concluído', 'Cancelado']));
-  }, [firestore]);
+    if (!firestore || !clientId) return null; // Don't query if no client ID is available
+    return query(
+        collection(firestore, 'processos'), 
+        where('exportadorId', '==', clientId),
+        where('status', 'not-in', ['Concluído', 'Cancelado'])
+    );
+  }, [firestore, clientId]);
 
   const { data: processosAtivos, isLoading } = useCollection(processosQuery);
 
+  const clientName = useMemo(() => {
+    if (!processosAtivos || processosAtivos.length === 0) return null;
+    return processosAtivos[0].exportadorNome;
+  }, [processosAtivos]);
+
   const handleRowClick = (processoId: string) => {
-      router.push(`/portal/documentos?processo_id=${processoId}`);
+    router.push(`/portal/documentos?processo_id=${processoId}&exportadorId=${clientId}`);
   }
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Meus Embarques Ativos</CardTitle>
+        <CardTitle>{clientName ? `Embarques de ${clientName}` : 'Meus Embarques Ativos'}</CardTitle>
         <CardDescription>
           Acompanhe o status e os detalhes dos seus embarques em tempo real. Clique num embarque para ver os documentos.
         </CardDescription>
@@ -92,7 +106,14 @@ export default function ClientEmbarquesPage() {
                 </TableCell>
               </TableRow>
             )}
-            {!isLoading && processosAtivos && processosAtivos.map((processo) => (
+            {!isLoading && !clientId && (
+              <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                  Nenhum cliente selecionado.
+                </TableCell>
+              </TableRow>
+            )}
+            {!isLoading && clientId && processosAtivos?.map((processo) => (
               <TableRow 
                 key={processo.id} 
                 onClick={() => handleRowClick(processo.id)}
@@ -115,10 +136,10 @@ export default function ClientEmbarquesPage() {
                 </TableCell>
               </TableRow>
             ))}
-             {!isLoading && (!processosAtivos || processosAtivos.length === 0) && (
+             {!isLoading && clientId && (!processosAtivos || processosAtivos.length === 0) && (
               <TableRow>
                 <TableCell colSpan={8} className="h-24 text-center">
-                  Nenhum embarque ativo encontrado.
+                  Nenhum embarque ativo encontrado para este cliente.
                 </TableCell>
               </TableRow>
             )}
@@ -127,4 +148,13 @@ export default function ClientEmbarquesPage() {
       </CardContent>
     </Card>
   );
+}
+
+
+export default function ClientEmbarquesPage() {
+    return (
+        <Suspense fallback={<div className="flex h-screen w-full items-center justify-center"><Loader2 className="h-8 w-8 animate-spin" /></div>}>
+            <ClientEmbarquesContent />
+        </Suspense>
+    )
 }
