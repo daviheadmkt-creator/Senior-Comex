@@ -355,56 +355,66 @@ useEffect(() => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    const fileData = {
-        name: file.name,
-        url: URL.createObjectURL(file), 
-        type: file.type
-    };
-    
-    if (typeof uploadTarget === 'string') {
-        handleInputChange(uploadTarget, fileData);
-    } else if (typeof uploadTarget === 'object') {
-        if (uploadTarget.type === 'nota_fiscal') {
-            const { index } = uploadTarget;
-            handleNotaFiscalChange(index, 'file', fileData);
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        const fileData = {
+            name: file.name,
+            url: dataUrl,
+            type: file.type,
+        };
 
-            if (file.name.toLowerCase().endsWith('.xml')) {
-                const reader = new FileReader();
-                reader.onload = (event) => {
-                    const xmlText = event.target?.result as string;
-                    const parser = new DOMParser();
-                    const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-                    const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
-                    if (infNFe) {
-                        const idAttr = infNFe.getAttribute('Id');
-                        if (idAttr && idAttr.startsWith('NFe')) {
-                            const chave = idAttr.substring(3);
-                            if (chave.length === 44) {
-                                handleNotaFiscalChange(index, 'chave', chave);
-                                toast({
-                                    title: "Chave da NF-e Extraída!",
-                                    description: "A chave de acesso foi lida do XML e preenchida automaticamente.",
-                                });
+        if (typeof uploadTarget === 'string') {
+            handleInputChange(uploadTarget, fileData);
+        } else if (typeof uploadTarget === 'object') {
+            if (uploadTarget.type === 'nota_fiscal') {
+                const { index } = uploadTarget;
+                handleNotaFiscalChange(index, 'file', fileData);
+
+                if (file.name.toLowerCase().endsWith('.xml')) {
+                    try {
+                        const base64Content = dataUrl.split(',')[1];
+                        const xmlText = atob(base64Content);
+                        const parser = new DOMParser();
+                        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+                        const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
+                        if (infNFe) {
+                            const idAttr = infNFe.getAttribute('Id');
+                            if (idAttr && idAttr.startsWith('NFe')) {
+                                const chave = idAttr.substring(3);
+                                if (chave.length === 44) {
+                                    handleNotaFiscalChange(index, 'chave', chave);
+                                    toast({
+                                        title: "Chave da NF-e Extraída!",
+                                        description: "A chave de acesso foi lida do XML e preenchida automaticamente.",
+                                    });
+                                }
                             }
                         }
+                    } catch (error) {
+                        console.error("Error parsing XML from data URL:", error);
+                        toast({
+                            title: 'Erro ao ler XML',
+                            description: 'Não foi possível extrair a chave do ficheiro XML.',
+                            variant: 'destructive',
+                        });
                     }
-                };
-                reader.readAsText(file);
+                }
+            } else if (uploadTarget.type === 'documento_pos_embarque') {
+                const { index } = uploadTarget;
+                handlePostShipmentDocChange(index, 'file', fileData);
             }
-        } else if (uploadTarget.type === 'documento_pos_embarque') {
-            const { index } = uploadTarget;
-            handlePostShipmentDocChange(index, 'file', fileData);
         }
-    }
 
+        toast({
+            title: "Ficheiro Anexado",
+            description: `${file.name} foi anexado com sucesso.`,
+        });
 
-    toast({
-        title: "Ficheiro Anexado",
-        description: `${file.name} foi anexado com sucesso.`,
-    });
-
-    if (fileInputRef.current) fileInputRef.current.value = '';
-    setUploadTarget(null);
+        if (fileInputRef.current) fileInputRef.current.value = '';
+        setUploadTarget(null);
+    };
+    reader.readAsDataURL(file);
   };
 
   const triggerFileUpload = (target: string | object) => {
@@ -471,60 +481,57 @@ useEffect(() => {
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
-      const newNotas = Array.from(files).map(file => {
-          const newNota = {
-              id: Date.now() + Math.random(),
-              tipo: 'Remessa',
-              chave: '',
-              data_pedido: null,
-              data_recebida: null,
-              file: {
-                  name: file.name,
-                  url: URL.createObjectURL(file),
-                  type: file.type
-              }
-          };
-
-          if (file.name.toLowerCase().endsWith('.xml')) {
-              const reader = new FileReader();
-              reader.onload = (event) => {
+      for (const file of Array.from(files)) {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+              const dataUrl = event.target?.result as string;
+              
+              let chave = '';
+              if (file.name.toLowerCase().endsWith('.xml')) {
                   try {
-                      const xmlText = event.target?.result as string;
+                      const base64Content = dataUrl.split(',')[1];
+                      const xmlText = atob(base64Content);
                       const parser = new DOMParser();
                       const xmlDoc = parser.parseFromString(xmlText, "text/xml");
                       const infNFe = xmlDoc.getElementsByTagName('infNFe')[0];
                       if (infNFe) {
                           const idAttr = infNFe.getAttribute('Id');
                           if (idAttr && idAttr.startsWith('NFe')) {
-                              const chave = idAttr.substring(3);
-                              if (chave.length === 44) {
-                                  // Update the specific nota fiscal with the extracted key
-                                  setFormData(prev => ({
-                                      ...prev,
-                                      notas_fiscais: prev.notas_fiscais.map(nf => 
-                                          nf.id === newNota.id ? { ...nf, chave } : nf
-                                      )
-                                  }));
+                              const extractedChave = idAttr.substring(3);
+                              if (extractedChave.length === 44) {
+                                  chave = extractedChave;
                               }
                           }
                       }
                   } catch (error) {
-                      console.error("Error parsing XML:", error);
+                      console.error("Error parsing XML from data URL:", error);
+                  }
+              }
+
+              const newNota = {
+                  id: Date.now() + Math.random(),
+                  tipo: 'Remessa',
+                  chave: chave,
+                  data_pedido: null,
+                  data_recebida: null,
+                  file: {
+                      name: file.name,
+                      url: dataUrl,
+                      type: file.type
                   }
               };
-              reader.readAsText(file);
-          }
-          return newNota;
-      });
-
-      setFormData(prev => ({
-          ...prev,
-          notas_fiscais: [...prev.notas_fiscais, ...newNotas]
-      }));
+              
+              setFormData(prev => ({
+                  ...prev,
+                  notas_fiscais: [...prev.notas_fiscais, newNota]
+              }));
+          };
+          reader.readAsDataURL(file);
+      }
 
       toast({
           title: "Ficheiros Carregados",
-          description: `${files.length} nota(s) fiscal(is) foram adicionadas.`
+          description: `${files.length} nota(s) fiscal(is) foram adicionadas para processamento.`
       });
 
       if (nfFileInputRef.current) nfFileInputRef.current.value = '';
@@ -746,12 +753,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
                 try {
                     if (docItem.file.type && docItem.file.type.startsWith('image/')) {
-                        const imgData = await fetch(docItem.file.url).then(res => res.blob());
-                        const reader = new FileReader();
-                        reader.readAsDataURL(imgData);
-                        await new Promise(resolve => reader.onload = resolve);
                         const format = docItem.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
-                        doc.addImage(reader.result as string, format, 15, 40, 180, 160, undefined, 'FAST');
+                        doc.addImage(docItem.file.url, format, 15, 40, 180, 160, undefined, 'FAST');
                     } else if (docItem.file.type === 'application/pdf') {
                         doc.rect(14, 40, 182, 217);
                         doc.setFontSize(16);
@@ -808,12 +811,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
                 try {
                     if (nf.file.type && nf.file.type.startsWith('image/')) {
-                        const imgData = await fetch(nf.file.url).then(res => res.blob());
-                        const reader = new FileReader();
-                        reader.readAsDataURL(imgData);
-                        await new Promise(resolve => reader.onload = resolve);
-                        const format = nf.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
-                        doc.addImage(reader.result as string, format, 15, 40, 180, 160, undefined, 'FAST');
+                         const format = nf.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
+                         doc.addImage(nf.file.url, format, 15, 40, 180, 160, undefined, 'FAST');
                     } else if (nf.file.type === 'application/pdf') {
                          doc.rect(14, 40, 182, 217);
                         doc.setFontSize(16);
@@ -1175,8 +1174,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 {formData.deadline_draft_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_draft_file.url} download={formData.deadline_draft_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_draft_file.name}`}>
+                                        <a href={formData.deadline_draft_file.url} download={formData.deadline_draft_file.name} title={`Descarregar ${formData.deadline_draft_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1197,8 +1196,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                  {formData.deadline_vgm_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_vgm_file.url} download={formData.deadline_vgm_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_vgm_file.name}`}>
+                                        <a href={formData.deadline_vgm_file.url} download={formData.deadline_vgm_file.name} title={`Descarregar ${formData.deadline_vgm_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1219,8 +1218,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                   {formData.deadline_carga_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_carga_file.url} download={formData.deadline_carga_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_carga_file.name}`}>
+                                        <a href={formData.deadline_carga_file.url} download={formData.deadline_carga_file.name} title={`Descarregar ${formData.deadline_carga_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1269,8 +1268,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_bl_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.draft_bl_file.url} download={formData.draft_bl_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_bl_file.name}`}>
+                                        <a href={formData.draft_bl_file.url} download={formData.draft_bl_file.name} title={`Descarregar ${formData.draft_bl_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1296,8 +1295,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_fito_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.draft_fito_file.url} download={formData.draft_fito_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_fito_file.name}`}>
+                                        <a href={formData.draft_fito_file.url} download={formData.draft_fito_file.name} title={`Descarregar ${formData.draft_fito_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1323,8 +1322,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_co_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.draft_co_file.url} download={formData.draft_co_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_co_file.name}`}>
+                                        <a href={formData.draft_co_file.url} download={formData.draft_co_file.name} title={`Descarregar ${formData.draft_co_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1398,8 +1397,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             />
                                             {nota.file ? (
                                                 <div className="flex items-center gap-1">
-                                                    <a href={nota.file.url} download={nota.file.name}>
-                                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${nota.file.name}`}>
+                                                    <a href={nota.file.url} download={nota.file.name} title={`Descarregar ${nota.file.name}`}>
+                                                        <Button variant="outline" size="icon" type="button">
                                                             <Check className="h-4 w-4 text-green-600" />
                                                         </Button>
                                                     </a>
@@ -1506,8 +1505,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.due_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.due_file.url} download={formData.due_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.due_file.name}`}>
+                                        <a href={formData.due_file.url} download={formData.due_file.name} title={`Descarregar ${formData.due_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1543,8 +1542,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.lpco_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.lpco_file.url} download={formData.lpco_file.name}>
-                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.lpco_file.name}`}>
+                                        <a href={formData.lpco_file.url} download={formData.lpco_file.name} title={`Descarregar ${formData.lpco_file.name}`}>
+                                            <Button variant="outline" size="icon" type="button">
                                                 <Check className="h-4 w-4 text-green-600" />
                                             </Button>
                                         </a>
@@ -1692,8 +1691,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
-                                                        <a href={docItem.file.url} download={docItem.file.name}>
-                                                            <Button variant="outline" size="icon" type="button" title={`Descarregar ${docItem.file.name}`}>
+                                                        <a href={docItem.file.url} download={docItem.file.name} title={`Descarregar ${docItem.file.name}`}>
+                                                            <Button variant="outline" size="icon" type="button">
                                                                 <Check className="h-4 w-4 text-green-600" />
                                                             </Button>
                                                         </a>
