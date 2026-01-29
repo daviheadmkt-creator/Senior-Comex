@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -8,12 +7,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Loader2, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import Image from 'next/image';
+import { useAuth } from '@/firebase';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ClientLoginPage() {
   const router = useRouter();
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [logo, setLogo] = useState<string | null>(null);
+  const auth = useAuth();
+  const { toast } = useToast();
 
   useEffect(() => {
     const savedLogo = localStorage.getItem('system_logo');
@@ -22,13 +28,24 @@ export default function ClientLoginPage() {
     }
   }, []);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    // Simulate API call for client
-    setTimeout(() => {
+    try {
+      if (!auth) {
+        throw new Error("Authentication service is not available.");
+      }
+      await signInWithEmailAndPassword(auth, email, password);
       router.push('/portal/embarques');
-    }, 1000);
+    } catch (error: any) {
+        toast({
+            title: 'Erro de Autenticação',
+            description: 'Usuário ou senha inválidos. Verifique seus dados e tente novamente.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsLoading(false);
+    }
   };
 
   return (
@@ -82,6 +99,8 @@ export default function ClientLoginPage() {
                             placeholder="seu.email@cliente.com"
                             required
                             className="pl-10"
+                            value={email}
+                            onChange={(e) => setEmail(e.target.value)}
                         />
                     </div>
                 </div>
@@ -99,7 +118,8 @@ export default function ClientLoginPage() {
                             autoComplete="current-password"
                             required
                             className="pl-10"
-                            defaultValue="password"
+                            value={password}
+                            onChange={(e) => setPassword(e.target.value)}
                         />
                          <div className="absolute inset-y-0 right-0 flex items-center pr-3">
                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="focus:outline-none">

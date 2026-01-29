@@ -1,4 +1,3 @@
-
 'use client';
 import {
   SidebarProvider,
@@ -12,10 +11,12 @@ import {
   SidebarTrigger,
   SidebarGroup,
 } from '@/components/ui/sidebar';
-import { Ship, FileText, Globe } from 'lucide-react';
+import { Ship, FileText, Globe, Loader2 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { useEffect, useState } from 'react';
 import Image from 'next/image';
+import { useUser } from '@/firebase';
+import { useRouter } from 'next/navigation';
 
 export default function PortalLayout({
   children,
@@ -23,6 +24,8 @@ export default function PortalLayout({
   children: React.ReactNode;
 }) {
     const [logo, setLogo] = useState<string | null>(null);
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
 
     useEffect(() => {
         const savedLogo = localStorage.getItem('system_logo');
@@ -30,6 +33,20 @@ export default function PortalLayout({
             setLogo(savedLogo);
         }
     }, []);
+
+    useEffect(() => {
+        if (!isUserLoading && !user) {
+          router.push('/portal/login');
+        }
+    }, [user, isUserLoading, router]);
+
+    if (isUserLoading || !user) {
+        return (
+          <div className="flex h-screen w-full items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          </div>
+        );
+    }
 
   return (
     <SidebarProvider>
