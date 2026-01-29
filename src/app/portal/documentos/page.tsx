@@ -9,7 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import {
   Table,
   TableBody,
@@ -29,6 +29,7 @@ import {
 import { Label } from '@/components/ui/label';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection } from 'firebase/firestore';
+import { cn } from '@/lib/utils';
 
 function ClientDocumentsContent() {
   const firestore = useFirestore();
@@ -130,11 +131,13 @@ function ClientDocumentsContent() {
                     <TableCell className="font-medium">{doc.name}</TableCell>
                     <TableCell className="text-muted-foreground">{doc.file.name}</TableCell>
                     <TableCell className="text-right">
-                        <a href={doc.file.url} download={doc.file.name}>
-                            <Button variant="outline" size="sm">
-                                <DownloadCloud className="mr-2 h-4 w-4" />
-                                Download
-                            </Button>
+                        <a 
+                            href={doc.file.url} 
+                            download={doc.file.name}
+                            className={cn(buttonVariants({ variant: 'outline', size: 'sm' }))}
+                        >
+                            <DownloadCloud className="mr-2 h-4 w-4" />
+                            Download
                         </a>
                     </TableCell>
                   </TableRow>
