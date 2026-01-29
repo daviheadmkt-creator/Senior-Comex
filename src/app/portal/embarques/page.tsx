@@ -20,8 +20,8 @@ import {
 } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import { useCollection, useFirestore, useMemoFirebase, useUser } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { format, parseISO } from 'date-fns';
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -47,14 +47,26 @@ function ClientEmbarquesContent() {
   const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { user } = useUser(); // We might need this later to distinguish admin-view from client-view
+  const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // This allows an admin to view a specific client's portal
   const exportadorIdFromParams = searchParams.get('exportadorId');
 
-  // TODO: In a real-world scenario for a client logging in, we would get their associated 
-  // exportadorId from their user profile in Firestore. For now, we rely on the URL parameter.
-  const clientId = exportadorIdFromParams;
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+  const clientId = useMemo(() => {
+    if (!currentUserData) return null;
+    // If the user is an admin/internal, they can view any client via URL param.
+    if (currentUserData.funcao !== 'Cliente') {
+      return exportadorIdFromParams;
+    }
+    // If the user is a client, they can ONLY see their own data.
+    return currentUserData.partnerId;
+  }, [currentUserData, exportadorIdFromParams]);
+
 
   const processosQuery = useMemoFirebase(() => {
     if (!firestore || !clientId) return null; // Don't query if no client ID is available
@@ -65,15 +77,78 @@ function ClientEmbarquesContent() {
     );
   }, [firestore, clientId]);
 
-  const { data: processosAtivos, isLoading } = useCollection(processosQuery);
+  const { data: processosAtivos, isLoading: isLoadingProcessos } = useCollection(processosQuery);
+
+  const isLoading = isAuthLoading || isUserDocLoading || isLoadingProcessos;
 
   const clientName = useMemo(() => {
-    if (!processosAtivos || processosAtivos.length === 0) return null;
-    return processosAtivos[0].exportadorNome;
-  }, [processosAtivos]);
+    if (!isLoading && processosAtivos && processosAtivos.length > 0) {
+      return processosAtivos[0].exportadorNome;
+    }
+    if (!isLoading && currentUserData?.funcao === 'Cliente') {
+        return currentUserData.nome;
+    }
+    return null;
+  }, [processosAtivos, currentUserData, isLoading]);
 
   const handleRowClick = (processoId: string) => {
     router.push(`/portal/documentos?processo_id=${processoId}&exportadorId=${clientId}`);
+  }
+
+  const renderTableBody = () => {
+    if (isLoading) {
+      return (
+        <TableRow>
+          <TableCell colSpan={8} className="h-24 text-center">
+            <Loader2 className="mx-auto h-6 w-6 animate-spin" />
+          </TableCell>
+        </TableRow>
+      );
+    }
+
+    if (!clientId) {
+        return (
+             <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
+                    Nenhum cliente associado à sua conta ou selecionado para visualização.
+                </TableCell>
+            </TableRow>
+        )
+    }
+    
+    if (!processosAtivos || processosAtivos.length === 0) {
+        return (
+             <TableRow>
+                <TableCell colSpan={8} className="h-24 text-center">
+                  Nenhum embarque ativo encontrado para este cliente.
+                </TableCell>
+              </TableRow>
+        )
+    }
+
+    return processosAtivos.map((processo) => (
+      <TableRow 
+        key={processo.id} 
+        onClick={() => handleRowClick(processo.id)}
+        className="cursor-pointer"
+      >
+        <TableCell className="font-medium">{processo.po_number}</TableCell>
+        <TableCell>
+            <div>{processo.analistaNome || 'N/A'}</div>
+            <div className="text-xs text-muted-foreground">{processo.exportadorNome}</div>
+        </TableCell>
+        <TableCell>{processo.produtoNome}</TableCell>
+        <TableCell>{processo.navio}</TableCell>
+        <TableCell>{processo.portoEmbarqueNome} / {processo.portoDescargaNome}</TableCell>
+        <TableCell>{formatDate(processo.eta)}</TableCell>
+        <TableCell>{formatDate(processo.deadline_draft)}</TableCell>
+        <TableCell>
+            <Badge variant={getStatusVariant(processo.status)}>
+                {processo.status}
+            </Badge>
+        </TableCell>
+      </TableRow>
+    ));
   }
 
   return (
@@ -99,50 +174,7 @@ function ClientEmbarquesContent() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {isLoading && (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  <Loader2 className="mx-auto h-6 w-6 animate-spin" />
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading && !clientId && (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground">
-                  Nenhum cliente selecionado.
-                </TableCell>
-              </TableRow>
-            )}
-            {!isLoading && clientId && processosAtivos?.map((processo) => (
-              <TableRow 
-                key={processo.id} 
-                onClick={() => handleRowClick(processo.id)}
-                className="cursor-pointer"
-              >
-                <TableCell className="font-medium">{processo.po_number}</TableCell>
-                <TableCell>
-                    <div>{processo.analistaNome || 'N/A'}</div>
-                    <div className="text-xs text-muted-foreground">{processo.exportadorNome}</div>
-                </TableCell>
-                <TableCell>{processo.produtoNome}</TableCell>
-                <TableCell>{processo.navio}</TableCell>
-                <TableCell>{processo.portoEmbarqueNome} / {processo.portoDescargaNome}</TableCell>
-                <TableCell>{formatDate(processo.eta)}</TableCell>
-                <TableCell>{formatDate(processo.deadline_draft)}</TableCell>
-                <TableCell>
-                    <Badge variant={getStatusVariant(processo.status)}>
-                        {processo.status}
-                    </Badge>
-                </TableCell>
-              </TableRow>
-            ))}
-             {!isLoading && clientId && (!processosAtivos || processosAtivos.length === 0) && (
-              <TableRow>
-                <TableCell colSpan={8} className="h-24 text-center">
-                  Nenhum embarque ativo encontrado para este cliente.
-                </TableCell>
-              </TableRow>
-            )}
+            {renderTableBody()}
           </TableBody>
         </Table>
       </CardContent>

@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   Card,
   CardContent,
@@ -30,11 +30,12 @@ import {
   useUser,
   useAuth,
   setDocumentNonBlocking,
+  useCollection,
 } from '@/firebase';
-import { collection, doc, getCountFromServer } from 'firebase/firestore';
+import { collection, doc, getCountFromServer, query, where } from 'firebase/firestore';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 
-const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística'];
+const userRoles = ['Administrador', 'Operador', 'Financeiro', 'Logística', 'Cliente'];
 const userStatus = ['Ativo', 'Inativo'];
 
 export default function NovoUsuarioPage() {
@@ -50,6 +51,7 @@ export default function NovoUsuarioPage() {
     email: '',
     funcao: '',
     status: 'Ativo',
+    partnerId: '',
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -63,11 +65,25 @@ export default function NovoUsuarioPage() {
 
   const { data: userData, isLoading: isUserLoading } = useDoc(userDocRef);
 
+  const partnersQuery = useMemoFirebase(() => {
+    if (!firestore) return null;
+    return query(collection(firestore, 'partners'), where('tipo_parceiro', '==', 'Cliente (Importador)'));
+  }, [firestore]);
+  const { data: clientPartners, isLoading: isLoadingPartners } = useCollection(partnersQuery);
+
+
   useEffect(() => {
-    if (userData) {
-      setFormData(userData as any);
+    if (isEditing && userData) {
+      setFormData(prev => ({
+          ...prev,
+          nome: userData.nome || '',
+          email: userData.email || '',
+          funcao: userData.funcao || '',
+          status: userData.status || 'Ativo',
+          partnerId: userData.partnerId || '',
+      }));
     }
-  }, [userData]);
+  }, [isEditing, userData]);
 
   const pageTitle = isEditing ? 'Editar Usuário' : 'Novo Usuário';
   const pageDescription = isEditing
@@ -88,9 +104,14 @@ export default function NovoUsuarioPage() {
     setIsSaving(true);
 
     if (isEditing && userId) {
-        // --- LOGICA DE EDIÇÃO ---
         const userRef = doc(firestore, 'users', userId);
-        setDocumentNonBlocking(userRef, formData, { merge: true });
+        const dataToUpdate = {
+            nome: formData.nome,
+            funcao: formData.funcao,
+            status: formData.status,
+            partnerId: formData.funcao === 'Cliente' ? formData.partnerId : '',
+        };
+        setDocumentNonBlocking(userRef, dataToUpdate, { merge: true });
         toast({
             title: 'Sucesso!',
             description: 'O usuário foi atualizado.',
@@ -116,6 +137,7 @@ export default function NovoUsuarioPage() {
                 email: formData.email,
                 funcao: isFirstUser ? 'Administrador' : (formData.funcao || 'Operador'),
                 status: 'Ativo',
+                partnerId: formData.funcao === 'Cliente' ? formData.partnerId : '',
             };
 
             setDocumentNonBlocking(userRef, dataToSave, { merge: true });
@@ -230,6 +252,34 @@ export default function NovoUsuarioPage() {
                 </Select>
               </div>
             </div>
+
+            {formData.funcao === 'Cliente' && (
+                <div className="space-y-2">
+                    <Label htmlFor="partnerId">Cliente Associado</Label>
+                    <Select
+                        value={formData.partnerId}
+                        onValueChange={(value) => handleInputChange('partnerId', value)}
+                        required={formData.funcao === 'Cliente'}
+                    >
+                        <SelectTrigger id="partnerId">
+                            <SelectValue placeholder={isLoadingPartners ? "A carregar clientes..." : "Selecione o cliente"} />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {isLoadingPartners ? (
+                                <SelectItem value="loading" disabled>A carregar...</SelectItem>
+                            ) : (
+                                clientPartners?.map((partner) => (
+                                    <SelectItem key={partner.id} value={partner.id}>
+                                        {partner.nome_fantasia || partner.razao_social}
+                                    </SelectItem>
+                                ))
+                            )}
+                        </SelectContent>
+                    </Select>
+                    <p className='text-xs text-muted-foreground'>Associe este utilizador a um parceiro do tipo "Cliente (Importador)".</p>
+                </div>
+            )}
+
             {!isEditing && (
                  <p className='text-sm text-muted-foreground p-4 border rounded-md'>
                     Um novo usuário será criado no sistema de autenticação. Após a criação, recomendamos enviar um e-mail de redefinição de senha para que o usuário possa definir sua própria senha de acesso.

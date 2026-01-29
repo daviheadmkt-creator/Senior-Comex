@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect, Suspense } from 'react';
@@ -27,34 +28,48 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
-import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
-import { collection, query, where } from 'firebase/firestore';
+import { useCollection, useFirestore, useMemoFirebase, useUser, useDoc } from '@/firebase';
+import { collection, query, where, doc } from 'firebase/firestore';
 import { cn } from '@/lib/utils';
 
 function ClientDocumentsContent() {
   const firestore = useFirestore();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const processoIdFromParam = searchParams.get('processo_id');
-  const exportadorIdFromParam = searchParams.get('exportadorId'); // Get client ID
+  const { user, isUserLoading: isAuthLoading } = useUser();
 
-  // Query processes for the specific client
+  const processoIdFromParam = searchParams.get('processo_id');
+  const exportadorIdFromParam = searchParams.get('exportadorId'); 
+
+  const userDocRef = useMemoFirebase(
+    () => (user ? doc(firestore, 'users', user.uid) : null),
+    [firestore, user]
+  );
+  const { data: currentUserData, isLoading: isUserDocLoading } = useDoc(userDocRef);
+
+  const clientId = useMemo(() => {
+    if (!currentUserData) return null;
+    if (currentUserData.funcao !== 'Cliente') {
+      return exportadorIdFromParam;
+    }
+    return currentUserData.partnerId;
+  }, [currentUserData, exportadorIdFromParam]);
+
   const processosCollection = useMemoFirebase(() => {
-    if (!firestore || !exportadorIdFromParam) return null;
+    if (!firestore || !clientId) return null;
     return query(
       collection(firestore, 'processos'),
-      where('exportadorId', '==', exportadorIdFromParam)
+      where('exportadorId', '==', clientId)
     );
-  }, [firestore, exportadorIdFromParam]);
+  }, [firestore, clientId]);
 
-  const { data: processos, isLoading } = useCollection(processosCollection);
+  const { data: processos, isLoading: isLoadingProcessos } = useCollection(processosCollection);
+  const isLoading = isAuthLoading || isUserDocLoading || isLoadingProcessos;
 
-  // The selected ID is derived directly from the URL or the loaded data.
   const selectedProcessoId = processoIdFromParam || (processos && processos.length > 0 ? processos[0].id : '');
 
-  // When the user selects a new process, update the URL.
   const handleSelectChange = (newProcessoId: string) => {
-    router.push(`/portal/documentos?processo_id=${newProcessoId}&exportadorId=${exportadorIdFromParam}`);
+    router.push(`/portal/documentos?processo_id=${newProcessoId}&exportadorId=${clientId}`);
   };
 
 
@@ -68,16 +83,13 @@ function ClientDocumentsContent() {
     
     const docs: { name: string; file: { name: string; url: string } }[] = [];
     
-    // Drafts
     if (selectedProcesso.draft_bl_file) docs.push({ name: 'Draft: Bill of Lading (BL)', file: selectedProcesso.draft_bl_file });
     if (selectedProcesso.draft_fito_file) docs.push({ name: 'Draft: Certificado Fitossanitário', file: selectedProcesso.draft_fito_file });
     if (selectedProcesso.draft_co_file) docs.push({ name: 'Draft: Certificado de Origem', file: selectedProcesso.draft_co_file });
     
-    // Official Docs
     if (selectedProcesso.due_file) docs.push({ name: 'DUE (Declaração Única de Exportação)', file: selectedProcesso.due_file });
     if (selectedProcesso.lpco_file) docs.push({ name: 'LPCO (Licenças, Permissões, Certificados e Outros)', file: selectedProcesso.lpco_file });
 
-    // Post-shipment docs
     if (selectedProcesso.documentos_pos_embarque) {
         selectedProcesso.documentos_pos_embarque.forEach((doc: any) => {
             if (doc.file) {
@@ -151,7 +163,7 @@ function ClientDocumentsContent() {
                     </TableCell>
                   </TableRow>
                 ))}
-                 {!isLoading && (!selectedProcesso || documents.length === 0) && (
+                 {!isLoading && (!selectedProcessoId || !selectedProcesso || documents.length === 0) && (
                     <TableRow>
                         <TableCell colSpan={3} className="h-24 text-center text-muted-foreground">
                             Nenhum documento disponível para este embarque.
