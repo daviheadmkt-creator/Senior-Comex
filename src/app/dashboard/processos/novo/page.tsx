@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -213,7 +214,7 @@ export default function NovoProcessoPage() {
 
   const portOptions = useMemo(() => {
     if (!sortedPorts) return [];
-    return sortedPorts.map(port => ({ value: port.id, label: `${port.name} - ${port.country}` }));
+    return sortedPorts.map(port => ({ value: port.id, label: `${'\'\''}port.name} - ${'\'\''}port.country}` }));
   }, [sortedPorts]);
 
 
@@ -272,42 +273,53 @@ useEffect(() => {
   
   const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais;
 
-  const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
+  const pageTitle = isEditing ? `Editar Processo ${'\'\''}formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
     const handleDownload = (fileData: { name: string; url: string; } | null) => {
-        if (!fileData || !fileData.url) {
-          toast({
-            title: "Download Falhou",
-            description: "Ficheiro não encontrado.",
-            variant: "destructive",
-          });
-          return;
+      if (!fileData || !fileData.url) {
+        toast({
+          title: "Download Falhou",
+          description: "Ficheiro não encontrado.",
+          variant: "destructive",
+        });
+        return;
+      }
+  
+      try {
+        const parts = fileData.url.split(',');
+        const mimeTypePart = parts[0].split(':')[1];
+        const mimeType = mimeTypePart.split(';')[0];
+        const isBase64 = parts[0].includes(';base64');
+        const data = parts[1];
+  
+        const byteCharacters = isBase64 ? atob(data) : decodeURIComponent(data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
         }
-    
-        fetch(fileData.url)
-          .then(res => res.blob())
-          .then(blob => {
-            const blobUrl = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
-            link.href = blobUrl;
-            link.download = fileData.name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            window.URL.revokeObjectURL(blobUrl); // Clean up
-          })
-          .catch(err => {
-            console.error("Download error:", err);
-            toast({
-              title: "Download Falhou",
-              description: "Não foi possível processar o ficheiro para download. Verifique a sua conexão.",
-              variant: "destructive",
-            });
-          });
-      };
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: mimeType });
+  
+        const blobUrl = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = blobUrl;
+        link.download = fileData.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(blobUrl);
+      } catch (err) {
+        console.error("Download error:", err);
+        toast({
+          title: "Download Falhou",
+          description: "Não foi possível processar o ficheiro para download. O formato do ficheiro pode ser inválido.",
+          variant: "destructive",
+        });
+      }
+    };
 
     const handleInputChange = (id: string, value: any) => {
         setFormData(prev => {
@@ -380,7 +392,7 @@ useEffect(() => {
         maximumFractionDigits: 5
     }).format(number / 100000);
 
-    handleInputChange('quantidade', `${formatted} TON`);
+    handleInputChange('quantidade', `${'\'\''}formatted} TON`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -440,7 +452,7 @@ useEffect(() => {
 
         toast({
             title: "Ficheiro Anexado",
-            description: `${file.name} foi anexado com sucesso.`,
+            description: `${'\'\''}file.name} foi anexado com sucesso.`,
         });
 
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -563,7 +575,7 @@ useEffect(() => {
 
       toast({
           title: "Ficheiros Carregados",
-          description: `${files.length} nota(s) fiscal(is) foram adicionadas para processamento.`
+          description: `${'\'\''}files.length} nota(s) fiscal(is) foram adicionadas para processamento.`
       });
 
       if (nfFileInputRef.current) nfFileInputRef.current.value = '';
@@ -674,7 +686,7 @@ const handleCreateContact = (contactName: string) => {
     
     toast({
         title: "Contato Criado",
-        description: `"${'\'\''}contactName" foi adicionado a ${'\'\''}selectedExporter.nome_fantasia}.`
+        description: `"${'\'\''}contactName}" foi adicionado a ${'\'\''}selectedExporter.nome_fantasia}.`
     });
 };
 
@@ -698,7 +710,7 @@ const handleCreatePartner = (partnerName: string) => {
     
     toast({
         title: "Armador Criado",
-        description: `"${'\'\''}partnerName" foi adicionado à base de dados de parceiros.`
+        description: `"${'\'\''}partnerName}" foi adicionado à base de dados de parceiros.`
     });
 };
 
@@ -723,7 +735,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     
     toast({
         title: "Terminal Criado",
-        description: `"${'\'\''}terminalName" foi adicionado à base de dados de parceiros como ${'\'\''}tipo}.`
+        description: `"${'\'\''}terminalName}" foi adicionado à base de dados de parceiros como ${'\'\''}tipo}.`
     });
 };
 
