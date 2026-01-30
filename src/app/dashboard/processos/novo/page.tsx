@@ -289,19 +289,65 @@ useEffect(() => {
         }
 
         try {
+            // Split the Data URI to get the base64 part and the mime type
+            const parts = fileData.url.split(',');
+            if (parts.length !== 2) {
+                throw new Error("Invalid Data URI format");
+            }
+            const metaPart = parts[0];
+            const dataPart = parts[1];
+    
+            const mimeMatch = metaPart.match(/:(.*?);/);
+            if (!mimeMatch || mimeMatch.length < 2) {
+                throw new Error("Could not determine MIME type from Data URI");
+            }
+            const mimeType = mimeMatch[1];
+            
+            // Decode the base64 string into a byte string
+            const byteString = atob(dataPart);
+            
+            // Create an ArrayBuffer and a view (Uint8Array) for it
+            const ab = new ArrayBuffer(byteString.length);
+            const ia = new Uint8Array(ab);
+            for (let i = 0; i < byteString.length; i++) {
+                ia[i] = byteString.charCodeAt(i);
+            }
+    
+            // Create a Blob from the typed array
+            const blob = new Blob([ab], { type: mimeType });
+
+            // Create a temporary URL for the blob
+            const objectUrl = URL.createObjectURL(blob);
+    
+            // Create a temporary link element and trigger the download
             const link = document.createElement('a');
-            link.href = fileData.url;
+            link.href = objectUrl;
             link.download = fileData.name;
             document.body.appendChild(link);
             link.click();
+            
+            // Clean up by removing the link and revoking the object URL
             document.body.removeChild(link);
-        } catch (err) {
-            console.error("Download error:", err);
-            toast({
-                title: "Download Falhou",
-                description: "Não foi possível iniciar o download do ficheiro.",
-                variant: "destructive",
-            });
+            URL.revokeObjectURL(objectUrl);
+    
+        } catch (e) {
+            console.error("Download error:", e);
+            // Fallback for safety, might work for small files
+            try {
+                const link = document.createElement('a');
+                link.href = fileData.url;
+                link.download = fileData.name;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            } catch (fallbackError) {
+                 console.error("Fallback download error:", fallbackError);
+                 toast({
+                    title: "Download Falhou",
+                    description: "Não foi possível processar o ficheiro para download.",
+                    variant: "destructive",
+                });
+            }
         }
     };
 
@@ -1049,7 +1095,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                                 <Combobox 
-                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia)).map(p => ({ value: p.id, label: `${p.nome_fantasia} | ${p.cnpj || 'N/A'}` })) || []}
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia)).map(p => ({ value: p.id, label: `${p.nome_fantasia || ''} | ${p.cnpj || 'N/A'}` })) || []}
                                      value={formData.exportadorId}
                                      onValueChange={(value) => {
                                         handleInputChange('exportadorId', value)
