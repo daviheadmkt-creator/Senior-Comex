@@ -278,7 +278,7 @@ useEffect(() => {
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
-    const handleDownload = (fileData: { name: string; url: string; type?: string } | null) => {
+    const handleDownload = async (fileData: { name: string; url: string; type?: string } | null) => {
         if (!fileData || !fileData.url) {
             toast({
                 title: "Download Falhou",
@@ -289,65 +289,30 @@ useEffect(() => {
         }
 
         try {
-            // Split the Data URI to get the base64 part and the mime type
-            const parts = fileData.url.split(',');
-            if (parts.length !== 2) {
-                throw new Error("Invalid Data URI format");
+            const response = await fetch(fileData.url);
+            if (!response.ok) {
+              throw new Error('A resposta da rede não foi \'ok\' ao buscar o Data URI');
             }
-            const metaPart = parts[0];
-            const dataPart = parts[1];
-    
-            const mimeMatch = metaPart.match(/:(.*?);/);
-            if (!mimeMatch || mimeMatch.length < 2) {
-                throw new Error("Could not determine MIME type from Data URI");
-            }
-            const mimeType = mimeMatch[1];
+            const blob = await response.blob();
             
-            // Decode the base64 string into a byte string
-            const byteString = atob(dataPart);
-            
-            // Create an ArrayBuffer and a view (Uint8Array) for it
-            const ab = new ArrayBuffer(byteString.length);
-            const ia = new Uint8Array(ab);
-            for (let i = 0; i < byteString.length; i++) {
-                ia[i] = byteString.charCodeAt(i);
-            }
-    
-            // Create a Blob from the typed array
-            const blob = new Blob([ab], { type: mimeType });
-
-            // Create a temporary URL for the blob
             const objectUrl = URL.createObjectURL(blob);
     
-            // Create a temporary link element and trigger the download
             const link = document.createElement('a');
             link.href = objectUrl;
             link.download = fileData.name;
             document.body.appendChild(link);
             link.click();
             
-            // Clean up by removing the link and revoking the object URL
             document.body.removeChild(link);
             URL.revokeObjectURL(objectUrl);
     
         } catch (e) {
             console.error("Download error:", e);
-            // Fallback for safety, might work for small files
-            try {
-                const link = document.createElement('a');
-                link.href = fileData.url;
-                link.download = fileData.name;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-            } catch (fallbackError) {
-                 console.error("Fallback download error:", fallbackError);
-                 toast({
-                    title: "Download Falhou",
-                    description: "Não foi possível processar o ficheiro para download.",
-                    variant: "destructive",
-                });
-            }
+            toast({
+                title: "Download Falhou",
+                description: "Não foi possível processar o ficheiro para download. O formato pode ser inválido ou o seu browser está a bloquear o conteúdo.",
+                variant: "destructive",
+            });
         }
     };
 
@@ -1811,4 +1776,3 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     </div>
   );
 }
-
