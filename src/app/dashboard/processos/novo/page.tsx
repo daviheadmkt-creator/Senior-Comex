@@ -214,7 +214,7 @@ export default function NovoProcessoPage() {
 
   const portOptions = useMemo(() => {
     if (!sortedPorts) return [];
-    return sortedPorts.map(port => ({ value: port.id, label: `${'\'\''}port.name} - ${'\'\''}port.country}` }));
+    return sortedPorts.map(port => ({ value: port.id, label: `${port.name} - ${port.country}` }));
   }, [sortedPorts]);
 
 
@@ -273,36 +273,36 @@ useEffect(() => {
   
   const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingProdutos || isLoadingPorts || isLoadingTerminais;
 
-  const pageTitle = isEditing ? `Editar Processo ${'\'\''}formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
+  const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
   const pageDescription = isEditing
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
     const handleDownload = (fileData: { name: string; url: string; type?: string } | null) => {
-      if (!fileData || !fileData.url) {
-        toast({
-          title: "Download Falhou",
-          description: "Ficheiro não encontrado ou inválido.",
-          variant: "destructive",
-        });
-        return;
-      }
-    
-      try {
-        const link = document.createElement('a');
-        link.href = fileData.url;
-        link.download = fileData.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      } catch (err) {
-        console.error("Download error:", err);
-        toast({
-          title: "Download Falhou",
-          description: "Não foi possível iniciar o download do ficheiro.",
-          variant: "destructive",
-        });
-      }
+        if (!fileData || !fileData.url) {
+            toast({
+                title: "Download Falhou",
+                description: "Ficheiro não encontrado ou inválido.",
+                variant: "destructive",
+            });
+            return;
+        }
+
+        try {
+            const link = document.createElement('a');
+            link.href = fileData.url;
+            link.download = fileData.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (err) {
+            console.error("Download error:", err);
+            toast({
+                title: "Download Falhou",
+                description: "Não foi possível iniciar o download do ficheiro.",
+                variant: "destructive",
+            });
+        }
     };
 
     const handleInputChange = (id: string, value: any) => {
@@ -376,7 +376,7 @@ useEffect(() => {
         maximumFractionDigits: 5
     }).format(number / 100000);
 
-    handleInputChange('quantidade', `${'\'\''}formatted} TON`);
+    handleInputChange('quantidade', `${formatted} TON`);
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -436,7 +436,7 @@ useEffect(() => {
 
         toast({
             title: "Ficheiro Anexado",
-            description: `${'\'\''}file.name} foi anexado com sucesso.`,
+            description: `${file.name} foi anexado com sucesso.`,
         });
 
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -559,7 +559,7 @@ useEffect(() => {
 
       toast({
           title: "Ficheiros Carregados",
-          description: `${'\'\''}files.length} nota(s) fiscal(is) foram adicionadas para processamento.`
+          description: `${files.length} nota(s) fiscal(is) foram adicionadas para processamento.`
       });
 
       if (nfFileInputRef.current) nfFileInputRef.current.value = '';
@@ -670,7 +670,7 @@ const handleCreateContact = (contactName: string) => {
     
     toast({
         title: "Contato Criado",
-        description: `"${'\'\''}contactName}" foi adicionado a ${'\'\''}selectedExporter.nome_fantasia}.`
+        description: `"${contactName}" foi adicionado a ${selectedExporter.nome_fantasia}.`
     });
 };
 
@@ -694,7 +694,7 @@ const handleCreatePartner = (partnerName: string) => {
     
     toast({
         title: "Armador Criado",
-        description: `"${'\'\''}partnerName}" foi adicionado à base de dados de parceiros.`
+        description: `"${partnerName}" foi adicionado à base de dados de parceiros.`
     });
 };
 
@@ -719,7 +719,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     
     toast({
         title: "Terminal Criado",
-        description: `"${'\'\''}terminalName}" foi adicionado à base de dados de parceiros como ${'\'\''}tipo}.`
+        description: `"${terminalName}" foi adicionado à base de dados de parceiros como ${tipo}.`
     });
 };
 
@@ -736,20 +736,20 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         doc.text('PACOTE DE DOCUMENTOS DE EMBARQUE', 105, 40, { align: 'center' });
         
         doc.setFontSize(16);
-        doc.text(`Processo: ${'\'\''}formData.processo_interno || 'N/A'}`, 105, 60, { align: 'center' });
+        doc.text(`Processo: ${formData.processo_interno || 'N/A'}`, 105, 60, { align: 'center' });
 
         if (formData.awb_courier) {
             doc.setFontSize(14);
             doc.setFont('helvetica', 'normal');
-            doc.text(`AWB do Courier: ${'\'\''}formData.awb_courier}`, 105, 70, { align: 'center' });
+            doc.text(`AWB do Courier: ${formData.awb_courier}`, 105, 70, { align: 'center' });
         }
 
         (doc as any).autoTable({
             startY: 90,
             head: [['Resumo do Pacote']],
             body: [
-                [`Total de Documentos Originais: ${'\'\''}originalsCount}`],
-                [`Total de Documentos em Cópia: ${'\'\''}copiesCount}`],
+                [`Total de Documentos Originais: ${originalsCount}`],
+                [`Total de Documentos em Cópia: ${copiesCount}`],
             ],
             theme: 'plain',
             headStyles: { fontStyle: 'bold', fontSize: 14, halign: 'center' },
@@ -777,7 +777,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             if (docItem.file && docItem.file.url) {
                 doc.addPage();
                 doc.setFontSize(12);
-                doc.text(`Anexo: ${'\'\''}docItem.nome} (${'\'\''}docItem.file.name})`, 14, 20);
+                doc.text(`Anexo: ${docItem.nome} (${docItem.file.name})`, 14, 20);
 
                 try {
                     if (docItem.file.type && docItem.file.type.startsWith('image/')) {
@@ -789,20 +789,20 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                         doc.setTextColor(150);
                         doc.text('Documento PDF Anexado', 105, 140, { align: 'center' });
                         doc.setFontSize(12);
-                        doc.text(`Ficheiro: ${'\'\''}docItem.file.name}`, 105, 150, { align: 'center' });
+                        doc.text(`Ficheiro: ${docItem.file.name}`, 105, 150, { align: 'center' });
                         doc.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, {align: 'center'});
                     } else {
-                        doc.text(`Não foi possível pré-visualizar o ficheiro: ${'\'\''}docItem.file.name}`, 14, 40);
+                        doc.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
                     }
                 } catch (e) {
                      console.error("Error adding file to PDF:", e);
-                     doc.text(`Não foi possível pré-visualizar o ficheiro: ${'\'\''}docItem.file.name}`, 14, 40);
+                     doc.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
                 }
             }
         }
 
 
-        doc.save(`Malote_Documentos_${'\'\''}formData.processo_interno || 'processo'}.pdf`);
+        doc.save(`Malote_Documentos_${formData.processo_interno || 'processo'}.pdf`);
     };
 
     const generateNFsPdf = async () => {
@@ -814,7 +814,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         doc.text('PACOTE DE NOTAS FISCAIS', 105, 40, { align: 'center' });
         
         doc.setFontSize(16);
-        doc.text(`Processo: ${'\'\''}formData.processo_interno || 'N/A'}`, 105, 60, { align: 'center' });
+        doc.text(`Processo: ${formData.processo_interno || 'N/A'}`, 105, 60, { align: 'center' });
         
         (doc as any).autoTable({
             startY: 80,
@@ -835,7 +835,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             if (nf.file && nf.file.url) {
                 doc.addPage();
                 doc.setFontSize(12);
-                doc.text(`Anexo: ${'\'\''}nf.tipo} - ${'\'\''}nf.file.name}`, 14, 20);
+                doc.text(`Anexo: ${nf.tipo} - ${nf.file.name}`, 14, 20);
 
                 try {
                     if (nf.file.type && nf.file.type.startsWith('image/')) {
@@ -847,19 +847,19 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                         doc.setTextColor(150);
                         doc.text('Documento PDF Anexado', 105, 140, { align: 'center' });
                         doc.setFontSize(12);
-                        doc.text(`Ficheiro: ${'\'\''}nf.file.name}`, 105, 150, { align: 'center' });
+                        doc.text(`Ficheiro: ${nf.file.name}`, 105, 150, { align: 'center' });
                         doc.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, {align: 'center'});
                     } else {
-                        doc.text(`Não foi possível pré-visualizar o ficheiro: ${'\'\''}nf.file.name}`, 14, 40);
+                        doc.text(`Não foi possível pré-visualizar o ficheiro: ${nf.file.name}`, 14, 40);
                     }
                 } catch (e) {
                      console.error("Error adding NF file to PDF:", e);
-                     doc.text(`Não foi possível pré-visualizar o ficheiro: ${'\'\''}nf.file.name}`, 14, 40);
+                     doc.text(`Não foi possível pré-visualizar o ficheiro: ${nf.file.name}`, 14, 40);
                 }
             }
         }
 
-        doc.save(`Pacote_NFs_${'\'\''}formData.processo_interno || 'processo'}.pdf`);
+        doc.save(`Pacote_NFs_${formData.processo_interno || 'processo'}.pdf`);
     };
 
 
@@ -895,7 +895,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 
                 toast({
                     title: 'Importação Concluída',
-                    description: `${'\'\''}newContainers.length} contêineres foram importados com sucesso.`,
+                    description: `${newContainers.length} contêineres foram importados com sucesso.`,
                 });
             } catch (error) {
                 console.error("Erro ao importar planilha:", error);
@@ -953,7 +953,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
     toast({
         title: "Sucesso!",
-        description: `Processo ${'\'\''}isEditing ? 'atualizado' : 'criado'}.`,
+        description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
         variant: "default",
     });
 
@@ -1049,7 +1049,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                              <div className="space-y-2">
                                 <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                                 <Combobox 
-                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia)).map(p => ({ value: p.id, label: `${'\'\''}p.nome_fantasia} | ${'\'\''}p.cnpj || 'N/A'}` })) || []}
+                                     items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia)).map(p => ({ value: p.id, label: `${p.nome_fantasia} | ${p.cnpj || 'N/A'}` })) || []}
                                      value={formData.exportadorId}
                                      onValueChange={(value) => {
                                         handleInputChange('exportadorId', value)
@@ -1063,7 +1063,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                            <div className="space-y-2">
                                 <Label htmlFor="analistaId">Contato do Exportador</Label>
                                  <Combobox
-                                    items={exporterContacts.map(c => ({ value: String(c.id), label: `${'\'\''}c.nome} (${'\'\''}c.cargo || 'N/A'})` }))}
+                                    items={exporterContacts.map(c => ({ value: String(c.id), label: `${c.nome} (${c.cargo || 'N/A'})` }))}
                                     value={String(formData.analistaId || '')}
                                     onValueChange={(id) => {
                                       const contact = exporterContacts.find(c => String(c.id) === id);
@@ -1202,7 +1202,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 {formData.deadline_draft_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${'\'\''}formData.deadline_draft_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${formData.deadline_draft_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1222,7 +1222,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                  {formData.deadline_vgm_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${'\'\''}formData.deadline_vgm_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${formData.deadline_vgm_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1242,7 +1242,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                   {formData.deadline_carga_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${'\'\''}formData.deadline_carga_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${formData.deadline_carga_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1290,7 +1290,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_bl_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${'\'\''}formData.draft_bl_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1315,7 +1315,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_fito_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${'\'\''}formData.draft_fito_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1340,7 +1340,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_co_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${'\'\''}formData.draft_co_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1413,7 +1413,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             />
                                             {nota.file ? (
                                                 <div className="flex items-center gap-1">
-                                                    <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(nota.file)} title={`Descarregar ${'\'\''}nota.file.name}`}>
+                                                    <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`}>
                                                         <Download className="h-4 w-4 text-green-600" />
                                                     </Button>
                                                     <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => handleNotaFiscalChange(index, 'file', null)} className="text-destructive hover:text-destructive">
@@ -1519,7 +1519,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.due_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${'\'\''}formData.due_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1554,7 +1554,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.lpco_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${'\'\''}formData.lpco_file.name}`}>
+                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`}>
                                             <Download className="h-4 w-4 text-green-600" />
                                         </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1575,11 +1575,11 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                             {formData.containers.map((container:any, index:number) => (
                                 <div key={container.id} className="flex items-center gap-4">
                                     <Checkbox 
-                                        id={`inspecionado-${'\'\''}container.id}`} 
+                                        id={`inspecionado-${container.id}`} 
                                         checked={container.inspecionado} 
                                         onCheckedChange={(checked) => handleContainerChange(index, 'inspecionado', !!checked)}
                                     />
-                                    <Label htmlFor={`inspecionado-${'\'\''}container.id}`} className="flex-1 font-normal">{container.numero || `Contêiner ${'\'\''}index + 1}`}</Label>
+                                    <Label htmlFor={`inspecionado-${container.id}`} className="flex-1 font-normal">{container.numero || `Contêiner ${index + 1}`}</Label>
                                     {container.inspecionado && (
                                         <Input 
                                             value={container.novo_lacre || ''} 
@@ -1613,12 +1613,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 <AccordionContent>
                     <Card>
                         <CardContent className="space-y-4 pt-6">
-                            <div className="grid md:grid-cols-1 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="navio_final">Navio Final</Label>
-                                    <Input id="navio_final" value={formData.navio_final || ''} onChange={e => handleInputChange('navio_final', e.target.value)} placeholder="Nome final do navio" />
-                                </div>
-                            </div>
                              <div className="grid md:grid-cols-2 gap-4">
                                 <div className="space-y-2">
                                     <Label>Data de Saída (ETD)</Label>
@@ -1701,7 +1695,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
-                                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${'\'\''}docItem.file.name}`}>
+                                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`}>
                                                             <Download className="h-4 w-4 text-green-600" />
                                                         </Button>
                                                         <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className="text-destructive hover:text-destructive">
