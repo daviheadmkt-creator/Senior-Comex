@@ -278,44 +278,28 @@ useEffect(() => {
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
-    const handleDownload = (fileData: { name: string; url: string; } | null) => {
+    const handleDownload = (fileData: { name: string; url: string; type?: string } | null) => {
       if (!fileData || !fileData.url) {
         toast({
           title: "Download Falhou",
-          description: "Ficheiro não encontrado.",
+          description: "Ficheiro não encontrado ou inválido.",
           variant: "destructive",
         });
         return;
       }
-  
+    
       try {
-        const parts = fileData.url.split(',');
-        const mimeTypePart = parts[0].split(':')[1];
-        const mimeType = mimeTypePart.split(';')[0];
-        const isBase64 = parts[0].includes(';base64');
-        const data = parts[1];
-  
-        const byteCharacters = isBase64 ? atob(data) : decodeURIComponent(data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: mimeType });
-  
-        const blobUrl = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
-        link.href = blobUrl;
+        link.href = fileData.url;
         link.download = fileData.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        window.URL.revokeObjectURL(blobUrl);
       } catch (err) {
         console.error("Download error:", err);
         toast({
           title: "Download Falhou",
-          description: "Não foi possível processar o ficheiro para download. O formato do ficheiro pode ser inválido.",
+          description: "Não foi possível iniciar o download do ficheiro.",
           variant: "destructive",
         });
       }
