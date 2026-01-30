@@ -278,7 +278,7 @@ useEffect(() => {
     ? 'Gerencie todas as etapas do processo de exportação.'
     : 'Inicie um novo processo a partir de uma nomeação.';
 
-    const handleDownload = async (fileData: { name: string; url: string; type?: string } | null) => {
+    const handleDownload = (fileData: { name: string; url: string; type?: string } | null) => {
         if (!fileData || !fileData.url) {
             toast({
                 title: "Download Falhou",
@@ -289,23 +289,32 @@ useEffect(() => {
         }
 
         try {
-            const response = await fetch(fileData.url);
-            if (!response.ok) {
-              throw new Error('A resposta da rede não foi \'ok\' ao buscar o Data URI');
+            const parts = fileData.url.split(',');
+            if (parts.length < 2) {
+                throw new Error("Invalid Data URI format.");
             }
-            const blob = await response.blob();
             
+            const mimeTypePart = parts[0].split(':')[1].split(';')[0];
+            const isBase64 = parts[0].includes(';base64');
+            const data = parts[1];
+            
+            const byteCharacters = isBase64 ? atob(data) : decodeURIComponent(data);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: mimeTypePart });
+
             const objectUrl = URL.createObjectURL(blob);
-    
             const link = document.createElement('a');
             link.href = objectUrl;
             link.download = fileData.name;
             document.body.appendChild(link);
             link.click();
-            
             document.body.removeChild(link);
             URL.revokeObjectURL(objectUrl);
-    
+
         } catch (e) {
             console.error("Download error:", e);
             toast({
