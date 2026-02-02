@@ -351,6 +351,41 @@ useEffect(() => {
     handleInputChange('quantidade', `${formatted} TON`);
   };
 
+  const handleDownload = (dataUrl: string, fileName: string) => {
+    try {
+      const dataURItoBlob = (dataURI: string) => {
+        if (!dataURI || !dataURI.includes(',')) {
+          throw new Error("Invalid Data URI format.");
+        }
+        const byteString = atob(dataURI.split(',')[1]);
+        const mimeString = dataURI.split(',')[0].split(':')[1].split(';')[0];
+        const ab = new ArrayBuffer(byteString.length);
+        const ia = new Uint8Array(ab);
+        for (let i = 0; i < byteString.length; i++) {
+          ia[i] = byteString.charCodeAt(i);
+        }
+        return new Blob([ab], { type: mimeString });
+      };
+
+      const blob = dataURItoBlob(dataUrl);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      console.error("Download error:", e);
+      toast({
+        title: "Download Falhou",
+        description: "Não foi possível processar o ficheiro para download. O formato pode ser inválido.",
+        variant: "destructive",
+      });
+    }
+  };
+
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
@@ -1174,9 +1209,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 {formData.deadline_draft_file ? (
                                     <div className="flex items-center gap-1">
-                                         <a href={formData.deadline_draft_file.url} download={formData.deadline_draft_file.name} title={`Descarregar ${formData.deadline_draft_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_draft_file.name}`} onClick={() => handleDownload(formData.deadline_draft_file.url, formData.deadline_draft_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1194,9 +1229,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                  {formData.deadline_vgm_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_vgm_file.url} download={formData.deadline_vgm_file.name} title={`Descarregar ${formData.deadline_vgm_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_vgm_file.name}`} onClick={() => handleDownload(formData.deadline_vgm_file.url, formData.deadline_vgm_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1214,9 +1249,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                   {formData.deadline_carga_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.deadline_carga_file.url} download={formData.deadline_carga_file.name} title={`Descarregar ${formData.deadline_carga_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.deadline_carga_file.name}`} onClick={() => handleDownload(formData.deadline_carga_file.url, formData.deadline_carga_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1262,9 +1297,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_bl_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.draft_bl_file.url} download={formData.draft_bl_file.name} title={`Descarregar ${formData.draft_bl_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_bl_file.name}`} onClick={() => handleDownload(formData.draft_bl_file.url, formData.draft_bl_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1287,9 +1322,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_fito_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.draft_fito_file.url} download={formData.draft_fito_file.name} title={`Descarregar ${formData.draft_fito_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_fito_file.name}`} onClick={() => handleDownload(formData.draft_fito_file.url, formData.draft_fito_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1312,9 +1347,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_co_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.draft_co_file.url} download={formData.draft_co_file.name} title={`Descarregar ${formData.draft_co_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.draft_co_file.name}`} onClick={() => handleDownload(formData.draft_co_file.url, formData.draft_co_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1385,9 +1420,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             />
                                             {nota.file ? (
                                                 <div className="flex items-center gap-1">
-                                                     <a href={nota.file.url} download={nota.file.name} title={`Descarregar ${nota.file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                                    <Button variant="outline" size="icon" type="button" title={`Descarregar ${nota.file.name}`} onClick={() => handleDownload(nota.file.url, nota.file.name)}>
                                                         <Download className="h-4 w-4 text-green-600" />
-                                                    </a>
+                                                    </Button>
                                                     <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => handleNotaFiscalChange(index, 'file', null)} className="text-destructive hover:text-destructive">
                                                         <XCircle className="h-4 w-4" />
                                                     </Button>
@@ -1491,9 +1526,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.due_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.due_file.url} download={formData.due_file.name} title={`Descarregar ${formData.due_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.due_file.name}`} onClick={() => handleDownload(formData.due_file.url, formData.due_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1526,9 +1561,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.lpco_file ? (
                                     <div className="flex items-center gap-1">
-                                        <a href={formData.lpco_file.url} download={formData.lpco_file.name} title={`Descarregar ${formData.lpco_file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${formData.lpco_file.name}`} onClick={() => handleDownload(formData.lpco_file.url, formData.lpco_file.name)}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </a>
+                                        </Button>
                                         <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </Button>
@@ -1667,9 +1702,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
-                                                        <a href={docItem.file.url} download={docItem.file.name} title={`Descarregar ${docItem.file.name}`} className={cn(buttonVariants({ variant: "outline", size: "icon" }))}>
+                                                        <Button variant="outline" size="icon" type="button" title={`Descarregar ${docItem.file.name}`} onClick={() => handleDownload(docItem.file.url, docItem.file.name)}>
                                                             <Download className="h-4 w-4 text-green-600" />
-                                                        </a>
+                                                        </Button>
                                                         <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className="text-destructive hover:text-destructive">
                                                             <XCircle className="h-4 w-4" />
                                                         </Button>
