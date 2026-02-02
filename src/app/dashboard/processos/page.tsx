@@ -147,6 +147,13 @@ export default function GestaoProcessosPage() {
                 </TableCell>
                 <TableCell>
                   <div className='flex gap-2'>
+                    {processo.exportadorId && (
+                        <Link href={`/portal/${processo.exportadorId}`} passHref target="_blank">
+                            <Button variant="outline" size="icon" title="Abrir Portal do Cliente">
+                                <Globe className="h-4 w-4" />
+                            </Button>
+                        </Link>
+                    )}
                     <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`} passHref>
                       <Button variant="outline" size="icon" className="text-green-600 hover:text-green-700" title="Editar Processo">
                         <Pencil className="h-4 w-4" />
