@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -147,12 +146,6 @@ export default function LoginPage() {
               </form>
               
               <div className="mt-8 text-center text-sm">
-                  <p className="text-muted-foreground">
-                      É um cliente?{' '}
-                      <Link href="/portal/login" className="font-medium text-primary hover:text-primary/80">
-                          Acesse o portal aqui
-                      </Link>
-                  </p>
                   <p className="mt-4 text-muted-foreground">
                       Não tem uma conta?{' '}
                       <Link href="/signup" className="font-medium text-primary hover:text-primary/80">

@@ -1,4 +1,3 @@
-
 'use client';
 import { useEffect, useMemo, useState } from 'react';
 import {
@@ -218,12 +217,6 @@ export default function DashboardLayout({
                 <SidebarMenuButton href="/dashboard/configuracoes">
                     <Settings />
                     <span>Configurações</span>
-                </SidebarMenuButton>
-            </SidebarMenuItem>
-            <SidebarMenuItem>
-                <SidebarMenuButton href="/portal/embarques">
-                    <Globe />
-                    <span>Portal do Cliente</span>
                 </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
