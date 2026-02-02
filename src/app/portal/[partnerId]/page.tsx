@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -34,16 +35,31 @@ const formatDate = (dateString: string | null | undefined) => {
 
 const DocumentList = ({ processo }: { processo: any }) => {
     const documents = useMemo(() => {
-        const docs = [];
-        if (processo.due_file) docs.push({ name: "DUE", file: processo.due_file });
-        if (processo.lpco_file) docs.push({ name: "LPCO", file: processo.lpco_file });
+        const docs: { name: string; file: any }[] = [];
+
+        // Drafts
         if (processo.draft_bl_file) docs.push({ name: "Draft BL", file: processo.draft_bl_file });
         if (processo.draft_fito_file) docs.push({ name: "Draft Fito", file: processo.draft_fito_file });
         if (processo.draft_co_file) docs.push({ name: "Draft C.O.", file: processo.draft_co_file });
-
+        
+        // Fiscal / Customs
+        if (processo.due_file) docs.push({ name: "DUE", file: processo.due_file });
+        if (processo.lpco_file) docs.push({ name: "LPCO (MAPA)", file: processo.lpco_file });
+        
+        // Post-shipment
         processo.documentos_pos_embarque?.forEach((doc: any) => {
             if (doc.file) docs.push({ name: doc.nome, file: doc.file });
         });
+
+        // Fiscal Notes
+        processo.notas_fiscais?.forEach((nf: any, index: number) => {
+            if (nf.file) docs.push({ name: `Nota Fiscal (${nf.tipo || 'N/A'}) #${index + 1}`, file: nf.file });
+        });
+
+        // Deadline proofs
+        if (processo.deadline_draft_file) docs.push({ name: "Comprovante Deadline Draft", file: processo.deadline_draft_file });
+        if (processo.deadline_vgm_file) docs.push({ name: "Comprovante Deadline VGM", file: processo.deadline_vgm_file });
+        if (processo.deadline_carga_file) docs.push({ name: "Comprovante Deadline Carga", file: processo.deadline_carga_file });
 
         return docs;
     }, [processo]);
