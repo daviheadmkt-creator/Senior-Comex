@@ -280,6 +280,10 @@ useEffect(() => {
     
     const handleInputChange = (id: string, value: any) => {
         setFormData(prev => ({ ...prev, [id]: value ?? '' }));
+
+        if (id === 'booking_number' && value) {
+            setFormData(prev => ({ ...prev, status: "Booking Confirmado / Aguardando Draft"}));
+        }
     };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -315,10 +319,10 @@ useEffect(() => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    if (file.size > 150 * 1024) { // 150KB limit
+    if (file.size > 500 * 1024) { // 500KB limit
         toast({
             title: "Ficheiro Demasiado Grande",
-            description: `O ficheiro "${file.name}" excede o limite de 150KB e não pode ser carregado.`,
+            description: `O ficheiro "${file.name}" excede o limite de 500KB e não pode ser carregado.`,
             variant: "destructive",
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -462,10 +466,10 @@ useEffect(() => {
       if (!files || files.length === 0) return;
 
       for (const file of Array.from(files)) {
-          if (file.size > 150 * 1024) { // 150KB limit
+          if (file.size > 500 * 1024) { // 500KB limit
               toast({
                   title: "Ficheiro Demasiado Grande",
-                  description: `${file.name} excede o limite de 150KB e não foi adicionado.`,
+                  description: `${file.name} excede o limite de 500KB e não foi adicionado.`,
                   variant: "destructive",
               });
               continue; // Skip this file
@@ -568,40 +572,41 @@ useEffect(() => {
     const { status, booking_number, due_status, mapa_status, documentos_pos_embarque, awb_courier,
             notas_fiscais, containers, navio_final } = formData;
     
+    if (!status) return <XCircle className="h-5 w-5 text-gray-400" />;
+
     const statusNumber = processStatusOptions.indexOf(status);
+
+    if (statusNumber < 0) return <XCircle className="h-5 w-5 text-gray-400" />;
 
     switch (step) {
         case 1: // Processo e Booking
-            if (booking_number) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            if (statusNumber >= processStatusOptions.indexOf("Booking Confirmado / Aguardando Draft")) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            if (statusNumber >= 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            return <XCircle className="h-5 w-5 text-gray-400" />;
         case 2: // Drafts
             const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
             if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-            if (booking_number) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+            if (statusNumber >= processStatusOptions.indexOf("Booking Confirmado / Aguardando Draft")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 3: // Liberação
             const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'AVERBADA';
             const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
-            const areNFsOk = notas_fiscais.length > 0 && notas_fiscais.every((nf:any) => nf.chave);
-            const areContainersOk = containers.length > 0 && containers.every((c:any) => c.numero && c.lacre && (!c.inspecionado || (c.inspecionado && c.novo_lacre)));
-            if (isDueOk && isMapaOk && areNFsOk && areContainersOk) {
-                return <CheckCircle className="h-5 w-5 text-green-500" />;
-            }
+            if (isDueOk && isMapaOk) return <CheckCircle className="h-5 w-5 text-green-500" />;
             if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
             if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 4: // Confirmação de Embarque
-            if (formData.navio_final) {
+            if (navio_final || status.toLowerCase().includes('trânsito') || status.toLowerCase().includes('concluído')) {
                 return <CheckCircle className="h-5 w-5 text-green-500" />;
             }
             const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
             if(isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             return <XCircle className="h-5 w-5 text-gray-400" />;
         case 5: // Docs Pós-Embarque
-            const hasBlWithFile = documentos_pos_embarque && documentos_pos_embarque.some((d: any) => d.nome === 'BL' && d.file);
-            if (hasBlWithFile && statusNumber >= processStatusOptions.indexOf("Em trânsito")) {
-                 if (documentos_pos_embarque.every((d:any) => d.file)) return <CheckCircle className="h-5 w-5 text-green-500" />;
+            const hasBl = documentos_pos_embarque && documentos_pos_embarque.some((d: any) => d.nome === 'BL');
+             if (hasBl) {
+                 if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
                  return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
             }
             if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
@@ -932,17 +937,17 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
     } catch (error: any) {
         console.error("Erro ao salvar processo:", error);
-        if (error.code === 'invalid-argument') {
+        if (error.code === 'invalid-argument' || (error.message && error.message.includes('exceeds the maximum size'))) {
             toast({
                 title: "Erro: Ficheiros Demasiado Grandes",
-                description: "O tamanho total dos ficheiros anexados excede o limite. Por favor, remova ou substitua por ficheiros menores (limite: 150KB).",
+                description: "O tamanho total dos ficheiros anexados excede o limite. Por favor, remova ou substitua por ficheiros menores (limite por ficheiro: 500KB).",
                 variant: "destructive",
                 duration: 9000,
             });
         } else {
              toast({
                 title: "Erro ao Guardar",
-                description: "Não foi possível guardar o processo. O tamanho total dos anexos pode ser demasiado grande, ou pode haver um problema de ligação.",
+                description: "Não foi possível guardar o processo. Verifique a sua ligação ou tente novamente.",
                 variant: "destructive",
                 duration: 9000,
             });
@@ -1291,9 +1296,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_bl_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.draft_bl_file.url} download={formData.draft_bl_file.name} title={`Descarregar ${formData.draft_bl_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('draft_bl_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1316,9 +1321,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_fito_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.draft_fito_file.url} download={formData.draft_fito_file.name} title={`Descarregar ${formData.draft_fito_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('draft_fito_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1341,9 +1346,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_co_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.draft_co_file.url} download={formData.draft_co_file.name} title={`Descarregar ${formData.draft_co_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('draft_co_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
