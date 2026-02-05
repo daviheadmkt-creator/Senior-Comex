@@ -306,65 +306,29 @@ useEffect(() => {
     handleInputChange('quantidade', `${formatted} TON`);
   };
   
-    const handleDownload = (file: { name: string, url: string, type?: string }) => {
-        if (!file || !file.url) {
-            toast({ title: "Erro", description: "Ficheiro não encontrado ou inválido.", variant: "destructive" });
-            return;
-        }
+  const handleDownload = (file: { name: string, url: string, type?: string }) => {
+    if (!file || !file.url) {
+        toast({ title: "Erro", description: "Ficheiro não encontrado ou inválido.", variant: "destructive" });
+        return;
+    }
 
-        if (file.url.startsWith('blob:')) {
-            const link = document.createElement('a');
-            link.href = file.url;
-            link.download = file.name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            return;
-        }
-    
-        if (!file.url.includes(',')) {
-             toast({ title: "Erro", description: "Formato de dados do ficheiro inválido.", variant: "destructive" });
-             return;
-        }
-
-        try {
-            const base64 = file.url.split(',')[1];
-            if (!base64) throw new Error("Dados do ficheiro não encontrados.");
-            
-            const byteCharacters = atob(base64);
-            const byteNumbers = new Array(byteCharacters.length);
-            for (let i = 0; i < byteCharacters.length; i++) {
-                byteNumbers[i] = byteCharacters.charCodeAt(i);
-            }
-            const byteArray = new Uint8Array(byteNumbers);
-            const blob = new Blob([byteArray], { type: file.type || 'application/octet-stream' });
-            
-            const link = document.createElement('a');
-            const url = URL.createObjectURL(blob);
-            link.href = url;
-            link.download = file.name;
-            document.body.appendChild(link);
-            link.click();
-            document.body.removeChild(link);
-            URL.revokeObjectURL(url);
-        } catch (e: any) {
-            console.error("Download error:", e);
-            toast({
-                title: "Download Falhou",
-                description: "Não foi possível processar o ficheiro para download. O formato pode ser inválido.",
-                variant: "destructive"
-            });
-        }
-    };
-
+    // Use a direct link for downloads.
+    const link = document.createElement('a');
+    link.href = file.url;
+    link.download = file.name;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    if (file.size > 500 * 1024) { // 500KB limit
+    if (file.size > 250 * 1024) { // 250KB limit
         toast({
             title: "Ficheiro Demasiado Grande",
-            description: `O ficheiro "${file.name}" excede o limite de 500KB e não pode ser carregado.`,
+            description: `O ficheiro "${file.name}" excede o limite de 250KB e não pode ser carregado.`,
             variant: "destructive",
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -508,10 +472,10 @@ useEffect(() => {
       if (!files || files.length === 0) return;
 
       for (const file of Array.from(files)) {
-          if (file.size > 500 * 1024) { // 500KB limit
+          if (file.size > 250 * 1024) { // 250KB limit
               toast({
                   title: "Ficheiro Demasiado Grande",
-                  description: `${file.name} excede o limite de 500KB e não foi adicionado.`,
+                  description: `${file.name} excede o limite de 250KB e não foi adicionado.`,
                   variant: "destructive",
               });
               continue; // Skip this file
@@ -942,58 +906,58 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         XLSX.writeFile(wb, "template_containers.xlsx");
     };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!firestore) {
         toast({ title: "Erro", description: "Base de dados indisponível.", variant: "destructive" });
         return;
     }
 
-    const docId = processId || doc(collection(firestore, 'processos')).id;
-    const processoRef = doc(firestore, 'processos', docId);
+    try {
+        const docId = processId || doc(collection(firestore, 'processos')).id;
+        const processoRef = doc(firestore, 'processos', docId);
 
-    const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
-    const selectedAnalista = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
-    const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
-    const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
-    
-    const dataToSave = {
-        ...formData,
-        id: docId,
-        exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
-        analistaNome: selectedAnalista?.nome || formData.analistaNome || 'N/A',
-        portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
-        portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
-        destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-    };
+        const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
+        const selectedAnalista = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
+        const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
+        const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
+        
+        const dataToSave = {
+            ...formData,
+            id: docId,
+            exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+            analistaNome: selectedAnalista?.nome || formData.analistaNome || 'N/A',
+            portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
+            portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
+            destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+        };
 
-    setDoc(processoRef, dataToSave, { merge: true })
-        .then(() => {
-            toast({
-                title: "Sucesso!",
-                description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
-            });
-            router.push('/dashboard/processos');
-        })
-        .catch((error: any) => {
-            console.error("Erro ao salvar processo:", error);
-            if (error.code === 'invalid-argument') {
-                toast({
-                    title: "Erro: Dados Inválidos",
-                    description: "O processo contém demasiados dados (provavelmente ficheiros grandes) e não pôde ser guardado. Por favor, reduza o tamanho ou a quantidade de ficheiros.",
-                    variant: "destructive",
-                    duration: 9000,
-                });
-            } else {
-                // For other errors, use the existing global error handler for permissions
-                const permissionError = new FirestorePermissionError({
-                    path: processoRef.path,
-                    operation: 'write',
-                    requestResourceData: dataToSave,
-                });
-                errorEmitter.emit('permission-error', permissionError);
-            }
+        await setDoc(processoRef, dataToSave, { merge: true });
+
+        toast({
+            title: "Sucesso!",
+            description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
         });
+        router.push('/dashboard/processos');
+
+    } catch (error: any) {
+        console.error("Erro ao salvar processo:", error);
+        if (error.code === 'invalid-argument') {
+            toast({
+                title: "Erro: Ficheiros Demasiado Grandes",
+                description: "O tamanho total dos ficheiros anexados excede o limite. Por favor, remova ou substitua por ficheiros menores (limite: 250KB).",
+                variant: "destructive",
+                duration: 9000,
+            });
+        } else {
+             toast({
+                title: "Erro ao Guardar",
+                description: "Não foi possível guardar o processo. Verifique a sua ligação ou tente novamente.",
+                variant: "destructive",
+                duration: 9000,
+            });
+        }
+    }
   };
   
   if (isLoading) {
@@ -1337,9 +1301,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_bl_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.draft_bl_file.url} download={formData.draft_bl_file.name} title={`Descarregar ${formData.draft_bl_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('draft_bl_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1362,9 +1326,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_fito_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.draft_fito_file.url} download={formData.draft_fito_file.name} title={`Descarregar ${formData.draft_fito_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('draft_fito_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1387,9 +1351,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_co_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.draft_co_file.url} download={formData.draft_co_file.name} title={`Descarregar ${formData.draft_co_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('draft_co_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1460,9 +1424,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             />
                                             {nota.file ? (
                                                 <div className="flex items-center gap-1">
-                                                     <button type="button" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                                     <a href={nota.file.url} download={nota.file.name} title={`Descarregar ${nota.file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                                         <Download className="h-4 w-4 text-green-600" />
-                                                    </button>
+                                                    </a>
                                                     <button type="button" title="Remover Anexo" onClick={() => handleNotaFiscalChange(index, 'file', null)} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")}>
                                                         <XCircle className="h-4 w-4" />
                                                     </button>
@@ -1566,9 +1530,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.due_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.due_file.url} download={formData.due_file.name} title={`Descarregar ${formData.due_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('due_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1601,9 +1565,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.lpco_file ? (
                                     <div className="flex items-center gap-1">
-                                        <button type="button" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                        <a href={formData.lpco_file.url} download={formData.lpco_file.name} title={`Descarregar ${formData.lpco_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </button>
+                                        </a>
                                         <button type="button" onClick={() => removeFile('lpco_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
                                         </button>
@@ -1742,9 +1706,9 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
-                                                        <button type="button" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
+                                                        <a href={docItem.file.url} download={docItem.file.name} title={`Descarregar ${docItem.file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                                             <Download className="h-4 w-4 text-green-600" />
-                                                        </button>
+                                                        </a>
                                                         <button type="button" title="Remover Anexo" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")}>
                                                             <XCircle className="h-4 w-4" />
                                                         </button>
@@ -1812,4 +1776,5 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     </div>
   );
 }
+    
     
