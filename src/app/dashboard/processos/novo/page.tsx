@@ -31,12 +31,13 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDocumentNonBlocking } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDoc, errorEmitter } from '@/firebase';
 import { collection, query, where, doc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Combobox } from '@/components/ui/combobox';
 import * as XLSX from 'xlsx';
 import { cn } from '@/lib/utils';
+import { FirestorePermissionError } from '@/firebase/errors';
 
 
 const processStatusOptions = [
@@ -279,11 +280,7 @@ useEffect(() => {
     
     const handleInputChange = (id: string, value: any) => {
         setFormData(prev => {
-            let newState = { ...prev, [id]: value ?? '' };
-    
-            if (id === 'navio') {
-                newState.navio_final = value ?? '';
-            }
+            const newState = { ...prev, [id]: value ?? '' };
     
             if (id !== 'status' && newState.status === "Iniciado / Aguardando Booking" && newState.booking_number) {
                  newState.status = "Booking Confirmado / Aguardando Draft";
@@ -308,55 +305,66 @@ useEffect(() => {
 
     handleInputChange('quantidade', `${formatted} TON`);
   };
-
-  const handleDownload = (file: { name: string, url: string, type?: string }) => {
-    if (!file || !file.url) {
-        toast({ title: "Erro", description: "Ficheiro não encontrado.", variant: "destructive" });
-        return;
-    }
-
-    try {
-        const dataUrl = file.url;
-        if (typeof dataUrl !== 'string' || !dataUrl.includes(',')) {
-            throw new Error("Formato de dados inválido.");
+  
+    const handleDownload = (file: { name: string, url: string, type?: string }) => {
+        if (!file || !file.url) {
+            toast({ title: "Erro", description: "Ficheiro não encontrado ou inválido.", variant: "destructive" });
+            return;
         }
-        const base64 = dataUrl.split(',')[1];
-        if(!base64) throw new Error("O ficheiro está vazio.");
-        
-        const byteCharacters = atob(base64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-            byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: file.type || 'application/octet-stream' });
-        
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = file.name;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
 
-    } catch (e: any) {
-        console.error("Download error:", e);
-        toast({
-            title: "Download Falhou",
-            description: e.message || "Não foi possível processar o ficheiro para download.",
-            variant: "destructive"
-        });
-    }
-  };
+        if (file.url.startsWith('blob:')) {
+            const link = document.createElement('a');
+            link.href = file.url;
+            link.download = file.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            return;
+        }
+    
+        if (!file.url.includes(',')) {
+             toast({ title: "Erro", description: "Formato de dados do ficheiro inválido.", variant: "destructive" });
+             return;
+        }
+
+        try {
+            const base64 = file.url.split(',')[1];
+            if (!base64) throw new Error("Dados do ficheiro não encontrados.");
+            
+            const byteCharacters = atob(base64);
+            const byteNumbers = new Array(byteCharacters.length);
+            for (let i = 0; i < byteCharacters.length; i++) {
+                byteNumbers[i] = byteCharacters.charCodeAt(i);
+            }
+            const byteArray = new Uint8Array(byteNumbers);
+            const blob = new Blob([byteArray], { type: file.type || 'application/octet-stream' });
+            
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.href = url;
+            link.download = file.name;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        } catch (e: any) {
+            console.error("Download error:", e);
+            toast({
+                title: "Download Falhou",
+                description: "Não foi possível processar o ficheiro para download. O formato pode ser inválido.",
+                variant: "destructive"
+            });
+        }
+    };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    if (file.size > 750 * 1024) { // 750KB limit
+    if (file.size > 500 * 1024) { // 500KB limit
         toast({
-            title: "Ficheiro demasiado grande",
-            description: `O ficheiro "${file.name}" excede o limite de 750KB.`,
+            title: "Ficheiro Demasiado Grande",
+            description: `O ficheiro "${file.name}" excede o limite de 500KB e não pode ser carregado.`,
             variant: "destructive",
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -500,10 +508,10 @@ useEffect(() => {
       if (!files || files.length === 0) return;
 
       for (const file of Array.from(files)) {
-          if (file.size > 750 * 1024) { // 750KB limit
+          if (file.size > 500 * 1024) { // 500KB limit
               toast({
-                  title: "Ficheiro demasiado grande",
-                  description: `${file.name} excede o limite de 750KB e não foi adicionado.`,
+                  title: "Ficheiro Demasiado Grande",
+                  description: `${file.name} excede o limite de 500KB e não foi adicionado.`,
                   variant: "destructive",
               });
               continue; // Skip this file
@@ -663,7 +671,7 @@ const handleCreateContact = (contactName: string) => {
     const updatedContacts = [...(selectedExporter.contatos || []), newContact];
     
     const partnerRef = doc(firestore, 'partners', formData.exportadorId);
-    setDocumentNonBlocking(partnerRef, { contatos: updatedContacts }, { merge: true });
+    setDoc(partnerRef, { contatos: updatedContacts }, { merge: true });
     
     const newContactId = String(updatedContacts.length - 1);
     const newContactsForState = updatedContacts.map((c, i) => ({ ...c, id: String(i) }));
@@ -692,7 +700,7 @@ const handleCreatePartner = (partnerName: string) => {
     };
 
     const partnerRef = doc(firestore, 'partners', newPartnerId);
-    setDocumentNonBlocking(partnerRef, newPartnerData, { merge: true });
+    setDoc(partnerRef, newPartnerData, { merge: true });
 
     setFormData(prev => ({
         ...prev,
@@ -716,7 +724,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     };
 
     const partnerRef = doc(firestore, 'partners', newPartnerId);
-    setDocumentNonBlocking(partnerRef, newPartnerData, { merge: true });
+    setDoc(partnerRef, newPartnerData, { merge: true });
 
     const fieldId = tipo === 'Terminal de Estufagem' ? 'terminalDespachoId' : 'terminalEmbarqueId';
     setFormData(prev => ({
@@ -936,7 +944,10 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!firestore) return;
+    if (!firestore) {
+        toast({ title: "Erro", description: "Base de dados indisponível.", variant: "destructive" });
+        return;
+    }
 
     const docId = processId || doc(collection(firestore, 'processos')).id;
     const processoRef = doc(firestore, 'processos', docId);
@@ -955,16 +966,34 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
     };
-    
-    setDocumentNonBlocking(processoRef, dataToSave, { merge: true });
 
-    toast({
-        title: "Sucesso!",
-        description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
-        variant: "default",
-    });
-
-    router.push('/dashboard/processos');
+    setDoc(processoRef, dataToSave, { merge: true })
+        .then(() => {
+            toast({
+                title: "Sucesso!",
+                description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
+            });
+            router.push('/dashboard/processos');
+        })
+        .catch((error: any) => {
+            console.error("Erro ao salvar processo:", error);
+            if (error.code === 'invalid-argument') {
+                toast({
+                    title: "Erro: Dados Inválidos",
+                    description: "O processo contém demasiados dados (provavelmente ficheiros grandes) e não pôde ser guardado. Por favor, reduza o tamanho ou a quantidade de ficheiros.",
+                    variant: "destructive",
+                    duration: 9000,
+                });
+            } else {
+                // For other errors, use the existing global error handler for permissions
+                const permissionError = new FirestorePermissionError({
+                    path: processoRef.path,
+                    operation: 'write',
+                    requestResourceData: dataToSave,
+                });
+                errorEmitter.emit('permission-error', permissionError);
+            }
+        });
   };
   
   if (isLoading) {
@@ -1220,12 +1249,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                                 {formData.deadline_draft_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${formData.deadline_draft_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${formData.deadline_draft_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('deadline_draft_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_draft_file')}>
@@ -1240,12 +1269,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                                  {formData.deadline_vgm_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${formData.deadline_vgm_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${formData.deadline_vgm_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('deadline_vgm_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_vgm_file')}>
@@ -1260,12 +1289,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                                   {formData.deadline_carga_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${formData.deadline_carga_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${formData.deadline_carga_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('deadline_carga_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_carga_file')}>
@@ -1308,12 +1337,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_bl_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('draft_bl_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar Draft BL" onClick={() => triggerFileUpload('draft_bl_file')}>
@@ -1333,12 +1362,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_fito_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('draft_fito_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar Draft Fito" onClick={() => triggerFileUpload('draft_fito_file')}>
@@ -1358,12 +1387,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 />
                                 {formData.draft_co_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('draft_co_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar Draft Origem" onClick={() => triggerFileUpload('draft_co_file')}>
@@ -1431,12 +1460,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             />
                                             {nota.file ? (
                                                 <div className="flex items-center gap-1">
-                                                     <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`}>
+                                                     <button type="button" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                                         <Download className="h-4 w-4 text-green-600" />
-                                                    </Button>
-                                                    <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => handleNotaFiscalChange(index, 'file', null)} className="text-destructive hover:text-destructive">
+                                                    </button>
+                                                    <button type="button" title="Remover Anexo" onClick={() => handleNotaFiscalChange(index, 'file', null)} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")}>
                                                         <XCircle className="h-4 w-4" />
-                                                    </Button>
+                                                    </button>
                                                 </div>
                                             ) : (
                                                 <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}><FileUp className="h-4 w-4" /></Button>
@@ -1537,12 +1566,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.due_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('due_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar DUE" onClick={() => triggerFileUpload('due_file')}>
@@ -1572,12 +1601,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 </Select>
                                 {formData.lpco_file ? (
                                     <div className="flex items-center gap-1">
-                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`}>
+                                        <button type="button" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                             <Download className="h-4 w-4 text-green-600" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                                        </button>
+                                        <button type="button" onClick={() => removeFile('lpco_file')} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")} title="Remover anexo">
                                             <XCircle className="h-4 w-4" />
-                                        </Button>
+                                        </button>
                                     </div>
                                 ) : (
                                     <Button variant="outline" size="icon" type="button" title="Anexar LPCO" onClick={() => triggerFileUpload('lpco_file')}>
@@ -1713,12 +1742,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                             <TableCell>
                                                  {docItem.file ? (
                                                     <div className="flex items-center gap-1">
-                                                        <Button variant="outline" size="icon" type="button" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`}>
+                                                        <button type="button" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} className={cn(buttonVariants({variant: 'outline', size: 'icon'}))}>
                                                             <Download className="h-4 w-4 text-green-600" />
-                                                        </Button>
-                                                        <Button variant="ghost" size="icon" type="button" title="Remover Anexo" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className="text-destructive hover:text-destructive">
+                                                        </button>
+                                                        <button type="button" title="Remover Anexo" onClick={() => removeFile({ type: 'documento_pos_embarque', index })} className={cn(buttonVariants({variant: 'ghost', size: 'icon'}), "text-destructive hover:text-destructive")}>
                                                             <XCircle className="h-4 w-4" />
-                                                        </Button>
+                                                        </button>
                                                     </div>
                                                 ) : (
                                                     <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', index })}>
@@ -1783,5 +1812,4 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     </div>
   );
 }
-
     
