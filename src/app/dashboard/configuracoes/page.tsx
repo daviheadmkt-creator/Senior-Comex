@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, History, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, Image as ImageIcon } from 'lucide-react';
 
 const configOptions = [
     {
@@ -16,12 +16,6 @@ const configOptions = [
         description: 'Altere o logo exibido no sistema.',
         href: '/dashboard/configuracoes/logo',
         icon: ImageIcon,
-    },
-    {
-        title: 'Relatório de Log',
-        description: 'Visualize o histórico de atividades e alterações no sistema.',
-        href: '/dashboard/configuracoes/log',
-        icon: History,
     },
 ]
 
