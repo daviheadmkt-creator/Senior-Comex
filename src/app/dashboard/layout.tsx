@@ -10,39 +10,20 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarTrigger,
-  SidebarGroup,
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton
 } from '@/components/ui/sidebar';
 import {
   LayoutDashboard,
-  Users,
-  Package,
-  Anchor,
-  UserCog,
-  Ship,
-  FileText,
   Settings,
-  DollarSign,
-  LineChart,
-  Target,
-  FileBarChart,
   ClipboardList,
-  Building,
-  Sailboat,
-  Contact,
-  HardHat,
   PackageCheck,
-  TrendingUp,
-  CreditCard,
-  Globe,
-  Warehouse,
+  Search,
   Loader2
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
@@ -149,40 +130,6 @@ export default function DashboardLayout({
                     </SidebarMenuSub>
                 </CollapsibleContent>
               </SidebarMenuItem>
-            </Collapsible>
-            <Collapsible asChild>
-                <SidebarMenuItem>
-                    <CollapsibleTrigger asChild>
-                        <SidebarMenuButton>
-                            <DollarSign />
-                            <span>Financeiro</span>
-                        </SidebarMenuButton>
-                    </CollapsibleTrigger>
-                    <CollapsibleContent asChild>
-                        <SidebarMenuSub>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton href="/dashboard/financeiro/lancamentos">
-                                    Lançamentos
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton href="/dashboard/financeiro/projecao-caixa">
-                                    Fluxo de Caixa
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton href="/dashboard/financeiro/kpis">
-                                    KPIs
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                            <SidebarMenuSubItem>
-                                <SidebarMenuSubButton href="/dashboard/financeiro/relatorios">
-                                    Relatórios
-                                </SidebarMenuSubButton>
-                            </SidebarMenuSubItem>
-                        </SidebarMenuSub>
-                    </CollapsibleContent>
-                </SidebarMenuItem>
             </Collapsible>
             <Collapsible asChild>
                 <SidebarMenuItem>

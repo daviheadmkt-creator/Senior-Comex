@@ -8,7 +8,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Wallet, Landmark, Coins, Mail, UserCog, History, ClipboardList, Image as ImageIcon } from 'lucide-react';
+import { ArrowRight, History, Image as ImageIcon } from 'lucide-react';
 
 const configOptions = [
     {
@@ -16,36 +16,6 @@ const configOptions = [
         description: 'Altere o logo exibido no sistema.',
         href: '/dashboard/configuracoes/logo',
         icon: ImageIcon,
-    },
-    {
-        title: 'Ambiente de Cadastro',
-        description: 'Gerencie os tipos de cadastros do sistema.',
-        href: '/dashboard/configuracoes/tipos-cadastro',
-        icon: ClipboardList,
-    },
-    {
-        title: 'Financeiro',
-        description: 'Gerencie categorias, centros de custo e contas.',
-        href: '/dashboard/configuracoes/financeiro',
-        icon: Wallet,
-    },
-    {
-        title: 'Contas Bancárias',
-        description: 'Cadastre contas, caixas e meios de pagamento.',
-        href: '/dashboard/configuracoes/contas-bancarias',
-        icon: Landmark,
-    },
-     {
-        title: 'Moedas e Câmbio',
-        description: 'Gerencie moedas e taxas de câmbio aplicadas.',
-        href: '/dashboard/configuracoes/moedas-e-cambio',
-        icon: Coins,
-    },
-    {
-        title: 'Follow Up Automático',
-        description: 'Configure e gerencie os e-mails e alertas automáticos.',
-        href: '/dashboard/comunicacao/follow-up',
-        icon: Mail,
     },
     {
         title: 'Relatório de Log',
