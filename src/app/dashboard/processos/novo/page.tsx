@@ -160,6 +160,55 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
     return 'outline';
 };
 
+const estimateFirestoreDataSize = (data: any): number => {
+    let total = 0;
+
+    const sizeOf = (value: any): number => {
+        if (value === null) return 1;
+        const type = typeof value;
+        if (type === 'boolean') return 1;
+        if (type === 'number') return 8;
+        if (type === 'string') {
+           // Use a robust way to calculate UTF-8 byte length
+            let byteLength = 0;
+            for (let i = 0; i < value.length; i++) {
+                const code = value.charCodeAt(i);
+                if (code < 0x80) {
+                    byteLength += 1;
+                } else if (code < 0x800) {
+                    byteLength += 2;
+                } else if (code < 0xD800 || code >= 0xE000) {
+                    byteLength += 3;
+                } else {
+                    // Surrogate pair
+                    i++;
+                    byteLength += 4;
+                }
+            }
+            return byteLength + 1;
+        }
+        if (type === 'object') {
+            if (value instanceof Date || (value.seconds && value.nanoseconds)) return 8; // Firestore Timestamps
+            if (Array.isArray(value)) {
+                return value.reduce((acc, item) => acc + sizeOf(item), 0);
+            }
+            // For maps/objects
+            return Object.keys(value).reduce((acc, key) => {
+                // field name (UTF-8 bytes + 1) + field value
+                const keyByteLength = new TextEncoder().encode(key).length;
+                return acc + keyByteLength + 1 + sizeOf(value[key]);
+            }, 0);
+        }
+        return 0; // for undefined, function, symbol...
+    };
+
+    total += sizeOf(data);
+    total += 32; // Document overhead
+
+    return total;
+};
+
+
 export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -307,30 +356,23 @@ const handleDownload = async (file: { name: string, url: string, type?: string }
 
     try {
         let blob: Blob;
-        // Check if the URL is a data URI
         if (file.url.startsWith('data:')) {
             const response = await fetch(file.url);
             blob = await response.blob();
-        } else if (file.url.startsWith('blob:')) {
-            // If it's already a blob URL, we can use it directly
-            const response = await fetch(file.url);
-            if (!response.ok) throw new Error('Falha na rede ao obter o ficheiro blob.');
-            blob = await response.blob();
         } else {
-            // Assume it's a direct URL that fetch can handle, but be cautious with CORS
+             // For direct URLs or blob URLs
             const response = await fetch(file.url);
-            if (!response.ok) throw new Error('Falha na rede ao obter o ficheiro.');
+            if (!response.ok) throw new Error('Falha de rede ao obter o ficheiro.');
             blob = await response.blob();
         }
 
-        // Create a link and trigger the download
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = file.name;
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        URL.revokeObjectURL(link.href); // Clean up
+        URL.revokeObjectURL(link.href);
     } catch (error: any) {
         console.error("Erro no download:", error);
         toast({
@@ -339,16 +381,16 @@ const handleDownload = async (file: { name: string, url: string, type?: string }
             variant: "destructive"
         });
     }
-  };
+};
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    if (file.size > 750 * 1024) { // 750KB limit
+    if (file.size > 250 * 1024) { // 250KB limit
         toast({
             title: "Ficheiro Demasiado Grande",
-            description: `O ficheiro "${file.name}" excede o limite de 750KB e não pode ser carregado.`,
+            description: `O ficheiro "${file.name}" excede o limite de 250KB e não pode ser carregado.`,
             variant: "destructive",
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -955,6 +997,20 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
         };
 
+        const dataSize = estimateFirestoreDataSize(dataToSave);
+        const sizeLimit = 950 * 1024; // 950KB (1MiB limit - 1,048,576 bytes)
+
+        if (dataSize > sizeLimit) {
+            toast({
+                title: "Erro: Ficheiros Demasiado Grandes",
+                description: `O tamanho total do processo (${(dataSize / 1024).toFixed(0)}KB) excede o limite de 950KB. Por favor, remova ou substitua alguns anexos.`,
+                variant: "destructive",
+                duration: 9000,
+            });
+            setIsSaving(false);
+            return;
+        }
+
         await setDoc(processoRef, dataToSave, { merge: true });
 
         toast({
@@ -965,21 +1021,20 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
     } catch (error: any) {
         console.error("Erro ao salvar processo:", error);
-        if (error.code === 'invalid-argument' || (error.message && (error.message.includes('exceeds the maximum size') || error.message.includes('too large')))) {
-            toast({
-                title: "Erro: Ficheiros Demasiado Grandes",
-                description: "O tamanho total dos ficheiros anexados excede o limite de 1MB. Por favor, remova ou substitua por ficheiros menores (limite por ficheiro: 500KB).",
-                variant: "destructive",
-                duration: 9000,
-            });
-        } else {
-             toast({
-                title: "Erro ao Guardar",
-                description: "Não foi possível guardar o processo. Verifique a sua ligação ou tente novamente.",
-                variant: "destructive",
-                duration: 9000,
-            });
+        
+        let description = `Ocorreu um erro inesperado. Código: ${error.code || 'desconhecido'}. Mensagem: ${error.message || 'sem mensagem'}.`;
+        
+        if (error.message && (error.message.toLowerCase().includes('exceeds the maximum size') || error.message.toLowerCase().includes('too large') || error.message.toLowerCase().includes('entity too large'))) {
+            description = "O tamanho total dos ficheiros anexados excede o limite de 1MB. Por favor, remova ou substitua por ficheiros menores.";
         }
+
+        toast({
+            title: "Erro ao Guardar",
+            description,
+            variant: "destructive",
+            duration: 9000,
+        });
+
     } finally {
         setIsSaving(false);
     }
@@ -1036,7 +1091,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 </Link>
                  <Button type="submit" disabled={isSaving || isLoading}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    Salvar Alterações
+                    {isSaving ? 'A guardar...' : 'Salvar Alterações'}
                 </Button>
             </div>
         </div>
@@ -1152,9 +1207,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                                 <Input id="booking_number" value={formData.booking_number || ''} onChange={e => {
                                     const value = e.target.value;
                                     handleInputChange('booking_number', value);
-                                    if (value && formData.status === "Iniciado / Aguardando Booking") {
-                                        handleInputChange('status', "Booking Confirmado / Aguardando Draft");
-                                    }
                                 }} placeholder="Insira o número do booking" />
                             </div>
                             <div className="space-y-2">
@@ -1822,3 +1874,5 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     
 
     
+
+      
