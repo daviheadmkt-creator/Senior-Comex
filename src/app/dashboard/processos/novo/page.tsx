@@ -281,10 +281,6 @@ useEffect(() => {
     
     const handleInputChange = (id: string, value: any) => {
         setFormData(prev => ({ ...prev, [id]: value ?? '' }));
-
-        if (id === 'booking_number' && value && formData.status === "Iniciado / Aguardando Booking") {
-             setFormData(prev => ({ ...prev, status: "Booking Confirmado / Aguardando Draft"}));
-        }
     };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -303,27 +299,56 @@ useEffect(() => {
     handleInputChange('quantidade', `${formatted} TON`);
   };
   
-  const handleDownload = (file: { name: string, url: string, type?: string }) => {
+const handleDownload = async (file: { name: string, url: string, type?: string }) => {
     if (!file || !file.url) {
         toast({ title: "Erro", description: "Ficheiro não encontrado ou inválido.", variant: "destructive" });
         return;
     }
-    const link = document.createElement('a');
-    link.href = file.url;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+
+    try {
+        let blob: Blob;
+        // Check if the URL is a data URI
+        if (file.url.startsWith('data:')) {
+            const response = await fetch(file.url);
+            blob = await response.blob();
+        } else if (file.url.startsWith('blob:')) {
+            // If it's already a blob URL, we can use it directly
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error('Falha na rede ao obter o ficheiro blob.');
+            blob = await response.blob();
+        } else {
+            // Assume it's a direct URL that fetch can handle, but be cautious with CORS
+            const response = await fetch(file.url);
+            if (!response.ok) throw new Error('Falha na rede ao obter o ficheiro.');
+            blob = await response.blob();
+        }
+
+        // Create a link and trigger the download
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href); // Clean up
+    } catch (error: any) {
+        console.error("Erro no download:", error);
+        toast({
+            title: "Erro de Download",
+            description: error.message || "Não foi possível descarregar o ficheiro.",
+            variant: "destructive"
+        });
+    }
   };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    if (file.size > 250 * 1024) { // 250KB limit
+    if (file.size > 750 * 1024) { // 750KB limit
         toast({
             title: "Ficheiro Demasiado Grande",
-            description: `O ficheiro "${file.name}" excede o limite de 250KB e não pode ser carregado.`,
+            description: `O ficheiro "${file.name}" excede o limite de 750KB e não pode ser carregado.`,
             variant: "destructive",
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -914,7 +939,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     try {
         const docId = processId || doc(collection(firestore, 'processos')).id;
         const processoRef = doc(firestore, 'processos', docId);
-
+        
         const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
         const selectedAnalista = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
         const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
@@ -930,29 +955,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
         };
 
-        try {
-            const size = new TextEncoder().encode(JSON.stringify(dataToSave)).length;
-            const limit = 1000 * 1024; // 1MB with a small buffer
-
-            if (size > limit) {
-                toast({
-                    title: "Erro: Processo Demasiado Grande",
-                    description: "O tamanho total dos dados, incluindo os ficheiros anexados, excede o limite de 1MB. Por favor, remova alguns anexos ou use ficheiros menores.",
-                    variant: "destructive",
-                    duration: 9000,
-                });
-                return;
-            }
-        } catch (e) {
-            toast({
-                title: "Erro ao Processar",
-                description: "Não foi possível processar os dados para guardar. Podem ser demasiado grandes.",
-                variant: "destructive",
-                duration: 9000,
-            });
-            return;
-        }
-
         await setDoc(processoRef, dataToSave, { merge: true });
 
         toast({
@@ -967,13 +969,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             toast({
                 title: "Erro: Ficheiros Demasiado Grandes",
                 description: "O tamanho total dos ficheiros anexados excede o limite de 1MB. Por favor, remova ou substitua por ficheiros menores (limite por ficheiro: 500KB).",
-                variant: "destructive",
-                duration: 9000,
-            });
-        } else if (error instanceof FirestorePermissionError) {
-             toast({
-                title: "Erro de Permissão",
-                description: "Não tem permissão para guardar este processo. Contacte o administrador.",
                 variant: "destructive",
                 duration: 9000,
             });
@@ -1013,7 +1008,24 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 <p className="text-muted-foreground">{pageDescription}</p>
                 {isEditing && (
                     <div className='mt-2'>
-                        <Badge variant={getStatusVariant(formData.status)}>{formData.status}</Badge>
+                        <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
+                            <SelectTrigger id="status" className="w-[300px] h-8 text-xs">
+                                <div className='flex items-center gap-2'>
+                                    <span className={cn("h-2 w-2 rounded-full",
+                                        getStatusVariant(formData.status) === 'default' && 'bg-green-500',
+                                        getStatusVariant(formData.status) === 'secondary' && 'bg-yellow-500',
+                                        getStatusVariant(formData.status) === 'destructive' && 'bg-red-500',
+                                        getStatusVariant(formData.status) === 'outline' && 'bg-gray-400'
+                                    )}></span>
+                                    <SelectValue placeholder="Selecione o status" />
+                                </div>
+                            </SelectTrigger>
+                            <SelectContent>
+                                {processStatusOptions.map(status => (
+                                    <SelectItem key={status} value={status}>{status}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
                 )}
             </div>
@@ -1024,7 +1036,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                 </Link>
                  <Button type="submit" disabled={isSaving || isLoading}>
                     {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                    {isSaving ? 'A guardar...' : 'Salvar Alterações'}
+                    Salvar Alterações
                 </Button>
             </div>
         </div>
@@ -1060,7 +1072,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             <AccordionContent>
                 <Card>
                     <CardContent className="grid gap-6 pt-6">
-                         <div className="grid md:grid-cols-4 gap-4">
+                         <div className="grid md:grid-cols-3 gap-4">
                              <div className="space-y-2">
                                 <Label htmlFor="processo_interno">Número do Processo Interno</Label>
                                 <Input id="processo_interno" value={formData.processo_interno || ''} onChange={e => handleInputChange('processo_interno', e.target.value)} placeholder="Ex: SEN-2024-001" />
@@ -1068,17 +1080,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                             <div className="space-y-2">
                                 <Label htmlFor="po_number">Nº do Contrato/PO</Label>
                                 <Input id="po_number" value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} placeholder="Ex: 3426B" />
-                            </div>
-                            <div className="space-y-2">
-                                <Label htmlFor="status">Status do Processo</Label>
-                                <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
-                                    <SelectTrigger id="status"><SelectValue placeholder="Selecione o status" /></SelectTrigger>
-                                    <SelectContent>
-                                        {processStatusOptions.map(status => (
-                                            <SelectItem key={status} value={status}>{status}</SelectItem>
-                                        ))}
-                                    </SelectContent>
-                                </Select>
                             </div>
                              <div className="space-y-2">
                                 <Label>Data da Nomeação</Label>
@@ -1148,7 +1149,13 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
                         <div className="grid md:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="booking_number">Nº do Booking</Label>
-                                <Input id="booking_number" value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} placeholder="Insira o número do booking" />
+                                <Input id="booking_number" value={formData.booking_number || ''} onChange={e => {
+                                    const value = e.target.value;
+                                    handleInputChange('booking_number', value);
+                                    if (value && formData.status === "Iniciado / Aguardando Booking") {
+                                        handleInputChange('status', "Booking Confirmado / Aguardando Draft");
+                                    }
+                                }} placeholder="Insira o número do booking" />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="armadorId">Armador</Label>
@@ -1810,6 +1817,8 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
   );
 }
     
+    
+
     
 
     
