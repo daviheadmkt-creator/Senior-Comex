@@ -163,40 +163,30 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 const estimateFirestoreDataSize = (data: any): number => {
     let total = 0;
 
+    const getUtf8ByteLength = (str: string): number => {
+        // Blob size is a good approximation for UTF-8 byte length
+        return new Blob([str]).size;
+    };
+
     const sizeOf = (value: any): number => {
         if (value === null) return 1;
         const type = typeof value;
         if (type === 'boolean') return 1;
         if (type === 'number') return 8;
         if (type === 'string') {
-           // Use a robust way to calculate UTF-8 byte length
-            let byteLength = 0;
-            for (let i = 0; i < value.length; i++) {
-                const code = value.charCodeAt(i);
-                if (code < 0x80) {
-                    byteLength += 1;
-                } else if (code < 0x800) {
-                    byteLength += 2;
-                } else if (code < 0xD800 || code >= 0xE000) {
-                    byteLength += 3;
-                } else {
-                    // Surrogate pair
-                    i++;
-                    byteLength += 4;
-                }
-            }
-            return byteLength + 1;
+           return getUtf8ByteLength(value) + 1;
         }
         if (type === 'object') {
             if (value instanceof Date || (value.seconds && value.nanoseconds)) return 8; // Firestore Timestamps
             if (Array.isArray(value)) {
+                // Add size of each item in the array
                 return value.reduce((acc, item) => acc + sizeOf(item), 0);
             }
-            // For maps/objects
+            // For map fields, it's the size of each key + value + 1 byte overhead for each
             return Object.keys(value).reduce((acc, key) => {
-                // field name (UTF-8 bytes + 1) + field value
-                const keyByteLength = new TextEncoder().encode(key).length;
-                return acc + keyByteLength + 1 + sizeOf(value[key]);
+                // key size (UTF-8 bytes + 1) + value size
+                const keySize = getUtf8ByteLength(key) + 1;
+                return acc + keySize + sizeOf(value[key]);
             }, 0);
         }
         return 0; // for undefined, function, symbol...
@@ -360,8 +350,7 @@ const handleDownload = async (file: { name: string, url: string, type?: string }
             const response = await fetch(file.url);
             blob = await response.blob();
         } else {
-             // For direct URLs or blob URLs
-            const response = await fetch(file.url);
+             const response = await fetch(file.url);
             if (!response.ok) throw new Error('Falha de rede ao obter o ficheiro.');
             blob = await response.blob();
         }
@@ -980,7 +969,6 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
 
     try {
         const docId = processId || doc(collection(firestore, 'processos')).id;
-        const processoRef = doc(firestore, 'processos', docId);
         
         const selectedExporter = parceiros?.find(p => String(p.id) === String(formData.exportadorId));
         const selectedAnalista = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
@@ -1011,6 +999,7 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
             return;
         }
 
+        const processoRef = doc(firestore, 'processos', docId);
         await setDoc(processoRef, dataToSave, { merge: true });
 
         toast({
@@ -1022,10 +1011,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
     } catch (error: any) {
         console.error("Erro ao salvar processo:", error);
         
-        let description = `Ocorreu um erro inesperado. Código: ${error.code || 'desconhecido'}. Mensagem: ${error.message || 'sem mensagem'}.`;
+        let description = "Não foi possível guardar o processo. Verifique a sua ligação ou tente novamente.";
         
-        if (error.message && (error.message.toLowerCase().includes('exceeds the maximum size') || error.message.toLowerCase().includes('too large') || error.message.toLowerCase().includes('entity too large'))) {
-            description = "O tamanho total dos ficheiros anexados excede o limite de 1MB. Por favor, remova ou substitua por ficheiros menores.";
+        if (error.code === 'permission-denied') {
+            description = "Você não tem permissão para realizar esta operação."
+        } else if (error.message && (error.message.toLowerCase().includes('exceeds the maximum size') || error.message.toLowerCase().includes('too large') || error.message.toLowerCase().includes('entity too large'))) {
+            description = "O tamanho total dos ficheiros anexados excede o limite. Por favor, remova ou substitua por ficheiros menores.";
         }
 
         toast({
