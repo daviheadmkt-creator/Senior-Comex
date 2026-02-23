@@ -161,41 +161,20 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
 };
 
 const estimateFirestoreDataSize = (data: any): number => {
-    let total = 0;
-
-    const getUtf8ByteLength = (str: string): number => {
-        // Blob size is a good approximation for UTF-8 byte length
-        return new Blob([str]).size;
-    };
-
-    const sizeOf = (value: any): number => {
-        if (value === null) return 1;
-        const type = typeof value;
-        if (type === 'boolean') return 1;
-        if (type === 'number') return 8;
-        if (type === 'string') {
-           return getUtf8ByteLength(value) + 1;
-        }
-        if (type === 'object') {
-            if (value instanceof Date || (value.seconds && value.nanoseconds)) return 8; // Firestore Timestamps
-            if (Array.isArray(value)) {
-                // Add size of each item in the array
-                return value.reduce((acc, item) => acc + sizeOf(item), 0);
-            }
-            // For map fields, it's the size of each key + value + 1 byte overhead for each
-            return Object.keys(value).reduce((acc, key) => {
-                // key size (UTF-8 bytes + 1) + value size
-                const keySize = getUtf8ByteLength(key) + 1;
-                return acc + keySize + sizeOf(value[key]);
-            }, 0);
-        }
-        return 0; // for undefined, function, symbol...
-    };
-
-    total += sizeOf(data);
-    total += 32; // Document overhead
-
-    return total;
+    try {
+        // A rough estimation by stringifying the object.
+        // This is not perfectly accurate for Firestore's storage model,
+        // but it provides a safe and reliable way to gauge the overall data size,
+        // especially when dealing with large base64 strings from files.
+        const jsonString = JSON.stringify(data);
+        return new Blob([jsonString]).size;
+    } catch (e) {
+        // If JSON.stringify fails (e.g., circular reference), it's a critical error
+        // in our data structure. We return Infinity to ensure the size check fails
+        // and the user is notified, preventing a crash during the Firestore write.
+        console.error("Critical Error: Could not estimate data size due to a data structure issue.", e);
+        return Infinity;
+    }
 };
 
 
@@ -345,16 +324,12 @@ const handleDownload = async (file: { name: string, url: string, type?: string }
     }
 
     try {
-        let blob: Blob;
-        if (file.url.startsWith('data:')) {
-            const response = await fetch(file.url);
-            blob = await response.blob();
-        } else {
-             const response = await fetch(file.url);
-            if (!response.ok) throw new Error('Falha de rede ao obter o ficheiro.');
-            blob = await response.blob();
+        const response = await fetch(file.url);
+        if (!response.ok) {
+            throw new Error(`Falha de rede ao obter o ficheiro: ${response.statusText}`);
         }
-
+        const blob = await response.blob();
+        
         const link = document.createElement('a');
         link.href = URL.createObjectURL(blob);
         link.download = file.name;
@@ -376,10 +351,10 @@ const handleDownload = async (file: { name: string, url: string, type?: string }
     const file = e.target.files?.[0];
     if (!file || !uploadTarget) return;
 
-    if (file.size > 250 * 1024) { // 250KB limit
+    if (file.size > 500 * 1024) { // 500KB limit
         toast({
             title: "Ficheiro Demasiado Grande",
-            description: `O ficheiro "${file.name}" excede o limite de 250KB e não pode ser carregado.`,
+            description: `O ficheiro "${file.name}" excede o limite de 500KB e não pode ser carregado.`,
             variant: "destructive",
         });
         if (fileInputRef.current) fileInputRef.current.value = '';
@@ -523,10 +498,10 @@ const handleDownload = async (file: { name: string, url: string, type?: string }
       if (!files || files.length === 0) return;
 
       for (const file of Array.from(files)) {
-          if (file.size > 250 * 1024) { // 250KB limit
+          if (file.size > 500 * 1024) { // 500KB limit
               toast({
                   title: "Ficheiro Demasiado Grande",
-                  description: `${file.name} excede o limite de 250KB e não foi adicionado.`,
+                  description: `${file.name} excede o limite de 500KB e não foi adicionado.`,
                   variant: "destructive",
               });
               continue; // Skip this file
@@ -986,12 +961,12 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         };
 
         const dataSize = estimateFirestoreDataSize(dataToSave);
-        const sizeLimit = 950 * 1024; // 950KB (1MiB limit - 1,048,576 bytes)
+        const sizeLimit = 950 * 1024; // 950KB to leave a safety margin for the ~1MB Firestore limit.
 
         if (dataSize > sizeLimit) {
             toast({
-                title: "Erro: Ficheiros Demasiado Grandes",
-                description: `O tamanho total do processo (${(dataSize / 1024).toFixed(0)}KB) excede o limite de 950KB. Por favor, remova ou substitua alguns anexos.`,
+                title: "Erro: Dados do Processo Demasiado Grandes",
+                description: `O tamanho total do processo (${(dataSize / 1024).toFixed(0)}KB) excede o limite de 950KB. Por favor, remova ou substitua alguns anexos por ficheiros menores.`,
                 variant: "destructive",
                 duration: 9000,
             });
@@ -1013,10 +988,17 @@ const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem
         
         let description = "Não foi possível guardar o processo. Verifique a sua ligação ou tente novamente.";
         
-        if (error.code === 'permission-denied') {
-            description = "Você não tem permissão para realizar esta operação."
-        } else if (error.message && (error.message.toLowerCase().includes('exceeds the maximum size') || error.message.toLowerCase().includes('too large') || error.message.toLowerCase().includes('entity too large'))) {
-            description = "O tamanho total dos ficheiros anexados excede o limite. Por favor, remova ou substitua por ficheiros menores.";
+        // Check for Firebase specific errors
+        if (error && typeof error.code === 'string') {
+            if (error.code === 'permission-denied') {
+                description = "Você não tem permissão para realizar esta operação."
+            } else if (error.code === 'invalid-argument' && error.message.toLowerCase().includes('exceeds the maximum size')) {
+                 description = "O tamanho total dos ficheiros anexados excede o limite da base de dados. Por favor, remova ou substitua por ficheiros menores.";
+            } else {
+                 description = `Ocorreu um erro: ${error.message} (Código: ${error.code})`;
+            }
+        } else if (error instanceof Error) {
+            description = `Ocorreu um erro inesperado: ${error.message}`;
         }
 
         toast({
