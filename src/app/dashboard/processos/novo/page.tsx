@@ -31,8 +31,8 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, setDoc, errorEmitter } from '@/firebase';
-import { collection, query, where, doc } from 'firebase/firestore';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, errorEmitter } from '@/firebase';
+import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Combobox } from '@/components/ui/combobox';
 import * as XLSX from 'xlsx';
