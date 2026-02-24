@@ -327,10 +327,9 @@ export default function NovoProcessoPage() {
       return;
     }
     try {
-      // Use um link para descarregar diretamente
       const link = document.createElement('a');
       link.href = file.downloadURL;
-      link.target = "_blank"; // Abrir numa nova aba pode ajudar
+      link.target = "_blank";
       link.download = file.name;
       document.body.appendChild(link);
       link.click();
@@ -348,64 +347,64 @@ export default function NovoProcessoPage() {
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !uploadTarget || !storage || !pageProcessId) return;
-  
+
     const targetKey = typeof uploadTarget === 'string' ? uploadTarget : `${uploadTarget.type}_${uploadTarget.index}`;
     setUploadingFileKey(targetKey);
-  
+
     const filePath = `processos/${pageProcessId}/${targetKey}/${Date.now()}_${file.name}`;
     const fileStorageRef = storageRef(storage, filePath);
-  
+
     let oldFile: FileData | null = null;
     if (typeof uploadTarget === 'string') {
-      oldFile = formData[uploadTarget];
+        oldFile = formData[uploadTarget];
     } else if (uploadTarget.type === 'nota_fiscal') {
-      oldFile = formData.notas_fiscais[uploadTarget.index]?.file;
+        oldFile = formData.notas_fiscais[uploadTarget.index]?.file;
     } else if (uploadTarget.type === 'documento_pos_embarque') {
-      oldFile = formData.documentos_pos_embarque[uploadTarget.index]?.file;
+        oldFile = formData.documentos_pos_embarque[uploadTarget.index]?.file;
     }
-  
+
+    // Non-blocking upload
     uploadBytes(fileStorageRef, file)
-      .then(async (snapshot) => {
-        const downloadURL = await getDownloadURL(snapshot.ref);
-  
-        const fileData: FileData = {
-          name: file.name,
-          downloadURL: downloadURL,
-          storagePath: snapshot.ref.fullPath,
-          type: file.type,
-        };
-  
-        if (oldFile && oldFile.storagePath) {
-          const oldFileRef = storageRef(storage, oldFile.storagePath);
-          deleteObject(oldFileRef).catch(err => console.warn("Old file deletion failed.", err));
-        }
-  
-        if (typeof uploadTarget === 'string') {
-          handleInputChange(uploadTarget, fileData);
-        } else if (uploadTarget.type === 'nota_fiscal') {
-          handleNotaFiscalChange(uploadTarget.index, 'file', fileData);
-        } else if (uploadTarget.type === 'documento_pos_embarque') {
-          handlePostShipmentDocChange(uploadTarget.index, 'file', fileData);
-        }
-  
-        toast({
-          title: "Ficheiro Carregado",
-          description: `${file.name} foi guardado com sucesso.`,
+        .then(async (snapshot) => {
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            const fileData: FileData = {
+                name: file.name,
+                downloadURL: downloadURL,
+                storagePath: snapshot.ref.fullPath,
+                type: file.type,
+            };
+
+            if (oldFile && oldFile.storagePath) {
+                const oldFileRef = storageRef(storage, oldFile.storagePath);
+                deleteObject(oldFileRef).catch(err => console.warn("Old file deletion failed.", err));
+            }
+            
+            if (typeof uploadTarget === 'string') {
+                handleInputChange(uploadTarget, fileData);
+            } else if (uploadTarget.type === 'nota_fiscal') {
+                handleNotaFiscalChange(uploadTarget.index, 'file', fileData);
+            } else if (uploadTarget.type === 'documento_pos_embarque') {
+                handlePostShipmentDocChange(uploadTarget.index, 'file', fileData);
+            }
+
+            toast({
+                title: "Ficheiro Carregado",
+                description: `${file.name} foi guardado com sucesso.`,
+            });
+        })
+        .catch((error) => {
+            console.error("File upload error:", error);
+            toast({
+                title: "Erro de Carregamento",
+                description: `Não foi possível carregar o ficheiro: ${error.message}`,
+                variant: "destructive",
+            });
+        })
+        .finally(() => {
+            setUploadingFileKey(null);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+            setUploadTarget(null);
         });
-      })
-      .catch((error) => {
-        console.error("File upload error:", error);
-        toast({
-          title: "Erro de Carregamento",
-          description: `Não foi possível carregar o ficheiro: ${error.message}`,
-          variant: "destructive",
-        });
-      })
-      .finally(() => {
-        setUploadingFileKey(null);
-        if (fileInputRef.current) fileInputRef.current.value = '';
-        setUploadTarget(null);
-      });
   };
 
   const triggerFileUpload = (target: string | object) => {
@@ -419,7 +418,6 @@ export default function NovoProcessoPage() {
     let fileToRemove: FileData | null = null;
     let targetKey: string | null = null;
     
-    // Determine which file to remove and its key for the loader
     if (typeof target === 'string') {
         fileToRemove = formData[target];
         targetKey = target;
@@ -432,11 +430,11 @@ export default function NovoProcessoPage() {
     }
 
     if (fileToRemove && fileToRemove.storagePath) {
-        if (targetKey) setUploadingFileKey(targetKey); // Start loader
+        if (targetKey) setUploadingFileKey(targetKey);
 
         const fileRef = storageRef(storage, fileToRemove.storagePath);
         
-        // Optimistically update UI first
+        // Optimistically update UI
         if (typeof target === 'string') {
             handleInputChange(target, null);
         } else if (target.type === 'nota_fiscal') {
@@ -445,14 +443,15 @@ export default function NovoProcessoPage() {
             handlePostShipmentDocChange(target.index, 'file', null);
         }
 
+        // Non-blocking delete
         deleteObject(fileRef)
           .then(() => {
               toast({ title: "Anexo Removido" });
           })
           .catch((error: any) => {
-              // Revert UI if deletion fails and it wasn't a "not found" error
               if (error.code !== 'storage/object-not-found') {
                   toast({ title: "Erro ao Remover", description: "Não foi possível remover o anexo do armazenamento.", variant: "destructive" });
+                  // Revert UI on failure
                   if (typeof target === 'string') {
                       handleInputChange(target, fileToRemove);
                   } else if (target.type === 'nota_fiscal') {
@@ -463,20 +462,16 @@ export default function NovoProcessoPage() {
               }
           })
           .finally(() => {
-              if (targetKey) setUploadingFileKey(null); // Stop loader
+              if (targetKey) setUploadingFileKey(null);
           });
     } else {
-      // If there's no file in storage, just clear it from the UI state
+      // If there's no file to remove from storage, just clear from UI state
       if (typeof target === 'string') {
-        handleInputChange(target, null);
+          handleInputChange(target, null);
       } else if (target.type === 'nota_fiscal') {
-        const updatedNotas = [...formData.notas_fiscais];
-        if (updatedNotas[target.index]) updatedNotas[target.index].file = null;
-        setFormData(prev => ({...prev, notas_fiscais: updatedNotas}));
+          handleNotaFiscalChange(target.index, 'file', null);
       } else if (target.type === 'documento_pos_embarque') {
-        const updatedDocs = [...formData.documentos_pos_embarque];
-        if (updatedDocs[target.index]) updatedDocs[target.index].file = null;
-        setFormData(prev => ({...prev, documentos_pos_embarque: updatedDocs}));
+          handlePostShipmentDocChange(target.index, 'file', null);
       }
     }
   };
@@ -526,60 +521,60 @@ export default function NovoProcessoPage() {
   const handleMultipleNFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0 || !storage || !pageProcessId) return;
-  
+
     setUploadingFileKey('notas_fiscais_multi');
-  
+
     const uploadPromises = Array.from(files).map(file => {
-      const targetKey = `notas_fiscais_multi_${Date.now()}`;
-      const filePath = `processos/${pageProcessId}/${targetKey}/${file.name}`;
-      const fileStorageRef = storageRef(storage, filePath);
-  
-      return uploadBytes(fileStorageRef, file).then(async snapshot => {
-        const downloadURL = await getDownloadURL(snapshot.ref);
-        const fileData: FileData = {
-          name: file.name,
-          downloadURL,
-          storagePath: snapshot.ref.fullPath,
-          type: file.type,
-        };
-        const newNota = {
-          id: Date.now() + Math.random(),
-          tipo: 'Remessa',
-          chave: '',
-          data_pedido: null,
-          data_recebida: null,
-          file: fileData
-        };
-        return newNota;
-      }).catch(error => {
-        console.error(`Failed to upload ${file.name}:`, error);
-        toast({
-          title: `Erro ao Carregar ${file.name}`,
-          description: error.message,
-          variant: "destructive",
+        const targetKey = `notas_fiscais_multi_${Date.now()}`;
+        const filePath = `processos/${pageProcessId}/${targetKey}/${file.name}`;
+        const fileStorageRef = storageRef(storage, filePath);
+
+        return uploadBytes(fileStorageRef, file).then(async snapshot => {
+            const downloadURL = await getDownloadURL(snapshot.ref);
+            const fileData: FileData = {
+                name: file.name,
+                downloadURL,
+                storagePath: snapshot.ref.fullPath,
+                type: file.type,
+            };
+            const newNota = {
+                id: Date.now() + Math.random(),
+                tipo: 'Remessa',
+                chave: '',
+                data_pedido: null,
+                data_recebida: null,
+                file: fileData
+            };
+            return newNota;
+        }).catch(error => {
+            console.error(`Failed to upload ${file.name}:`, error);
+            toast({
+                title: `Erro ao Carregar ${file.name}`,
+                description: error.message,
+                variant: "destructive",
+            });
+            return null;
         });
-        return null;
-      });
     });
-  
+
     Promise.all(uploadPromises)
-      .then(results => {
-        const newNotas = results.filter((r): r is NonNullable<typeof r> => r !== null);
-        if (newNotas.length > 0) {
-          setFormData(prev => ({
-            ...prev,
-            notas_fiscais: [...prev.notas_fiscais, ...newNotas]
-          }));
-        }
-        toast({
-          title: "Carregamento Concluído",
-          description: `${newNotas.length} de ${files.length} nota(s) fiscal(is) foram carregadas.`
+        .then(results => {
+            const newNotas = results.filter((r): r is NonNullable<typeof r> => r !== null);
+            if (newNotas.length > 0) {
+                setFormData(prev => ({
+                    ...prev,
+                    notas_fiscais: [...prev.notas_fiscais, ...newNotas]
+                }));
+            }
+            toast({
+                title: "Carregamento Concluído",
+                description: `${newNotas.length} de ${files.length} nota(s) fiscal(is) foram carregadas.`
+            });
+        })
+        .finally(() => {
+            if (nfFileInputRef.current) nfFileInputRef.current.value = '';
+            setUploadingFileKey(null);
         });
-      })
-      .finally(() => {
-        if (nfFileInputRef.current) nfFileInputRef.current.value = '';
-        setUploadingFileKey(null);
-      });
   };
 
   const removeNotaFiscal = (index: number) => {
