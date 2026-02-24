@@ -78,7 +78,7 @@ const DocumentList = ({ processo }: { processo: any }) => {
                                      <span className="text-xs text-muted-foreground">{doc.file.name}</span>
                                 </div>
                             </div>
-                            <a href={doc.file.dataUrl} download={doc.file.name} title={`Baixar ${doc.file.name}`}>
+                            <a href={doc.file.downloadURL} download={doc.file.name} target="_blank" rel="noopener noreferrer" title={`Baixar ${doc.file.name}`}>
                                 <Button variant="ghost" size="icon">
                                     <Download className="h-5 w-5" />
                                 </Button>
@@ -201,3 +201,5 @@ export default function PortalClientePage() {
         </div>
     );
 }
+
+    

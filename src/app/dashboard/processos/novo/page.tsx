@@ -31,12 +31,23 @@ import { cn } from '@/lib/utils';
 import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, useStorage } from '@/firebase';
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
 import * as XLSX from 'xlsx';
+import { Progress } from '@/components/ui/progress';
 
-type FileData = { name: string; dataUrl: string; type: string; size: number };
+
+type FileData = {
+  name: string;
+  storagePath: string; // Path in Firebase Storage
+  downloadURL: string; // Public URL for downloading
+  type: string;
+  size: number;
+  uploadState?: 'running' | 'success' | 'error';
+  uploadProgress?: number;
+};
 
 const processStatusOptions = [
   "Iniciado / Aguardando Booking",
@@ -179,6 +190,7 @@ export default function NovoProcessoPage() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const firestore = useFirestore();
+  const storage = useStorage();
   const { user: currentUser } = useUser();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -239,6 +251,23 @@ export default function NovoProcessoPage() {
   }, [sortedPorts]);
 
   const [filteredTerminais, setFilteredTerminais] = useState<any[]>([]);
+
+  const isUploading = useMemo(() => {
+    const filesToCheck = [
+      formData.draft_bl_file,
+      formData.draft_fito_file,
+      formData.draft_co_file,
+      formData.due_file,
+      formData.lpco_file,
+      formData.deadline_draft_file,
+      formData.deadline_vgm_file,
+      formData.deadline_carga_file,
+      ...formData.notas_fiscais.map((nf: any) => nf.file),
+      ...formData.documentos_pos_embarque.map((doc: any) => doc.file)
+    ];
+    return filesToCheck.some(file => file && file.uploadState === 'running');
+  }, [formData]);
+
 
   useEffect(() => {
     if (isEditing && processoData) {
@@ -319,71 +348,104 @@ export default function NovoProcessoPage() {
   };
 
   const handleDownload = (file: FileData) => {
-    if (!file || !file.dataUrl) {
-      toast({ title: "Erro", description: "Ficheiro não encontrado.", variant: "destructive" });
+    if (!file || !file.downloadURL) {
+      toast({ title: "Erro", description: "URL do ficheiro não encontrada.", variant: "destructive" });
       return;
     }
-    const link = document.createElement('a');
-    link.href = file.dataUrl;
-    link.download = file.name;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    window.open(file.downloadURL, '_blank');
   };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       const currentUploadTarget = uploadTarget;
-      if (!file || !currentUploadTarget) return;
+      if (!file || !currentUploadTarget || !storage || !pageProcessId) return;
 
-      if (file.size > 250 * 1024) { // 250KB limit
-          toast({
-              title: "Ficheiro Demasiado Grande",
-              description: `O ficheiro "${file.name}" excede o limite de 250KB. Por favor, escolha um ficheiro menor.`,
-              variant: "destructive",
+      const targetField = typeof currentUploadTarget === 'string' ? currentUploadTarget : null;
+      const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
+      const targetIndex = typeof currentUploadTarget === 'object' ? currentUploadTarget.index : -1;
+      
+      const filePath = `processos/${pageProcessId}/${file.name}-${Date.now()}`;
+      const storageRef = ref(storage, filePath);
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      const placeholder: FileData = {
+          name: file.name,
+          storagePath: filePath,
+          downloadURL: '',
+          type: file.type,
+          size: file.size,
+          uploadState: 'running',
+          uploadProgress: 0,
+      };
+
+      if (targetField) {
+          setFormData((prev: any) => ({ ...prev, [targetField]: placeholder }));
+      } else if (targetList === 'nota_fiscal') {
+          setFormData((prev: any) => {
+              const newNotas = [...prev.notas_fiscais];
+              newNotas[targetIndex].file = placeholder;
+              return { ...prev, notas_fiscais: newNotas };
           });
-          if (fileInputRef.current) fileInputRef.current.value = '';
-          return;
+      } else if (targetList === 'documento_pos_embarque') {
+          setFormData((prev: any) => {
+              const newDocs = [...prev.documentos_pos_embarque];
+              newDocs[targetIndex].file = placeholder;
+              return { ...prev, documentos_pos_embarque: newDocs };
+          });
       }
       
+      uploadTask.on('state_changed',
+          (snapshot) => {
+              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const updateProgress = (p: FileData) => ({...p, uploadProgress: progress});
+
+              if (targetField) {
+                  setFormData((prev: any) => ({ ...prev, [targetField]: updateProgress(prev[targetField]) }));
+              } else if (targetList === 'nota_fiscal') {
+                  setFormData((prev: any) => {
+                      const newNotas = [...prev.notas_fiscais];
+                      newNotas[targetIndex].file = updateProgress(newNotas[targetIndex].file);
+                      return { ...prev, notas_fiscais: newNotas };
+                  });
+              } else if (targetList === 'documento_pos_embarque') {
+                  setFormData((prev: any) => {
+                      const newDocs = [...prev.documentos_pos_embarque];
+                      newDocs[targetIndex].file = updateProgress(newDocs[targetIndex].file);
+                      return { ...prev, documentos_pos_embarque: newDocs };
+                  });
+              }
+          },
+          (error) => {
+              console.error("Upload error:", error);
+              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
+              if (targetField) {
+                  setFormData((prev: any) => ({...prev, [targetField]: null}));
+              }
+          },
+          () => {
+              getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                  const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
+                  if (targetField) {
+                      setFormData((prev: any) => ({ ...prev, [targetField]: finalFileData }));
+                  } else if (targetList === 'nota_fiscal') {
+                      setFormData((prev: any) => {
+                          const newNotas = [...prev.notas_fiscais];
+                          newNotas[targetIndex].file = finalFileData;
+                          return { ...prev, notas_fiscais: newNotas };
+                      });
+                  } else if (targetList === 'documento_pos_embarque') {
+                      setFormData((prev: any) => {
+                          const newDocs = [...prev.documentos_pos_embarque];
+                          newDocs[targetIndex].file = finalFileData;
+                          return { ...prev, documentos_pos_embarque: newDocs };
+                      });
+                  }
+              });
+          }
+      );
+
       if (fileInputRef.current) fileInputRef.current.value = '';
       setUploadTarget(null);
-
-      const reader = new FileReader();
-      reader.onload = (loadEvent) => {
-          const dataUrl = loadEvent.target?.result as string;
-          const fileData: FileData = {
-              name: file.name,
-              dataUrl: dataUrl,
-              type: file.type,
-              size: file.size
-          };
-
-          setFormData((prevData: any) => {
-              if (typeof currentUploadTarget === 'string') {
-                  return { ...prevData, [currentUploadTarget]: fileData };
-              } else if (currentUploadTarget.type === 'nota_fiscal') {
-                  const newNotas = [...prevData.notas_fiscais];
-                  newNotas[currentUploadTarget.index].file = fileData;
-                  return { ...prevData, notas_fiscais: newNotas };
-              } else if (currentUploadTarget.type === 'documento_pos_embarque') {
-                  const newDocs = [...prevData.documentos_pos_embarque];
-                  newDocs[currentUploadTarget.index].file = fileData;
-                  return { ...prevData, documentos_pos_embarque: newDocs };
-              }
-              return prevData;
-          });
-
-          toast({
-              title: "Anexo Adicionado",
-              description: `${file.name} foi anexado com sucesso.`,
-          });
-      };
-      reader.onerror = (error) => {
-          console.error("FileReader error:", error);
-          toast({ title: "Erro ao Ler Ficheiro", description: "Não foi possível ler o ficheiro selecionado.", variant: "destructive" });
-      };
-      reader.readAsDataURL(file);
   };
 
   const triggerFileUpload = (target: string | object) => {
@@ -392,14 +454,32 @@ export default function NovoProcessoPage() {
   };
 
   const removeFile = (target: string | { type: string, index: number }) => {
+    if (!storage) return;
+
+    let fileToRemove: FileData | null = null;
+    
     if (typeof target === 'string') {
+        fileToRemove = formData[target];
         handleInputChange(target, null);
     } else if (target.type === 'nota_fiscal') {
+        fileToRemove = formData.notas_fiscais[target.index].file;
         handleNotaFiscalChange(target.index, 'file', null);
     } else if (target.type === 'documento_pos_embarque') {
+        fileToRemove = formData.documentos_pos_embarque[target.index].file;
         handlePostShipmentDocChange(target.index, 'file', null);
     }
-    toast({ title: "Anexo Removido" });
+
+    if (fileToRemove && fileToRemove.storagePath) {
+        const fileRef = ref(storage, fileToRemove.storagePath);
+        deleteObject(fileRef).then(() => {
+            toast({ title: "Anexo Removido" });
+        }).catch(error => {
+            console.error("Error removing file from storage:", error);
+            toast({ title: "Erro", description: "Não foi possível remover o anexo do armazenamento.", variant: "destructive" });
+        });
+    } else {
+       toast({ title: "Anexo Removido" });
+    }
   };
 
   const handlePortChange = (value: string) => {
@@ -430,6 +510,7 @@ export default function NovoProcessoPage() {
   };
 
   const removePostShipmentDoc = (index: number) => {
+    removeFile({ type: 'documento_pos_embarque', index });
     const updatedDocuments = formData.documentos_pos_embarque.filter((_: any, i: number) => i !== index);
     setFormData(prev => ({ ...prev, documentos_pos_embarque: updatedDocuments }));
   };
@@ -442,52 +523,75 @@ export default function NovoProcessoPage() {
   
   const handleMultipleNFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const files = e.target.files;
-      if (!files || files.length === 0) return;
+      if (!files || files.length === 0 || !storage || !pageProcessId) return;
 
-      Array.from(files).forEach(file => {
-          if (file.size > 250 * 1024) { // 250KB limit per file
-              toast({
-                  title: "Ficheiro Demasiado Grande",
-                  description: `O ficheiro "${file.name}" excede o limite de 250KB e não foi carregado.`,
-                  variant: "destructive",
-              });
-              return;
-          }
-
-          const reader = new FileReader();
-          reader.onload = (loadEvent) => {
-              const dataUrl = loadEvent.target?.result as string;
-              const fileData: FileData = {
-                  name: file.name,
-                  dataUrl: dataUrl,
-                  type: file.type,
-                  size: file.size
-              };
-              const newNota = {
-                  id: Date.now() + Math.random(),
-                  tipo: 'Remessa',
-                  chave: '',
-                  data_pedido: null,
-                  data_recebida: null,
-                  file: fileData
-              };
-              setFormData(prev => ({
-                  ...prev,
-                  notas_fiscais: [...prev.notas_fiscais, newNota]
-              }));
+      Array.from(files).forEach((file, i) => {
+          const newNotaIndex = formData.notas_fiscais.length + i;
+          
+          const newNota = {
+              id: Date.now() + Math.random(),
+              tipo: 'Remessa',
+              chave: '',
+              data_pedido: null,
+              data_recebida: null,
+              file: null
           };
-          reader.readAsDataURL(file);
-      });
 
-      toast({
-          title: "Carregamento Concluído",
-          description: "As notas fiscais válidas foram anexadas."
-      });
+          const filePath = `processos/${pageProcessId}/${file.name}-${Date.now()}`;
+          const storageRef = ref(storage, filePath);
+          const uploadTask = uploadBytesResumable(storageRef, file);
 
+          const placeholder: FileData = {
+              name: file.name,
+              storagePath: filePath,
+              downloadURL: '',
+              type: file.type,
+              size: file.size,
+              uploadState: 'running',
+              uploadProgress: 0,
+          };
+
+          setFormData((prev:any) => ({
+              ...prev,
+              notas_fiscais: [...prev.notas_fiscais, { ...newNota, file: placeholder }]
+          }));
+
+          uploadTask.on('state_changed',
+            (snapshot) => {
+                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                setFormData((prev:any) => {
+                    const newNotas = [...prev.notas_fiscais];
+                    if (newNotas[newNotaIndex] && newNotas[newNotaIndex].file) {
+                        newNotas[newNotaIndex].file.uploadProgress = progress;
+                    }
+                    return { ...prev, notas_fiscais: newNotas };
+                });
+            },
+            (error) => {
+                 console.error("Upload error:", error);
+                 toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
+                 setFormData((prev:any) => ({...prev, notas_fiscais: prev.notas_fiscais.filter((n:any) => n.file?.storagePath !== filePath) }));
+            },
+            () => {
+                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                    setFormData((prev:any) => {
+                        const newNotas = [...prev.notas_fiscais];
+                        if (newNotas[newNotaIndex] && newNotas[newNotaIndex].file) {
+                            newNotas[newNotaIndex].file.downloadURL = downloadURL;
+                            newNotas[newNotaIndex].file.uploadState = 'success';
+                            newNotas[newNotaIndex].file.uploadProgress = 100;
+                        }
+                        return { ...prev, notas_fiscais: newNotas };
+                    });
+                });
+            }
+        );
+      });
       if (nfFileInputRef.current) nfFileInputRef.current.value = '';
   };
 
   const removeNotaFiscal = (index: number) => {
+    removeFile({ type: 'nota_fiscal', index });
     const updatedNotas = formData.notas_fiscais.filter((_: any, i: number) => i !== index);
     setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
   };
@@ -701,31 +805,28 @@ export default function NovoProcessoPage() {
     });
 
     for (const docItem of formData.documentos_pos_embarque) {
-      if (docItem.file && docItem.file.dataUrl) {
-        docPdf.addPage();
-        docPdf.setFontSize(12);
-        docPdf.text(`Anexo: ${docItem.nome} (${docItem.file.name})`, 14, 20);
-
-        try {
-          if (docItem.file.type && docItem.file.type.startsWith('image/')) {
-            const format = docItem.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
-            docPdf.addImage(docItem.file.dataUrl, format, 15, 40, 180, 160, undefined, 'FAST');
-          } else if (docItem.file.type === 'application/pdf') {
-            docPdf.rect(14, 40, 182, 217);
-            docPdf.setFontSize(16);
-            docPdf.setTextColor(150);
-            docPdf.text('Documento PDF Anexado', 105, 140, { align: 'center' });
+        if (docItem.file && docItem.file.downloadURL && docItem.file.type.startsWith('image/')) {
+            docPdf.addPage();
             docPdf.setFontSize(12);
-            docPdf.text(`Ficheiro: ${docItem.file.name}`, 105, 150, { align: 'center' });
-            docPdf.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, { align: 'center' });
-          } else {
-            docPdf.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
-          }
-        } catch (e) {
-          console.error("Error adding file to PDF:", e);
-          docPdf.text(`Não foi possível pré-visualizar o ficheiro: ${docItem.file.name}`, 14, 40);
+            docPdf.text(`Anexo: ${docItem.nome} (${docItem.file.name})`, 14, 20);
+
+            try {
+                const response = await fetch(docItem.file.downloadURL);
+                const blob = await response.blob();
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+                
+                const format = docItem.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
+                docPdf.addImage(dataUrl, format, 15, 40, 180, 160, undefined, 'FAST');
+            } catch (e) {
+                console.error("Error adding image to PDF:", e);
+                docPdf.text(`Não foi possível pré-visualizar a imagem: ${docItem.file.name}`, 14, 40);
+            }
         }
-      }
     }
 
     docPdf.save(`Malote_Documentos_${formData.processo_interno || 'processo'}.pdf`);
@@ -754,34 +855,33 @@ export default function NovoProcessoPage() {
       theme: 'striped',
       headStyles: { fillColor: [34, 107, 72] },
     });
-
-    for (const nf of formData.notas_fiscais) {
-      if (nf.file && nf.file.dataUrl) {
-        docPdf.addPage();
-        docPdf.setFontSize(12);
-        docPdf.text(`Anexo: ${nf.tipo} - ${nf.file.name}`, 14, 20);
-
-        try {
-          if (nf.file.type && nf.file.type.startsWith('image/')) {
-            const format = nf.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
-            docPdf.addImage(nf.file.dataUrl, format, 15, 40, 180, 160, undefined, 'FAST');
-          } else if (nf.file.type === 'application/pdf') {
-            docPdf.rect(14, 40, 182, 217);
-            docPdf.setFontSize(16);
-            docPdf.setTextColor(150);
-            docPdf.text('Documento PDF Anexado', 105, 140, { align: 'center' });
+    
+     for (const nf of formData.notas_fiscais) {
+        if (nf.file && nf.file.downloadURL && nf.file.type.startsWith('image/')) {
+            docPdf.addPage();
             docPdf.setFontSize(12);
-            docPdf.text(`Ficheiro: ${nf.file.name}`, 105, 150, { align: 'center' });
-            docPdf.text('A funcionalidade de fundir PDFs existentes não é suportada.', 105, 160, { align: 'center' });
-          } else {
-            docPdf.text(`Não foi possível pré-visualizar o ficheiro: ${nf.file.name}`, 14, 40);
-          }
-        } catch (e) {
-          console.error("Error adding NF file to PDF:", e);
-          docPdf.text(`Não foi possível pré-visualizar o ficheiro: ${nf.file.name}`, 14, 40);
+            docPdf.text(`Anexo: ${nf.tipo} - ${nf.file.name}`, 14, 20);
+
+            try {
+                const response = await fetch(nf.file.downloadURL);
+                const blob = await response.blob();
+                const dataUrl = await new Promise<string>((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.onloadend = () => resolve(reader.result as string);
+                    reader.onerror = reject;
+                    reader.readAsDataURL(blob);
+                });
+
+                const format = nf.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
+                docPdf.addImage(dataUrl, format, 15, 40, 180, 160, undefined, 'FAST');
+
+            } catch (e) {
+                console.error("Error adding NF image to PDF:", e);
+                docPdf.text(`Não foi possível pré-visualizar a imagem: ${nf.file.name}`, 14, 40);
+            }
         }
-      }
     }
+
 
     docPdf.save(`Pacote_NFs_${formData.processo_interno || 'processo'}.pdf`);
   };
@@ -852,6 +952,14 @@ export default function NovoProcessoPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isUploading) {
+        toast({
+            title: 'Aguarde o Carregamento',
+            description: 'Por favor, espere que todos os ficheiros terminem de carregar antes de guardar.',
+            variant: 'default',
+        });
+        return;
+    }
     if (!firestore || !pageProcessId) {
       toast({ title: "Erro", description: "Base de dados indisponível.", variant: "destructive" });
       return;
@@ -877,18 +985,6 @@ export default function NovoProcessoPage() {
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
       };
       
-      const estimatedSize = JSON.stringify(dataToSave).length;
-      if (estimatedSize > 950 * 1024) { // 950KB limit
-          toast({
-              title: "Erro ao Guardar",
-              description: `O tamanho total do processo (${Math.round(estimatedSize / 1024)}KB) excede o limite de 950KB. Por favor, remova ou substitua alguns anexos por ficheiros menores.`,
-              variant: "destructive",
-              duration: 9000,
-          });
-          setIsSaving(false);
-          return;
-      }
-
       const processoRef = doc(firestore, 'processos', docId);
       await setDoc(processoRef, dataToSave, { merge: true });
   
@@ -913,6 +1009,21 @@ export default function NovoProcessoPage() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const renderFileState = (file: FileData | null) => {
+    if (!file) {
+      return <span>Nenhum ficheiro anexado.</span>;
+    }
+    if (file.uploadState === 'running') {
+      return (
+        <div className="flex items-center gap-2 w-full">
+          <Progress value={file.uploadProgress} className="w-full" />
+          <span>{Math.round(file.uploadProgress || 0)}%</span>
+        </div>
+      );
+    }
+    return <span>{file.name}</span>;
   };
 
   if (isLoading) {
@@ -965,9 +1076,9 @@ export default function NovoProcessoPage() {
             <Link href="/dashboard/processos" passHref>
               <Button variant="outline" type="button">Cancelar</Button>
             </Link>
-            <Button type="submit" disabled={isSaving || isLoading}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSaving ? 'A guardar...' : 'Salvar Alterações'}
+            <Button type="submit" disabled={isSaving || isLoading || isUploading}>
+              {(isSaving || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {isSaving ? 'A guardar...' : isUploading ? 'A carregar...' : 'Salvar Alterações'}
             </Button>
           </div>
         </div>
@@ -1197,6 +1308,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
+                       {formData.deadline_draft_file?.uploadState === 'running' && <Progress value={formData.deadline_draft_file.uploadProgress} className="mt-1 h-1" />}
                     </div>
                     <div className="space-y-2">
                       <Label>Deadline VGM</Label>
@@ -1217,6 +1329,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
+                      {formData.deadline_vgm_file?.uploadState === 'running' && <Progress value={formData.deadline_vgm_file.uploadProgress} className="mt-1 h-1" />}
                     </div>
                     <div className="space-y-2">
                       <Label>Deadline Carga</Label>
@@ -1237,6 +1350,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
+                      {formData.deadline_carga_file?.uploadState === 'running' && <Progress value={formData.deadline_carga_file.uploadProgress} className="mt-1 h-1" />}
                     </div>
                   </div>
 
@@ -1266,11 +1380,9 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft BL (Bill of Lading)</Label>
                     <div className="flex items-center gap-2">
-                      <Input
-                        value={formData.draft_bl_file ? formData.draft_bl_file.name : 'Nenhum ficheiro anexado.'}
-                        readOnly
-                        className="flex-1"
-                      />
+                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted text-muted-foreground">
+                        {renderFileState(formData.draft_bl_file)}
+                      </div>
                        {formData.draft_bl_file ? (
                         <div className="flex items-center gap-1">
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`}>
@@ -1291,11 +1403,9 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft Certificado Fitossanitário</Label>
                     <div className="flex items-center gap-2">
-                      <Input
-                        value={formData.draft_fito_file ? formData.draft_fito_file.name : 'Nenhum ficheiro anexado.'}
-                        readOnly
-                        className="flex-1"
-                      />
+                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted text-muted-foreground">
+                         {renderFileState(formData.draft_fito_file)}
+                      </div>
                       {formData.draft_fito_file ? (
                         <div className="flex items-center gap-1">
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`}>
@@ -1316,11 +1426,9 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft Certificado de Origem</Label>
                     <div className="flex items-center gap-2">
-                      <Input
-                        value={formData.draft_co_file ? formData.draft_co_file.name : 'Nenhum ficheiro anexado.'}
-                        readOnly
-                        className="flex-1"
-                      />
+                       <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted text-muted-foreground">
+                         {renderFileState(formData.draft_co_file)}
+                      </div>
                       {formData.draft_co_file ? (
                         <div className="flex items-center gap-1">
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`}>
@@ -1389,12 +1497,18 @@ export default function NovoProcessoPage() {
                           <div className="space-y-2 col-span-2">
                             <Label>Chave de Acesso / Anexo</Label>
                             <div className='flex gap-2'>
-                              <Input
-                                value={nota.chave || (nota.file ? nota.file.name : '')}
-                                onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)}
-                                placeholder="Chave da NF"
-                                disabled={!!nota.file}
-                              />
+                              {nota.file ? (
+                                <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted text-muted-foreground">
+                                  {renderFileState(nota.file)}
+                                </div>
+                               ) : (
+                                <Input
+                                  value={nota.chave || ''}
+                                  onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)}
+                                  placeholder="Chave da NF"
+                                  disabled={!!nota.file}
+                                />
+                               )}
                               {nota.file ? (
                                 <div className="flex items-center gap-1">
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`}>
@@ -1519,6 +1633,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
+                      {formData.due_file?.uploadState === 'running' && <Progress value={formData.due_file.uploadProgress} className="mt-1 h-1" />}
                     </div>
                   </div>
 
@@ -1555,6 +1670,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
+                       {formData.lpco_file?.uploadState === 'running' && <Progress value={formData.lpco_file.uploadProgress} className="mt-1 h-1" />}
                     </div>
                   </div>
 
@@ -1698,6 +1814,7 @@ export default function NovoProcessoPage() {
                                   <Upload className="h-4 w-4" />
                                 </Button>
                               )}
+                               {docItem.file?.uploadState === 'running' && <Progress value={docItem.file.uploadProgress} className="mt-1 h-1" />}
                             </TableCell>
                             <TableCell>
                               <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(index)}>
@@ -1757,3 +1874,5 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
+
+    
