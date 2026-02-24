@@ -347,12 +347,36 @@ export default function NovoProcessoPage() {
     handleInputChange('quantidade', `${formatted} TON`);
   };
 
-  const handleDownload = (file: FileData) => {
-    if (!file || !file.downloadURL) {
+  const handleDownload = async (file: FileData) => {
+    if (!file) {
+        toast({ title: "Erro", description: "Ficheiro não encontrado.", variant: "destructive" });
+        return;
+    }
+
+    let urlToOpen = file.downloadURL;
+
+    // If URL is missing but storage path exists, try to fetch it.
+    if (!urlToOpen && file.storagePath && storage) {
+      try {
+        const fileRef = ref(storage, file.storagePath);
+        urlToOpen = await getDownloadURL(fileRef);
+      } catch (error) {
+        console.error("Error getting download URL:", error);
+        toast({ 
+            title: "Erro de Download", 
+            description: "Não foi possível obter o URL do ficheiro. O ficheiro pode não existir ou as permissões podem ser insuficientes.", 
+            variant: "destructive" 
+        });
+        return;
+      }
+    }
+
+    if (!urlToOpen) {
       toast({ title: "Erro", description: "URL do ficheiro não encontrada.", variant: "destructive" });
       return;
     }
-    window.open(file.downloadURL, '_blank');
+    
+    window.open(urlToOpen, '_blank');
   };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -1295,7 +1319,7 @@ export default function NovoProcessoPage() {
                         <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
                         {formData.deadline_draft_file ? (
                           <div className="flex items-center gap-1">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${formData.deadline_draft_file.name}`}>
+                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${formData.deadline_draft_file.name}`} disabled={formData.deadline_draft_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1316,7 +1340,7 @@ export default function NovoProcessoPage() {
                         <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
                         {formData.deadline_vgm_file ? (
                           <div className="flex items-center gap-1">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${formData.deadline_vgm_file.name}`}>
+                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${formData.deadline_vgm_file.name}`} disabled={formData.deadline_vgm_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1337,7 +1361,7 @@ export default function NovoProcessoPage() {
                         <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
                         {formData.deadline_carga_file ? (
                           <div className="flex items-center gap-1">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${formData.deadline_carga_file.name}`}>
+                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${formData.deadline_carga_file.name}`} disabled={formData.deadline_carga_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1385,7 +1409,7 @@ export default function NovoProcessoPage() {
                       </div>
                        {formData.draft_bl_file ? (
                         <div className="flex items-center gap-1">
-                          <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`}>
+                          <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`} disabled={formData.draft_bl_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
                           <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1408,7 +1432,7 @@ export default function NovoProcessoPage() {
                       </div>
                       {formData.draft_fito_file ? (
                         <div className="flex items-center gap-1">
-                          <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`}>
+                          <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`} disabled={formData.draft_fito_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
                           <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1431,7 +1455,7 @@ export default function NovoProcessoPage() {
                       </div>
                       {formData.draft_co_file ? (
                         <div className="flex items-center gap-1">
-                          <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`}>
+                          <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`} disabled={formData.draft_co_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1511,7 +1535,7 @@ export default function NovoProcessoPage() {
                                )}
                               {nota.file ? (
                                 <div className="flex items-center gap-1">
-                                  <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`}>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} disabled={nota.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
                                   <Button type="button" title="Remover Anexo" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
@@ -1620,7 +1644,7 @@ export default function NovoProcessoPage() {
                         </Select>
                         {formData.due_file ? (
                           <div className="flex items-center gap-1">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`}>
+                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} disabled={formData.due_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1657,7 +1681,7 @@ export default function NovoProcessoPage() {
                         </Select>
                         {formData.lpco_file ? (
                           <div className="flex items-center gap-1">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`}>
+                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} disabled={formData.lpco_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
                             <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
@@ -1802,7 +1826,7 @@ export default function NovoProcessoPage() {
                             <TableCell>
                               {docItem.file ? (
                                 <div className="flex items-center gap-1">
-                                  <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`}>
+                                  <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={docItem.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
                                   <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(index)}>
@@ -1874,5 +1898,3 @@ export default function NovoProcessoPage() {
     </div>
   );
 }
-
-    
