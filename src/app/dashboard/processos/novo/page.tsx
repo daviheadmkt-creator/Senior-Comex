@@ -390,7 +390,6 @@ export default function NovoProcessoPage() {
         });
 
       } catch (error) {
-        console.error("Error getting download URL:", error);
         toast({ 
             title: "Erro de Download", 
             description: "Não foi possível obter o URL do ficheiro. O ficheiro pode não existir ou as permissões podem ser insuficientes.", 
@@ -480,10 +479,19 @@ export default function NovoProcessoPage() {
               });
           },
           (error) => {
-              console.error("Upload error:", error);
               toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
+              } else if (targetList === 'nota_fiscal') {
+                  setFormData((prev: any) => {
+                      const newNotas = prev.notas_fiscais.filter((n:any, i:number) => i !== targetIndex);
+                      return { ...prev, notas_fiscais: newNotas };
+                  });
+              } else if (targetList === 'documento_pos_embarque') {
+                   setFormData((prev: any) => {
+                      const newDocs = prev.documentos_pos_embarque.filter((d:any, i:number) => i !== targetIndex);
+                      return { ...prev, documentos_pos_embarque: newDocs };
+                  });
               }
           },
           () => {
@@ -554,8 +562,6 @@ export default function NovoProcessoPage() {
         deleteObject(fileRef).then(() => {
             toast({ title: "Anexo Removido" });
         }).catch(error => {
-            // This console.error was triggering the Next.js error overlay in development.
-            // The toast provides sufficient user feedback without crashing the dev experience.
             toast({ 
                 title: "Erro de Rede", 
                 description: "A remoção do anexo falhou. Por favor, verifique a sua ligação à internet e recarregue a página para tentar novamente.", 
@@ -667,7 +673,6 @@ export default function NovoProcessoPage() {
                 });
             },
             (error) => {
-                 console.error("Upload error:", error);
                  toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
                  setFormData((prev:any) => ({...prev, notas_fiscais: prev.notas_fiscais.filter((n:any) => n.file?.storagePath !== filePath) }));
             },
