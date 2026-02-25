@@ -353,15 +353,22 @@ export default function NovoProcessoPage() {
         return;
     }
 
+    // Do not download if still uploading
+    if (file.uploadState === 'running') {
+        toast({ title: "Aguarde", description: "O ficheiro ainda está a ser carregado.", variant: "default"});
+        return;
+    }
+
     let urlToOpen = file.downloadURL;
 
     if (!urlToOpen && file.storagePath && storage) {
       try {
         const fileRef = ref(storage, file.storagePath);
         urlToOpen = await getDownloadURL(fileRef);
+        // Optimistically update the formData with the new URL to avoid future fetches
         setFormData((prev: any) => {
             const findAndReplace = (item: any) => {
-                if (item && item.storagePath === file.storagePath) {
+                if (item && typeof item === 'object' && item.storagePath === file.storagePath) {
                     return { ...item, downloadURL: urlToOpen };
                 }
                 return item;
@@ -373,8 +380,9 @@ export default function NovoProcessoPage() {
             let updatedState = { ...prev, notas_fiscais: updatedNotas, documentos_pos_embarque: updatedDocs };
             
             Object.keys(updatedState).forEach(key => {
-                if (updatedState[key] && updatedState[key].storagePath === file.storagePath) {
-                    updatedState[key] = { ...updatedState[key], downloadURL: urlToOpen };
+                const potentialFile = updatedState[key];
+                if (potentialFile && typeof potentialFile === 'object' && potentialFile.storagePath === file.storagePath) {
+                    updatedState[key] = { ...potentialFile, downloadURL: urlToOpen };
                 }
             });
 
@@ -546,8 +554,14 @@ export default function NovoProcessoPage() {
         deleteObject(fileRef).then(() => {
             toast({ title: "Anexo Removido" });
         }).catch(error => {
-            console.error("Error removing file from storage:", error);
-            toast({ title: "Erro", description: "Não foi possível remover o anexo do armazenamento.", variant: "destructive" });
+            // This console.error was triggering the Next.js error overlay in development.
+            // The toast provides sufficient user feedback without crashing the dev experience.
+            toast({ 
+                title: "Erro de Rede", 
+                description: "A remoção do anexo falhou. Por favor, verifique a sua ligação à internet e recarregue a página para tentar novamente.", 
+                variant: "destructive",
+                duration: 9000,
+            });
         });
     } else {
        toast({ title: "Anexo Removido" });
@@ -1108,10 +1122,10 @@ export default function NovoProcessoPage() {
     }
     if (file.uploadState === 'running') {
       return (
-        <div className="flex items-center gap-2 w-full text-xs text-foreground">
-          <span className="max-w-[120px] truncate" title={file.name}>{file.name}</span>
-          <Progress value={file.uploadProgress} className="flex-1" />
-          <span className="w-10 text-right font-mono">{Math.round(file.uploadProgress || 0)}%</span>
+        <div className="flex items-center gap-2 w-full">
+          <span className="flex-1 max-w-[calc(100%-80px)] truncate" title={file.name}>{file.name}</span>
+          <Progress value={file.uploadProgress} className="w-16 h-1.5" />
+          <span className="w-10 text-right font-mono text-xs">{Math.round(file.uploadProgress || 0)}%</span>
         </div>
       );
     }
@@ -1472,7 +1486,7 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft BL (Bill of Lading)</Label>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted">
+                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
                         {renderFileState(formData.draft_bl_file)}
                       </div>
                        {formData.draft_bl_file ? (
@@ -1480,7 +1494,7 @@ export default function NovoProcessoPage() {
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`} disabled={formData.draft_bl_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
-                          <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_bl_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={formData.draft_bl_file.uploadState === 'running'}>
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1495,7 +1509,7 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft Certificado Fitossanitário</Label>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted">
+                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
                          {renderFileState(formData.draft_fito_file)}
                       </div>
                       {formData.draft_fito_file ? (
@@ -1503,7 +1517,7 @@ export default function NovoProcessoPage() {
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`} disabled={formData.draft_fito_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
-                          <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                          <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_fito_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={formData.draft_fito_file.uploadState === 'running'}>
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1518,7 +1532,7 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft Certificado de Origem</Label>
                     <div className="flex items-center gap-2">
-                       <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted">
+                       <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
                          {renderFileState(formData.draft_co_file)}
                       </div>
                       {formData.draft_co_file ? (
@@ -1526,7 +1540,7 @@ export default function NovoProcessoPage() {
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`} disabled={formData.draft_co_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
-                           <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                           <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('draft_co_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={formData.draft_co_file.uploadState === 'running'}>
                             <XCircle className="h-4 w-4" />
                           </Button>
                         </div>
@@ -1590,7 +1604,7 @@ export default function NovoProcessoPage() {
                             <Label>Chave de Acesso / Anexo</Label>
                             <div className='flex gap-2'>
                               {nota.file ? (
-                                <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted">
+                                <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
                                   {renderFileState(nota.file)}
                                 </div>
                                ) : (
@@ -1606,7 +1620,7 @@ export default function NovoProcessoPage() {
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} disabled={nota.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
-                                  <Button type="button" title="Remover Anexo" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
+                                  <Button type="button" title="Remover Anexo" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)} disabled={nota.file.uploadState === 'running'}>
                                     <XCircle className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </div>
@@ -1626,7 +1640,7 @@ export default function NovoProcessoPage() {
                             <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
                           </div>
                           <div className='flex items-end'>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)}>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)} disabled={nota.file?.uploadState === 'running'}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -1715,7 +1729,7 @@ export default function NovoProcessoPage() {
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} disabled={formData.due_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={formData.due_file.uploadState === 'running'}>
                                 <XCircle className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1752,7 +1766,7 @@ export default function NovoProcessoPage() {
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} disabled={formData.lpco_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={formData.lpco_file.uploadState === 'running'}>
                                 <XCircle className="h-4 w-4" />
                             </Button>
                           </div>
@@ -1897,7 +1911,7 @@ export default function NovoProcessoPage() {
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={docItem.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
-                                  <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(index)}>
+                                  <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(index)} disabled={docItem.file.uploadState === 'running'}>
                                     <XCircle className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </div>
@@ -1909,7 +1923,7 @@ export default function NovoProcessoPage() {
                                {docItem.file?.uploadState === 'running' && <Progress value={docItem.file.uploadProgress} className="mt-1 h-1" />}
                             </TableCell>
                             <TableCell>
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(index)}>
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(index)} disabled={docItem.file?.uploadState === 'running'}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </TableCell>
