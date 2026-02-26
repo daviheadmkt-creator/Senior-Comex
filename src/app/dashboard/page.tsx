@@ -9,57 +9,14 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileWarning, CalendarClock, Loader2, Eye, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, FileWarning, CalendarClock, Loader2, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { differenceInDays, parseISO, format } from 'date-fns';
-import { useSearch } from '@/components/search-provider';
-import { cn } from '@/lib/utils';
-
-const processStatusOptions = [
-  "Iniciado / Aguardando Booking",
-  "Booking Confirmado / Aguardando Draft",
-  "DRAFTS_EM_APROVAÇÃO",
-  "DRAFTS_APROVADOS",
-  "CORRECAO_DE_DRAFT_SOLICITADA",
-  "CARGA_EM_TRANSITO_PARA_ESTUFAGEM",
-  "AGUARDANDO_EMISSAO_NF_EXPORTACAO",
-  "DUE_DESEMBARACADA",
-  "DOSSIÊ_SUBMETIDO / AGUARDANDO_ANÁLISE_FISCAL",
-  "INSPECAO_MAPA_AGENDADA",
-  "INSPECAO_MAPA_REALIZADA / AGUARDANDO_RELACRE",
-  "PRONTO_PARA_EMBARQUE",
-  "Em trânsito",
-  "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO",
-  "Concluído",
-  "Cancelado",
-];
-
-const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
-    if (!status) return 'outline';
-    const lowerStatus = status.toLowerCase();
-    if (lowerStatus.includes('trânsito') || lowerStatus.includes('confirmado') || lowerStatus.includes('aprovados') || lowerStatus.includes('desembaraçada') || lowerStatus.includes('deferido') || lowerStatus.includes('realizada')) return 'default';
-    if (lowerStatus.includes('concluído') || lowerStatus.includes('pronto')) return 'outline';
-    if (lowerStatus.includes('aguardando') || lowerStatus.includes('iniciado')) return 'secondary';
-    if (lowerStatus.includes('atrasado') || lowerStatus.includes('cancelado') || lowerStatus.includes('correcao')) return 'destructive';
-    return 'outline';
-};
-
-const formatDate = (dateString: string | null | undefined) => {
-    if (!dateString) return 'N/A';
-    try {
-        return format(parseISO(dateString), 'dd/MM/yyyy');
-    } catch {
-        return 'Data Inválida';
-    }
-}
+import { differenceInDays, parseISO } from 'date-fns';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
-  const { searchTerm } = useSearch();
   
   const processosQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -68,18 +25,6 @@ export default function DashboardPage() {
 
   const { data: processosAtivos, isLoading } = useCollection(processosQuery);
   
-  const filteredProcessos = useMemo(() => {
-    if (!processosAtivos) return [];
-    const term = searchTerm.toLowerCase();
-    return processosAtivos.filter(p => 
-      (p.po_number || '').toLowerCase().includes(term) ||
-      (p.produtoNome || '').toLowerCase().includes(term) ||
-      (p.processo_interno || '').toLowerCase().includes(term) ||
-      (p.navio || '').toLowerCase().includes(term) ||
-      (p.exportadorNome || '').toLowerCase().includes(term)
-    );
-  }, [processosAtivos, searchTerm]);
-
   const alerts = useMemo(() => {
     if (!processosAtivos) return [];
 
@@ -96,7 +41,7 @@ export default function DashboardPage() {
         });
       }
       
-      if (processo.status && processo.status.toLowerCase().includes('aguardando')) {
+      if (processo.status && (processo.status.toLowerCase().includes('aguardando') || processo.status.toLowerCase().includes('correcao'))) {
         generatedAlerts.push({
           id: `${processo.id}-pendente`,
           icon: <FileWarning className="h-5 w-5 text-orange-500" />,
@@ -119,7 +64,7 @@ export default function DashboardPage() {
               });
             }
         } catch(e) {
-             console.error("Invalid date format for deadline_draft:", processo.deadline_draft);
+             // Invalid date handled silently
         }
       }
     });
@@ -130,85 +75,6 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
-        <Card>
-            <CardHeader>
-                <CardTitle>Processos Ativos em Tempo Real</CardTitle>
-                <CardDescription>Acompanhe o status e o progresso de cada etapa dos seus embarques.</CardDescription>
-            </CardHeader>
-            <CardContent>
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead className="w-[120px]">PO / Processo</TableHead>
-                            <TableHead>Analista (Cliente)</TableHead>
-                            <TableHead className="hidden sm:table-cell">Produto</TableHead>
-                            <TableHead className="hidden lg:table-cell">Navio</TableHead>
-                            <TableHead className="hidden xl:table-cell">Origem / Destino</TableHead>
-                            <TableHead>Status Atual</TableHead>
-                            <TableHead className="hidden md:table-cell">Navio / ETA</TableHead>
-                            <TableHead className="text-right">Ação</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {isLoading && (
-                             <TableRow>
-                                <TableCell colSpan={8} className="h-24 text-center">
-                                    <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
-                                </TableCell>
-                            </TableRow>
-                        )}
-                        {!isLoading && filteredProcessos && filteredProcessos.map((processo) => (
-                            <TableRow key={processo.id} className="hover:bg-muted/50 transition-colors">
-                                <TableCell className="font-bold">
-                                    {processo.po_number}
-                                    <br />
-                                    <span className="text-[10px] text-muted-foreground font-normal">{processo.processo_interno}</span>
-                                </TableCell>
-                                <TableCell className="text-xs">
-                                    <span className="font-semibold">{processo.analistaNome || 'N/A'}</span>
-                                    <br/>
-                                    <span className='text-[10px] text-muted-foreground uppercase'>{processo.exportadorNome}</span>
-                                </TableCell>
-                                <TableCell className="text-xs font-medium hidden sm:table-cell">{processo.produtoNome}</TableCell>
-                                <TableCell className="text-xs hidden lg:table-cell">{processo.navio}</TableCell>
-                                <TableCell className="text-xs hidden xl:table-cell">
-                                    <span className="text-muted-foreground">{processo.portoEmbarqueNome}</span>
-                                    <br />
-                                    <span className="font-medium text-primary">→ {processo.portoDescargaNome}</span>
-                                </TableCell>
-                                <TableCell>
-                                    <Badge 
-                                        variant={getStatusVariant(processo.status)} 
-                                        className="text-xs px-2 py-0.5 whitespace-nowrap"
-                                    >
-                                        {processo.status || 'Sem Status'}
-                                    </Badge>
-                                </TableCell>
-                                <TableCell className="text-[11px] font-mono hidden md:table-cell">
-                                    <span className="font-bold text-foreground block truncate max-w-[120px]" title={processo.navio}>{processo.navio || 'N/A'}</span>
-                                    {formatDate(processo.eta)}
-                                </TableCell>
-                                <TableCell className="text-right">
-                                     <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`} passHref>
-                                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary hover:text-primary-foreground">
-                                            <Eye className="h-4 w-4" />
-                                        </Button>
-                                    </Link>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                         {!isLoading && (!filteredProcessos || filteredProcessos.length === 0) && (
-                            <TableRow>
-                                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground italic">
-                                    Nenhum processo ativo corresponde à sua busca.
-                                </TableCell>
-                            </TableRow>
-                        )}
-                    </TableBody>
-                </Table>
-            </CardContent>
-        </Card>
-
          <Card>
             <CardHeader>
                 <CardTitle>Alertas e Pendências</CardTitle>
