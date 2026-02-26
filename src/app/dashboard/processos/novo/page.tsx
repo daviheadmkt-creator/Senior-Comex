@@ -46,7 +46,8 @@ const ALLOWED_TYPES = [
   "image/png",
   "image/jpg",
   "image/jpeg",
-  "image/webp"
+  "image/webp",
+  "application/octet-stream" // Adicionado para compatibilidade com alguns ficheiros XML
 ];
 
 type FileData = {
@@ -366,11 +367,13 @@ export default function NovoProcessoPage() {
 
     let urlToOpen = file.downloadURL;
 
+    // Se o link de download estiver em falta ou expirado, tentamos obter um novo do Storage
     if (!urlToOpen && file.storagePath && storage) {
       try {
         const fileRef = ref(storage, file.storagePath);
         urlToOpen = await getDownloadURL(fileRef);
         
+        // Atualizamos o estado local para que o próximo clique seja instantâneo
         setFormData((prev: any) => {
             const updateItemFile = (item: any) => {
                 if (item && item.file && item.file.storagePath === file.storagePath) {
@@ -438,6 +441,7 @@ export default function NovoProcessoPage() {
       const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
       const targetId = typeof currentUploadTarget === 'object' ? currentUploadTarget.id : null;
       
+      // Criamos um nome único para evitar sobreposições, mantendo o processoId como pasta raiz
       const fileNameInStorage = `${file.name}-${Date.now()}`;
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
@@ -454,6 +458,7 @@ export default function NovoProcessoPage() {
           uploadProgress: 1,
       };
 
+      // Marcamos o campo como "a carregar" na interface imediatamente
       if (targetField) {
           setFormData((prev: any) => ({ ...prev, [targetField]: placeholder }));
       } else if (targetList === 'nota_fiscal') {
@@ -472,7 +477,8 @@ export default function NovoProcessoPage() {
       uploadTask.on('state_changed',
           (snapshot) => {
               const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
+              // Throttling leve para não sobrecarregar o React, mas manter fluidez
+              if (Math.abs(progress - lastProgress) < 2 && progress < 100) return;
               lastProgress = progress;
 
               setFormData((prev: any) => {
@@ -498,10 +504,11 @@ export default function NovoProcessoPage() {
               
               toast({ 
                   title: "Erro no Servidor de Arquivos", 
-                  description: `O carregamento de "${file.name}" foi negado ou falhou. Verifique se o arquivo tem menos de 10MB. Código: ${error.code}`, 
+                  description: `O carregamento de "${file.name}" foi negado ou falhou. Verifique se o arquivo tem menos de 10MB ou permissões.`, 
                   variant: "destructive" 
               });
 
+              // Limpamos o estado em caso de erro
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
               } else if (targetList === 'nota_fiscal') {
@@ -555,6 +562,7 @@ export default function NovoProcessoPage() {
 
     let fileToRemove: FileData | null = null;
     
+    // Identificamos qual o ficheiro a remover do estado e do storage
     if (typeof target === 'string') {
         fileToRemove = formData[target];
         handleInputChange(target, null);
@@ -570,11 +578,13 @@ export default function NovoProcessoPage() {
         setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: newDocs }));
     }
     
+    // Eliminamos fisicamente do Firebase Storage
     if (fileToRemove && fileToRemove.storagePath) {
         const fileRef = ref(storage, fileToRemove.storagePath);
         deleteObject(fileRef).then(() => {
             toast({ title: "Anexo Removido" });
         }).catch(error => {
+            // Se falhar a remoção no servidor (rede), apenas avisamos, mas o estado já foi limpo no front
             toast({ title: "Aviso", description: "O anexo foi removido do formulário, mas a limpeza do servidor falhou devido a um problema de rede. Por favor, recarregue a página se necessário.", variant: "default" });
         });
     }
@@ -671,7 +681,7 @@ export default function NovoProcessoPage() {
         let lastProg = 0;
         uploadTask.on('state_changed',
           (snapshot) => {
-            const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
             if (Math.abs(progress - lastProg) < 5 && progress < 100) return;
             lastProg = progress;
 
@@ -1917,7 +1927,7 @@ export default function NovoProcessoPage() {
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'originais', e.target.value)} />
+                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.originais, 'originais', e.target.value)} />
                             </TableCell>
                             <TableCell>
                               <Input className="w-24" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'copias', e.target.value)} />
