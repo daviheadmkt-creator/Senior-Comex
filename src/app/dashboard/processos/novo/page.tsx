@@ -37,7 +37,7 @@ import { Combobox } from '@/components/ui/combobox';
 import * as XLSX from 'xlsx';
 import { Progress } from '@/components/ui/progress';
 
-// Configurações de Validação de Ficheiros
+// Configurações de Validação de Ficheiros (Sincronizado com storage.rules)
 const MAX_FILE_SIZE_MB = 10;
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -438,8 +438,11 @@ export default function NovoProcessoPage() {
       const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
       const targetId = typeof currentUploadTarget === 'object' ? currentUploadTarget.id : null;
       
-      const filePath = `processos/${pageProcessId}/${file.name}-${Date.now()}`;
+      const fileNameInStorage = `${file.name}-${Date.now()}`;
+      const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
+      
+      // Upload direto do binário (Jeito Recomendado)
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       const placeholder: FileData = {
@@ -471,7 +474,7 @@ export default function NovoProcessoPage() {
           (snapshot) => {
               const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
               
-              // Throttle: Só atualiza o estado se o progresso mudar mais de 5% ou for o fim
+              // Throttling: Só atualiza o estado se o progresso mudar mais de 5% ou for o fim
               if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
               lastProgress = progress;
 
@@ -495,7 +498,14 @@ export default function NovoProcessoPage() {
           },
           (error) => {
               console.timeEnd(`Upload-${file.name}`);
-              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}. Verifique a sua internet.`, variant: "destructive" });
+              console.error("Upload failed details:", error);
+              
+              toast({ 
+                  title: "Erro no Servidor de Arquivos", 
+                  description: `O carregamento de "${file.name}" foi negado ou falhou. Verifique se o arquivo tem menos de 10MB. Erro: ${error.code}`, 
+                  variant: "destructive" 
+              });
+
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
               } else if (targetList === 'nota_fiscal') {
@@ -569,7 +579,7 @@ export default function NovoProcessoPage() {
         deleteObject(fileRef).then(() => {
             toast({ title: "Anexo Removido" });
         }).catch(error => {
-            toast({ title: "Aviso", description: "O ficheiro foi removido do processo, mas pode ainda estar no armazenamento devido a um erro de rede.", variant: "default" });
+            toast({ title: "Aviso", description: "O anexo foi removido do formulário, mas a limpeza do servidor falhou devido a um problema de rede. Por favor, recarregue a página se necessário.", variant: "default" });
         });
     }
   };
@@ -676,9 +686,10 @@ export default function NovoProcessoPage() {
               )
             }));
           },
-          () => {
+          (error) => {
             console.timeEnd(`Upload-NF-${file.name}`);
-            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
+            console.error("NF Upload failed:", error);
+            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}. Verifique as permissões do servidor.`, variant: "destructive" });
             setFormData((prev: any) => ({
               ...prev,
               notas_fiscais: prev.notas_fiscais.filter((nf: any) => nf.id !== entry.id)
@@ -1204,9 +1215,10 @@ export default function NovoProcessoPage() {
           </div>
         </div>
 
-        <input type="file" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xml,.pdf,image/*" />
+        <input type="file" id="general-file-upload" ref={fileInputRef} onChange={handleFileUpload} className="hidden" accept=".xml,.pdf,image/*" />
         <input
           type="file"
+          id="container-import-upload"
           ref={containerFileInputRef}
           onChange={handleContainerImport}
           className="hidden"
@@ -1214,6 +1226,7 @@ export default function NovoProcessoPage() {
         />
         <input
           type="file"
+          id="nf-multiple-upload"
           ref={nfFileInputRef}
           onChange={handleMultipleNFUpload}
           className="hidden"
