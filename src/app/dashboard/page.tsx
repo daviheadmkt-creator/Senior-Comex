@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileWarning, CalendarClock, Loader2, Eye, CheckCircle2, Circle } from 'lucide-react';
+import { AlertTriangle, FileWarning, CalendarClock, Loader2, Eye, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -205,12 +205,12 @@ export default function DashboardPage() {
                         <TableRow>
                             <TableHead className="w-[120px]">PO / Processo</TableHead>
                             <TableHead>Analista (Cliente)</TableHead>
-                            <TableHead>Produto</TableHead>
+                            <TableHead className="hidden sm:table-cell">Produto</TableHead>
                             <TableHead className="hidden lg:table-cell">Navio</TableHead>
                             <TableHead className="hidden xl:table-cell">Origem / Destino</TableHead>
                             <TableHead>Progresso</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead>ETA</TableHead>
+                            <TableHead>Status Atual</TableHead>
+                            <TableHead className="hidden md:table-cell">ETA</TableHead>
                             <TableHead className="text-right">Ação</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -234,7 +234,7 @@ export default function DashboardPage() {
                                     <br/>
                                     <span className='text-[10px] text-muted-foreground uppercase'>{processo.exportadorNome}</span>
                                 </TableCell>
-                                <TableCell className="text-xs font-medium">{processo.produtoNome}</TableCell>
+                                <TableCell className="text-xs font-medium hidden sm:table-cell">{processo.produtoNome}</TableCell>
                                 <TableCell className="text-xs hidden lg:table-cell">{processo.navio}</TableCell>
                                 <TableCell className="text-xs hidden xl:table-cell">
                                     <span className="text-muted-foreground">{processo.portoEmbarqueNome}</span>
@@ -245,11 +245,14 @@ export default function DashboardPage() {
                                     <ProcessStages processo={processo} />
                                 </TableCell>
                                 <TableCell>
-                                    <Badge variant={getStatusVariant(processo.status)} className="text-[10px] px-1.5 py-0">
-                                        {processo.status}
+                                    <Badge 
+                                        variant={getStatusVariant(processo.status)} 
+                                        className="text-xs px-2 py-0.5 whitespace-nowrap"
+                                    >
+                                        {processo.status || 'Sem Status'}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-[11px] font-mono">{formatDate(processo.eta)}</TableCell>
+                                <TableCell className="text-[11px] font-mono hidden md:table-cell">{formatDate(processo.eta)}</TableCell>
                                 <TableCell className="text-right">
                                      <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`} passHref>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary hover:text-primary-foreground">
