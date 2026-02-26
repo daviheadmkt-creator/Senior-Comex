@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -152,8 +153,8 @@ export default function GestaoProcessosPage() {
                     {formatDate(processo.eta)}
                 </TableCell>
                 <TableCell>
-                  <Badge variant={getStatusVariant(processo.status)}>
-                    {processo.status}
+                  <Badge variant={getStatusVariant(processo.status || 'N/A')}>
+                    {processo.status || 'Sem Status'}
                   </Badge>
                 </TableCell>
                 <TableCell>

@@ -47,7 +47,7 @@ const ALLOWED_TYPES = [
   "image/jpg",
   "image/jpeg",
   "image/webp",
-  "application/octet-stream" // Adicionado para compatibilidade com alguns ficheiros XML
+  "application/octet-stream" 
 ];
 
 type FileData = {
@@ -277,7 +277,6 @@ export default function NovoProcessoPage() {
 
 
   useEffect(() => {
-    // Inicializar o formulário apenas uma vez quando os dados estiverem prontos
     if (isEditing && processoData && parceiros && terminais && !hasInitialized.current) {
       const selectedExporter = parceiros?.find(p => p.id === processoData.exportadorId);
       const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({ ...c, id: String(index) })) || [];
@@ -371,13 +370,11 @@ export default function NovoProcessoPage() {
 
     let urlToOpen = file.downloadURL;
 
-    // Se o link de download estiver em falta ou expirado, tentamos obter um novo do Storage
     if (!urlToOpen && file.storagePath && storage) {
       try {
         const fileRef = ref(storage, file.storagePath);
         urlToOpen = await getDownloadURL(fileRef);
         
-        // Atualizamos o estado local para que o próximo clique seja instantâneo
         setFormData((prev: any) => {
             const updateItemFile = (item: any) => {
                 if (item && item.file && item.file.storagePath === file.storagePath) {
@@ -445,7 +442,6 @@ export default function NovoProcessoPage() {
       const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
       const targetId = typeof currentUploadTarget === 'object' ? currentUploadTarget.id : null;
       
-      // Criamos um nome único para evitar sobreposições, mantendo o processoId como pasta raiz
       const fileNameInStorage = `${file.name}-${Date.now()}`;
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
@@ -462,7 +458,6 @@ export default function NovoProcessoPage() {
           uploadProgress: 1,
       };
 
-      // Marcamos o campo como "a carregar" na interface imediatamente
       if (targetField) {
           setFormData((prev: any) => ({ ...prev, [targetField]: placeholder }));
       } else if (targetList === 'nota_fiscal') {
@@ -481,7 +476,6 @@ export default function NovoProcessoPage() {
       uploadTask.on('state_changed',
           (snapshot) => {
               const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              // Throttling leve para não sobrecarregar o React, mas manter fluidez
               if (Math.abs(progress - lastProgress) < 2 && progress < 100) return;
               lastProgress = progress;
 
@@ -507,12 +501,11 @@ export default function NovoProcessoPage() {
               console.timeEnd(`Upload-${file.name}`);
               
               toast({ 
-                  title: "Erro no Servidor de Arquivos", 
-                  description: `O carregamento de "${file.name}" foi negado ou falhou. Verifique se o arquivo tem menos de 10MB ou permissões.`, 
+                  title: "Erro no Upload", 
+                  description: `Falha ao carregar "${file.name}".`, 
                   variant: "destructive" 
               });
 
-              // Limpamos o estado em caso de erro
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
               } else if (targetList === 'nota_fiscal') {
@@ -566,7 +559,6 @@ export default function NovoProcessoPage() {
 
     let fileToRemove: FileData | null = null;
     
-    // Identificamos qual o ficheiro a remover do estado e do storage
     if (typeof target === 'string') {
         fileToRemove = formData[target];
         handleInputChange(target, null);
@@ -582,14 +574,12 @@ export default function NovoProcessoPage() {
         setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: newDocs }));
     }
     
-    // Eliminamos fisicamente do Firebase Storage
     if (fileToRemove && fileToRemove.storagePath) {
         const fileRef = ref(storage, fileToRemove.storagePath);
         deleteObject(fileRef).then(() => {
             toast({ title: "Anexo Removido" });
         }).catch(error => {
-            // Se falhar a remoção no servidor (rede), apenas avisamos, mas o estado já foi limpo no front
-            toast({ title: "Aviso", description: "O anexo foi removido do formulário, mas a limpeza do servidor falhou devido a um problema de rede. Por favor, recarregue a página se necessário.", variant: "default" });
+            toast({ title: "Aviso", description: "O anexo foi removido do formulário.", variant: "default" });
         });
     }
   };
@@ -678,7 +668,6 @@ export default function NovoProcessoPage() {
 
       newEntries.forEach((entry: any) => {
         const file = entry.fileObj;
-        console.time(`Upload-NF-${file.name}`);
         const storageRef = ref(storage!, entry.file.storagePath);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
@@ -697,15 +686,13 @@ export default function NovoProcessoPage() {
             }));
           },
           (error) => {
-            console.timeEnd(`Upload-NF-${file.name}`);
-            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}. Verifique as permissões.`, variant: "destructive" });
+            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
             setFormData((prev: any) => ({
               ...prev,
               notas_fiscais: prev.notas_fiscais.filter((nf: any) => nf.id !== entry.id)
             }));
           },
           async () => {
-            console.timeEnd(`Upload-NF-${file.name}`);
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             setFormData((prev: any) => ({
               ...prev,
@@ -1053,7 +1040,7 @@ export default function NovoProcessoPage() {
       } catch (error) {
         toast({
           title: 'Erro na Importação',
-          description: 'Houve um problema ao ler o ficheiro. Verifique o formato e tente novamente.',
+          description: 'Houve um problema ao ler o ficheiro.',
           variant: 'destructive',
         });
       } finally {
@@ -1084,7 +1071,7 @@ export default function NovoProcessoPage() {
     if (isUploading) {
         toast({
             title: 'Aguarde o Carregamento',
-            description: 'Por favor, espere que todos os ficheiros terminem de carregar para o servidor antes de guardar o processo.',
+            description: 'Aguarde os ficheiros terminarem de carregar.',
             variant: 'default',
         });
         return;
@@ -1107,6 +1094,7 @@ export default function NovoProcessoPage() {
       const dataToSave = {
         ...formData,
         id: docId,
+        status: formData.status || processoData?.status || 'Iniciado / Aguardando Booking',
         exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
         analistaNome: selectedAnalista?.nome || formData.analistaNome || 'N/A',
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
@@ -1119,16 +1107,15 @@ export default function NovoProcessoPage() {
   
       toast({
         title: "Sucesso!",
-        description: `Processo ${isEditing ? 'atualizado' : 'criado'} com sucesso.`,
+        description: `Processo salvo com sucesso.`,
       });
       router.push('/dashboard/processos');
   
     } catch (error: any) {
       toast({
         title: "Erro ao Guardar",
-        description: "Não foi possível guardar o processo. Verifique a sua ligação à internet.",
+        description: "Não foi possível guardar o processo.",
         variant: "destructive",
-        duration: 9000,
       });
     } finally {
       setIsSaving(false);
@@ -1220,7 +1207,7 @@ export default function NovoProcessoPage() {
           <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-700">
             <p className="font-semibold">Nota sobre Anexos:</p>
-            <p>Os ficheiros são enviados diretamente para o servidor. O tempo de upload depende exclusivamente da sua internet.</p>
+            <p>Os ficheiros são enviados diretamente para o servidor Firebase Storage.</p>
           </div>
         </div>
 
