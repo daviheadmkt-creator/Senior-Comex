@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -1833,12 +1832,23 @@ export default function NovoProcessoPage() {
                 <CardContent className="space-y-4 pt-6">
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label>Data de Saída (ETD)</Label>
-                      <DatePicker date={formData.etd} onDateChange={date => handleInputChange('etd', date)} showTime />
+                      <Label htmlFor="navio_stage4">Navio / Viagem</Label>
+                      <Input 
+                        id="navio_stage4" 
+                        value={formData.navio || ''} 
+                        onChange={e => handleInputChange('navio', e.target.value)} 
+                        placeholder="Ex: MSC EUGENIA / NAS21R" 
+                      />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Data de Chegada (ETA)</Label>
-                      <DatePicker date={formData.eta} onDateChange={date => handleInputChange('eta', date)} showTime />
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Data de Saída (ETD)</Label>
+                        <DatePicker date={formData.etd} onDateChange={date => handleInputChange('etd', date)} showTime />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Data de Chegada (ETA)</Label>
+                        <DatePicker date={formData.eta} onDateChange={date => handleInputChange('eta', date)} showTime />
+                      </div>
                     </div>
                   </div>
                 </CardContent>

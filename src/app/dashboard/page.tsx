@@ -210,7 +210,7 @@ export default function DashboardPage() {
                             <TableHead className="hidden xl:table-cell">Origem / Destino</TableHead>
                             <TableHead>Progresso</TableHead>
                             <TableHead>Status Atual</TableHead>
-                            <TableHead className="hidden md:table-cell">ETA</TableHead>
+                            <TableHead className="hidden md:table-cell">Navio / ETA</TableHead>
                             <TableHead className="text-right">Ação</TableHead>
                         </TableRow>
                     </TableHeader>
@@ -252,7 +252,10 @@ export default function DashboardPage() {
                                         {processo.status || 'Sem Status'}
                                     </Badge>
                                 </TableCell>
-                                <TableCell className="text-[11px] font-mono hidden md:table-cell">{formatDate(processo.eta)}</TableCell>
+                                <TableCell className="text-[11px] font-mono hidden md:table-cell">
+                                    <span className="font-bold text-foreground block truncate max-w-[120px]" title={processo.navio}>{processo.navio || 'N/A'}</span>
+                                    {formatDate(processo.eta)}
+                                </TableCell>
                                 <TableCell className="text-right">
                                      <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`} passHref>
                                         <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-primary hover:text-primary-foreground">

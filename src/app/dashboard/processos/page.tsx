@@ -122,7 +122,7 @@ export default function GestaoProcessosPage() {
               <TableHead>Produto</TableHead>
               <TableHead>Navio</TableHead>
               <TableHead>Destino</TableHead>
-              <TableHead>ETA</TableHead>
+              <TableHead>Navio / ETA</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ação</TableHead>
             </TableRow>
@@ -145,7 +145,10 @@ export default function GestaoProcessosPage() {
                 <TableCell>{processo.produtoNome}</TableCell>
                 <TableCell>{processo.navio}</TableCell>
                 <TableCell>{processo.destino}</TableCell>
-                <TableCell>{formatDate(processo.eta)}</TableCell>
+                <TableCell className="font-mono text-xs">
+                    <span className="font-bold text-foreground block">{processo.navio || 'N/A'}</span>
+                    {formatDate(processo.eta)}
+                </TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(processo.status)}>
                     {processo.status}
