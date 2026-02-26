@@ -8,7 +8,7 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card';
-import { Button, buttonVariants } from '@/components/ui/button';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Download } from 'lucide-react';
@@ -27,7 +27,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
-import { Textarea } from '@/components/ui/textarea';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, useStorage } from '@/firebase';
@@ -131,8 +130,8 @@ const initialFormData = {
   navio: '',
   viagem: '',
   containers: [] as any[],
-  documentos_pos_embarque: [] as { id: number; nome: string; originais: number; copias: number; data_emissao: string | null; data_liberacao: string | null; file: FileData | null }[],
-  notas_fiscais: [] as any[],
+  documentos_pos_embarque: [] as { id: string | number; nome: string; originais: number; copias: number; data_emissao: string | null; data_liberacao: string | null; file: FileData | null }[],
+  notas_fiscais: [] as { id: string | number; tipo: string; chave: string; data_pedido: string | null; data_recebida: string | null; file: FileData | null }[],
   due_numero: '',
   due_status: 'RASCUNHO SALVO',
   due_file: null as FileData | null,
@@ -196,7 +195,7 @@ export default function NovoProcessoPage() {
   const containerFileInputRef = useRef<HTMLInputElement>(null);
   const nfFileInputRef = useRef<HTMLInputElement>(null);
   
-  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', index: number } | { type: 'documento_pos_embarque', index: number } | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', id: string | number } | { type: 'documento_pos_embarque', id: string | number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
@@ -233,11 +232,6 @@ export default function NovoProcessoPage() {
 
   const [formData, setFormData] = useState<any>(initialFormData);
   const [exporterContacts, setExporterContacts] = useState<any[]>([]);
-
-  useMemoFirebase(
-    () => (firestore && currentUser ? doc(firestore, 'users', currentUser.uid) : null),
-    [firestore, currentUser]
-  );
 
   const sortedPorts = useMemo(() => {
     if (!portos) return [];
@@ -353,7 +347,6 @@ export default function NovoProcessoPage() {
         return;
     }
 
-    // Do not download if still uploading
     if (file.uploadState === 'running') {
         toast({ title: "Aguarde", description: "O ficheiro ainda está a ser carregado.", variant: "default"});
         return;
@@ -365,17 +358,17 @@ export default function NovoProcessoPage() {
       try {
         const fileRef = ref(storage, file.storagePath);
         urlToOpen = await getDownloadURL(fileRef);
-        // Optimistically update the formData with the new URL to avoid future fetches
+        
         setFormData((prev: any) => {
-            const findAndReplace = (item: any) => {
-                if (item && typeof item === 'object' && item.storagePath === file.storagePath) {
-                    return { ...item, downloadURL: urlToOpen };
+            const updateItemFile = (item: any) => {
+                if (item && item.file && item.file.storagePath === file.storagePath) {
+                    return { ...item, file: { ...item.file, downloadURL: urlToOpen } };
                 }
                 return item;
             };
 
-            const updatedNotas = prev.notas_fiscais.map((nf: any) => ({ ...nf, file: findAndReplace(nf.file) }));
-            const updatedDocs = prev.documentos_pos_embarque.map((doc: any) => ({ ...doc, file: findAndReplace(doc.file) }));
+            const updatedNotas = prev.notas_fiscais.map(updateItemFile);
+            const updatedDocs = prev.documentos_pos_embarque.map(updateItemFile);
             
             let updatedState = { ...prev, notas_fiscais: updatedNotas, documentos_pos_embarque: updatedDocs };
             
@@ -392,7 +385,7 @@ export default function NovoProcessoPage() {
       } catch (error) {
         toast({ 
             title: "Erro de Download", 
-            description: "Não foi possível obter o URL do ficheiro. O ficheiro pode não existir ou as permissões podem ser insuficientes.", 
+            description: "Não foi possível obter o URL do ficheiro. Verifique a sua ligação.", 
             variant: "destructive" 
         });
         return;
@@ -414,7 +407,7 @@ export default function NovoProcessoPage() {
 
       const targetField = typeof currentUploadTarget === 'string' ? currentUploadTarget : null;
       const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
-      const targetIndex = typeof currentUploadTarget === 'object' ? currentUploadTarget.index : -1;
+      const targetId = typeof currentUploadTarget === 'object' ? currentUploadTarget.id : null;
       
       const filePath = `processos/${pageProcessId}/${file.name}-${Date.now()}`;
       const storageRef = ref(storage, filePath);
@@ -434,14 +427,12 @@ export default function NovoProcessoPage() {
           setFormData((prev: any) => ({ ...prev, [targetField]: placeholder }));
       } else if (targetList === 'nota_fiscal') {
           setFormData((prev: any) => {
-              const newNotas = [...prev.notas_fiscais];
-              newNotas[targetIndex].file = placeholder;
+              const newNotas = prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: placeholder } : nf);
               return { ...prev, notas_fiscais: newNotas };
           });
       } else if (targetList === 'documento_pos_embarque') {
           setFormData((prev: any) => {
-              const newDocs = [...prev.documentos_pos_embarque];
-              newDocs[targetIndex].file = placeholder;
+              const newDocs = prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: placeholder } : doc);
               return { ...prev, documentos_pos_embarque: newDocs };
           });
       }
@@ -459,44 +450,33 @@ export default function NovoProcessoPage() {
                   if (targetField) {
                       return { ...prev, [targetField]: updateFileProgress(prev[targetField]) };
                   } else if (targetList === 'nota_fiscal') {
-                      const newNotas = prev.notas_fiscais.map((nota: any, idx: number) => {
-                          if (idx === targetIndex) {
-                              return { ...nota, file: updateFileProgress(nota.file) };
-                          }
-                          return nota;
-                      });
+                      const newNotas = prev.notas_fiscais.map((nota: any) => ({ ...nota, file: updateFileProgress(nota.file) }));
                       return { ...prev, notas_fiscais: newNotas };
                   } else if (targetList === 'documento_pos_embarque') {
-                      const newDocs = prev.documentos_pos_embarque.map((doc: any, idx: number) => {
-                          if (idx === targetIndex) {
-                              return { ...doc, file: updateFileProgress(doc.file) };
-                          }
-                          return doc;
-                      });
+                      const newDocs = prev.documentos_pos_embarque.map((doc: any) => ({ ...doc, file: updateFileProgress(doc.file) }));
                       return { ...prev, documentos_pos_embarque: newDocs };
                   }
                   return prev;
               });
           },
           (error) => {
-              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
+              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}. Verifique sua internet.`, variant: "destructive" });
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
               } else if (targetList === 'nota_fiscal') {
                   setFormData((prev: any) => {
-                      const newNotas = prev.notas_fiscais.filter((n:any, i:number) => i !== targetIndex);
+                      const newNotas = prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: null } : nf);
                       return { ...prev, notas_fiscais: newNotas };
                   });
               } else if (targetList === 'documento_pos_embarque') {
                    setFormData((prev: any) => {
-                      const newDocs = prev.documentos_pos_embarque.filter((d:any, i:number) => i !== targetIndex);
+                      const newDocs = prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: null } : doc);
                       return { ...prev, documentos_pos_embarque: newDocs };
                   });
               }
           },
           () => {
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                  
                   setFormData((prev: any) => {
                       const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
                       const updateFileState = (fileData: FileData | null) => {
@@ -507,20 +487,10 @@ export default function NovoProcessoPage() {
                       if (targetField) {
                           return { ...prev, [targetField]: updateFileState(prev[targetField]) };
                       } else if (targetList === 'nota_fiscal') {
-                           const newNotas = prev.notas_fiscais.map((nota: any, idx: number) => {
-                              if (idx === targetIndex) {
-                                  return { ...nota, file: updateFileState(nota.file) };
-                              }
-                              return nota;
-                          });
+                           const newNotas = prev.notas_fiscais.map((nota: any) => ({ ...nota, file: updateFileState(nota.file) }));
                           return { ...prev, notas_fiscais: newNotas };
                       } else if (targetList === 'documento_pos_embarque') {
-                          const newDocs = prev.documentos_pos_embarque.map((doc: any, idx: number) => {
-                              if (idx === targetIndex) {
-                                  return { ...doc, file: updateFileState(doc.file) };
-                              }
-                              return doc;
-                          });
+                          const newDocs = prev.documentos_pos_embarque.map((doc: any) => ({ ...doc, file: updateFileState(doc.file) }));
                           return { ...prev, documentos_pos_embarque: newDocs };
                       }
                       return prev;
@@ -538,40 +508,33 @@ export default function NovoProcessoPage() {
     fileInputRef.current?.click();
   };
 
-  const removeFile = (target: string | { type: string, index: number }) => {
+  const removeFile = (target: string | { type: string, id: string | number }) => {
     if (!storage) return;
 
     let fileToRemove: FileData | null = null;
-    let originalStateUpdater: () => void = () => {};
     
     if (typeof target === 'string') {
         fileToRemove = formData[target];
-        originalStateUpdater = () => handleInputChange(target, null);
+        handleInputChange(target, null);
     } else if (target.type === 'nota_fiscal') {
-        fileToRemove = formData.notas_fiscais[target.index].file;
-        originalStateUpdater = () => handleNotaFiscalChange(target.index, 'file', null);
+        const nf = formData.notas_fiscais.find((n: any) => n.id === target.id);
+        fileToRemove = nf?.file;
+        const newNotas = formData.notas_fiscais.map((n: any) => n.id === target.id ? { ...n, file: null } : n);
+        setFormData((prev: any) => ({ ...prev, notas_fiscais: newNotas }));
     } else if (target.type === 'documento_pos_embarque') {
-        fileToRemove = formData.documentos_pos_embarque[target.index].file;
-        originalStateUpdater = () => handlePostShipmentDocChange(target.index, 'file', null);
+        const docItem = formData.documentos_pos_embarque.find((d: any) => d.id === target.id);
+        fileToRemove = docItem?.file;
+        const newDocs = formData.documentos_pos_embarque.map((d: any) => d.id === target.id ? { ...d, file: null } : d);
+        setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: newDocs }));
     }
     
-    originalStateUpdater();
-
     if (fileToRemove && fileToRemove.storagePath) {
         const fileRef = ref(storage, fileToRemove.storagePath);
-        deleteObject(fileRef).then(() => {
-            toast({ title: "Anexo Removido" });
-        }).catch(error => {
-            toast({ 
-                title: "Erro de Rede", 
-                description: "A remoção do anexo falhou. Por favor, verifique a sua ligação à internet e recarregue a página para tentar novamente.", 
-                variant: "destructive",
-                duration: 9000,
-            });
+        deleteObject(fileRef).catch(() => {
+            // Silently fail or log, user already saw visual removal
         });
-    } else {
-       toast({ title: "Anexo Removido" });
     }
+    toast({ title: "Anexo Removido" });
   };
 
   const handlePortChange = (value: string) => {
@@ -588,10 +551,11 @@ export default function NovoProcessoPage() {
     setFormData(prev => ({ ...prev, containers: updatedContainers }));
   };
 
-  const handlePostShipmentDocChange = (index: number, field: string, value: any) => {
-    const updatedDocuments = [...formData.documentos_pos_embarque];
-    (updatedDocuments[index] as any)[field] = value;
-    setFormData(prev => ({ ...prev, documentos_pos_embarque: updatedDocuments }));
+  const handlePostShipmentDocChange = (id: string | number, field: string, value: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      documentos_pos_embarque: prev.documentos_pos_embarque.map((d: any) => d.id === id ? { ...d, [field]: value } : d)
+    }));
   };
 
   const addPostShipmentDoc = () => {
@@ -601,109 +565,92 @@ export default function NovoProcessoPage() {
     }));
   };
 
-  const removePostShipmentDoc = (index: number) => {
-    const docToRemove = formData.documentos_pos_embarque[index];
+  const removePostShipmentDoc = (id: string | number) => {
+    const docToRemove = formData.documentos_pos_embarque.find((d: any) => d.id === id);
     if (docToRemove && docToRemove.file) {
-      removeFile({ type: 'documento_pos_embarque', index });
+      removeFile({ type: 'documento_pos_embarque', id });
     }
-    const updatedDocuments = formData.documentos_pos_embarque.filter((_: any, i: number) => i !== index);
-    setFormData(prev => ({ ...prev, documentos_pos_embarque: updatedDocuments }));
+    setFormData(prev => ({ ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.filter((d: any) => d.id !== id) }));
   };
 
-  const handleNotaFiscalChange = (index: number, field: string, value: any) => {
-    const updatedNotas = [...formData.notas_fiscais];
-    (updatedNotas[index] as any)[field] = value;
-    setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
+  const handleNotaFiscalChange = (id: string | number, field: string, value: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === id ? { ...nf, [field]: value } : nf)
+    }));
   };
   
   const handleMultipleNFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-      const files = e.target.files;
-      if (!files || files.length === 0 || !storage || !pageProcessId) return;
+      const selectedFiles = e.target.files;
+      if (!selectedFiles || selectedFiles.length === 0 || !storage || !pageProcessId) return;
 
-      Array.from(files).forEach((file) => {
-          const newNota = {
-              id: Date.now() + Math.random(),
-              tipo: 'Remessa',
-              chave: '',
-              data_pedido: null,
-              data_recebida: null,
-              file: null as FileData | null
-          };
-          
-          const newNotaIndex = formData.notas_fiscais.length + Array.from(files).indexOf(file);
+      const filesArray = Array.from(selectedFiles);
+      
+      const newEntries = filesArray.map((file, i) => ({
+        id: `${Date.now()}-${i}-${Math.random()}`,
+        tipo: 'Remessa',
+        chave: '',
+        data_pedido: null,
+        data_recebida: null,
+        file: {
+          name: file.name,
+          storagePath: `processos/${pageProcessId}/${file.name}-${Date.now()}-${i}`,
+          downloadURL: '',
+          type: file.type,
+          size: file.size,
+          uploadState: 'running' as const,
+          uploadProgress: 0,
+        }
+      }));
 
-          setFormData((prev:any) => ({
+      setFormData((prev: any) => ({
+        ...prev,
+        notas_fiscais: [...prev.notas_fiscais, ...newEntries]
+      }));
+
+      newEntries.forEach((entry, i) => {
+        const file = filesArray[i];
+        const storageRef = ref(storage!, entry.file.storagePath);
+        const uploadTask = uploadBytesResumable(storageRef, file);
+
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setFormData((prev: any) => ({
               ...prev,
-              notas_fiscais: [...prev.notas_fiscais, newNota]
-          }));
-
-          const filePath = `processos/${pageProcessId}/${file.name}-${Date.now()}`;
-          const storageRef = ref(storage, filePath);
-          const uploadTask = uploadBytesResumable(storageRef, file);
-
-          const placeholder: FileData = {
-              name: file.name,
-              storagePath: filePath,
-              downloadURL: '',
-              type: file.type,
-              size: file.size,
-              uploadState: 'running',
-              uploadProgress: 0,
-          };
-          
-          setFormData((prev:any) => {
-            const newNotas = [...prev.notas_fiscais];
-            newNotas[newNotaIndex].file = placeholder;
-            return { ...prev, notas_fiscais: newNotas };
-          });
-
-
-          uploadTask.on('state_changed',
-            (snapshot) => {
-                const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                setFormData((prev:any) => {
-                    const newNotas = [...prev.notas_fiscais];
-                    if (newNotas[newNotaIndex] && newNotas[newNotaIndex].file) {
-                        newNotas[newNotaIndex].file = {
-                          ...newNotas[newNotaIndex].file,
-                          uploadProgress: progress,
-                        };
-                    }
-                    return { ...prev, notas_fiscais: newNotas };
-                });
-            },
-            (error) => {
-                 toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
-                 setFormData((prev:any) => ({...prev, notas_fiscais: prev.notas_fiscais.filter((n:any) => n.file?.storagePath !== filePath) }));
-            },
-            () => {
-                getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
-                    setFormData((prev:any) => {
-                        const newNotas = [...prev.notas_fiscais];
-                        if (newNotas[newNotaIndex] && newNotas[newNotaIndex].file) {
-                            newNotas[newNotaIndex].file = {
-                              ...newNotas[newNotaIndex].file,
-                              downloadURL,
-                              uploadState: 'success',
-                              uploadProgress: 100,
-                            }
-                        }
-                        return { ...prev, notas_fiscais: newNotas };
-                    });
-                });
-            }
+              notas_fiscais: prev.notas_fiscais.map((nf: any) => 
+                nf.id === entry.id ? { ...nf, file: { ...nf.file, uploadProgress: progress } } : nf
+              )
+            }));
+          },
+          () => {
+            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
+            setFormData((prev: any) => ({
+              ...prev,
+              notas_fiscais: prev.notas_fiscais.filter((nf: any) => nf.id !== entry.id)
+            }));
+          },
+          async () => {
+            const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+            setFormData((prev: any) => ({
+              ...prev,
+              notas_fiscais: prev.notas_fiscais.map((nf: any) => 
+                nf.id === entry.id ? { ...nf, file: { ...nf.file, downloadURL, uploadState: 'success', uploadProgress: 100 } } : nf
+              )
+            }));
+          }
         );
       });
+
       if (nfFileInputRef.current) nfFileInputRef.current.value = '';
   };
 
-  const removeNotaFiscal = (index: number) => {
-    const notaToRemove = formData.notas_fiscais[index];
+  const removeNotaFiscal = (id: string | number) => {
+    const notaToRemove = formData.notas_fiscais.find((n: any) => n.id === id);
     if(notaToRemove && notaToRemove.file) {
-        removeFile({ type: 'nota_fiscal', index });
+        removeFile({ type: 'nota_fiscal', id });
     }
-    const updatedNotas = formData.notas_fiscais.filter((_: any, i: number) => i !== index);
-    setFormData(prev => ({ ...prev, notas_fiscais: updatedNotas }));
+    setFormData(prev => ({ ...prev, notas_fiscais: prev.notas_fiscais.filter((n: any) => n.id !== id) }));
   };
 
   const addContainer = () => {
@@ -872,7 +819,6 @@ export default function NovoProcessoPage() {
     let originalsCount = formData.documentos_pos_embarque.reduce((acc: number, doc: any) => acc + (Number(doc.originais) || 0), 0);
     let copiesCount = formData.documentos_pos_embarque.reduce((acc: number, doc: any) => acc + (Number(doc.copias) || 0), 0);
 
-    // Cover Page
     docPdf.setFontSize(22);
     docPdf.setFont('helvetica', 'bold');
     docPdf.text('PACOTE DE DOCUMENTOS DE EMBARQUE', 105, 40, { align: 'center' });
@@ -933,7 +879,6 @@ export default function NovoProcessoPage() {
                 const format = docItem.file.type.split('/')[1]?.toUpperCase() || 'JPEG';
                 docPdf.addImage(dataUrl, format, 15, 40, 180, 160, undefined, 'FAST');
             } catch (e) {
-                console.error("Error adding image to PDF:", e);
                 docPdf.text(`Não foi possível pré-visualizar a imagem: ${docItem.file.name}`, 14, 40);
             }
         }
@@ -986,7 +931,6 @@ export default function NovoProcessoPage() {
                 docPdf.addImage(dataUrl, format, 15, 40, 180, 160, undefined, 'FAST');
 
             } catch (e) {
-                console.error("Error adding NF image to PDF:", e);
                 docPdf.text(`Não foi possível pré-visualizar a imagem: ${nf.file.name}`, 14, 40);
             }
         }
@@ -1031,7 +975,6 @@ export default function NovoProcessoPage() {
           description: `${newContainers.length} contêineres foram importados com sucesso.`,
         });
       } catch (error) {
-        console.error("Erro ao importar planilha:", error);
         toast({
           title: 'Erro na Importação',
           description: 'Houve um problema ao ler o ficheiro. Verifique o formato e tente novamente.',
@@ -1105,14 +1048,9 @@ export default function NovoProcessoPage() {
       router.push('/dashboard/processos');
   
     } catch (error: any) {
-      console.error("Erro ao salvar processo:", error);
-      let description = "Não foi possível guardar o processo. Verifique a sua ligação ou tente novamente.";
-      if (error.code === 'permission-denied') {
-        description = "Você não tem permissão para realizar esta operação.";
-      }
       toast({
         title: "Erro ao Guardar",
-        description,
+        description: "Não foi possível guardar o processo. Verifique a sua ligação.",
         variant: "destructive",
         duration: 9000,
       });
@@ -1212,7 +1150,6 @@ export default function NovoProcessoPage() {
         />
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-          {/* Etapa 1 */}
           <AccordionItem value="item-1">
             <AccordionTrigger>
               <div className='flex items-center gap-3'>
@@ -1470,7 +1407,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Etapa 2 */}
           <AccordionItem value="item-2" disabled={!isEditing}>
             <AccordionTrigger>
               <div className='flex items-center gap-3'>
@@ -1561,7 +1497,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Etapa 3 */}
           <AccordionItem value="item-3" disabled={!isEditing}>
             <AccordionTrigger>
               <div className='flex items-center gap-3'>
@@ -1592,11 +1527,11 @@ export default function NovoProcessoPage() {
                       </div>
                     </div>
                     <div className="space-y-4">
-                      {formData.notas_fiscais.map((nota: any, index: number) => (
+                      {formData.notas_fiscais.map((nota: any) => (
                         <div key={nota.id} className="grid md:grid-cols-6 gap-4 items-end p-3 border rounded-md">
                           <div className="space-y-2">
                             <Label>Tipo</Label>
-                            <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(index, 'tipo', value)}>
+                            <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(nota.id, 'tipo', value)}>
                               <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
                               <SelectContent>
                                 <SelectItem value="Remessa">Remessa</SelectItem>
@@ -1615,7 +1550,7 @@ export default function NovoProcessoPage() {
                                ) : (
                                 <Input
                                   value={nota.chave || ''}
-                                  onChange={(e) => handleNotaFiscalChange(index, 'chave', e.target.value)}
+                                  onChange={(e) => handleNotaFiscalChange(nota.id, 'chave', e.target.value)}
                                   placeholder="Chave da NF"
                                   disabled={!!nota.file}
                                 />
@@ -1625,12 +1560,12 @@ export default function NovoProcessoPage() {
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} disabled={nota.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
-                                  <Button type="button" title="Remover Anexo" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)} disabled={nota.file.uploadState === 'running'}>
+                                  <Button type="button" title="Remover Anexo" variant="ghost" size="icon" onClick={() => removeNotaFiscal(nota.id)} disabled={nota.file.uploadState === 'running'}>
                                     <XCircle className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </div>
                               ) : (
-                                <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', index })}>
+                                <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', id: nota.id })}>
                                     <FileUp className="h-4 w-4" />
                                 </Button>
                               )}
@@ -1638,14 +1573,14 @@ export default function NovoProcessoPage() {
                           </div>
                           <div className="space-y-2">
                             <Label>Data Solicitação</Label>
-                            <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(index, 'data_pedido', date)} />
+                            <DatePicker date={nota.data_pedido} onDateChange={(date) => handleNotaFiscalChange(nota.id, 'data_pedido', date)} />
                           </div>
                           <div className="space-y-2">
                             <Label>Data Recebimento</Label>
-                            <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(index, 'data_recebida', date)} />
+                            <DatePicker date={nota.data_recebida} onDateChange={(date) => handleNotaFiscalChange(nota.id, 'data_recebida', date)} />
                           </div>
                           <div className='flex items-end'>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(index)} disabled={nota.file?.uploadState === 'running'}>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeNotaFiscal(nota.id)} disabled={nota.file?.uploadState === 'running'}>
                               <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
@@ -1690,7 +1625,7 @@ export default function NovoProcessoPage() {
                         </TableHeader>
                         <TableBody>
                           {formData.containers.map((container: any, index: number) => (
-                            <TableRow key={index}>
+                            <TableRow key={container.id}>
                               <TableCell><Input className="min-w-[150px]" value={container.numero || ''} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: MSCU1234567" /></TableCell>
                               <TableCell><Input className="min-w-[120px]" value={container.lacre || ''} onChange={e => handleContainerChange(index, 'lacre', e.target.value)} placeholder="Ex: SEAL123" /></TableCell>
                               <TableCell><Input className="min-w-[100px]" value={container.tare || ''} onChange={e => handleContainerChange(index, 'tare', e.target.value)} /></TableCell>
@@ -1816,7 +1751,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Etapa 4 */}
           <AccordionItem value="item-4" disabled={!isEditing}>
             <AccordionTrigger>
               <div className='flex items-center gap-3'>
@@ -1856,7 +1790,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Etapa 5 */}
           <AccordionItem value="item-5" disabled={!isEditing}>
             <AccordionTrigger>
               <div className='flex items-center gap-3'>
@@ -1891,10 +1824,10 @@ export default function NovoProcessoPage() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {formData.documentos_pos_embarque.map((docItem: any, index: number) => (
+                        {formData.documentos_pos_embarque.map((docItem: any) => (
                           <TableRow key={docItem.id}>
                             <TableCell>
-                              <Select value={docItem.nome || ''} onValueChange={value => handlePostShipmentDocChange(index, 'nome', value)}>
+                              <Select value={docItem.nome || ''} onValueChange={value => handlePostShipmentDocChange(docItem.id, 'nome', value)}>
                                 <SelectTrigger className="min-w-[180px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
                                 <SelectContent>
                                   {documentTypes.map(type => (
@@ -1904,21 +1837,21 @@ export default function NovoProcessoPage() {
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(index, 'originais', e.target.value)} />
+                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'originais', e.target.value)} />
                             </TableCell>
                             <TableCell>
-                              <Input className="w-24" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(index, 'copias', e.target.value)} />
+                              <Input className="w-24" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'copias', e.target.value)} />
                             </TableCell>
                             <TableCell>
                               <DatePicker
                                 date={docItem.data_emissao}
-                                onDateChange={date => handlePostShipmentDocChange(index, 'data_emissao', date)}
+                                onDateChange={date => handlePostShipmentDocChange(docItem.id, 'data_emissao', date)}
                               />
                             </TableCell>
                             <TableCell>
                               <DatePicker
                                 date={docItem.data_liberacao}
-                                onDateChange={date => handlePostShipmentDocChange(index, 'data_liberacao', date)}
+                                onDateChange={date => handlePostShipmentDocChange(docItem.id, 'data_liberacao', date)}
                               />
                             </TableCell>
                             <TableCell>
@@ -1927,19 +1860,19 @@ export default function NovoProcessoPage() {
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={docItem.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
-                                  <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(index)} disabled={docItem.file.uploadState === 'running'}>
+                                  <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(docItem.id)} disabled={docItem.file.uploadState === 'running'}>
                                     <XCircle className="h-4 w-4 text-destructive" />
                                   </Button>
                                 </div>
                               ) : (
-                                <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', index })}>
+                                <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })}>
                                   <Upload className="h-4 w-4" />
                                 </Button>
                               )}
                                {docItem.file?.uploadState === 'running' && <Progress value={docItem.file.uploadProgress} className="mt-1 h-1" />}
                             </TableCell>
                             <TableCell>
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(index)} disabled={docItem.file?.uploadState === 'running'}>
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(docItem.id)} disabled={docItem.file?.uploadState === 'running'}>
                                 <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                             </TableCell>
@@ -1964,7 +1897,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* Etapa 6 */}
           <AccordionItem value="item-6" disabled={!isEditing}>
             <AccordionTrigger>
               <div className='flex items-center gap-3'>
