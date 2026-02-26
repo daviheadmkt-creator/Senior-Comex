@@ -207,6 +207,7 @@ export default function NovoProcessoPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const containerFileInputRef = useRef<HTMLInputElement>(null);
   const nfFileInputRef = useRef<HTMLInputElement>(null);
+  const hasInitialized = useRef(false);
   
   const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', id: string | number } | { type: 'documento_pos_embarque', id: string | number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
@@ -276,7 +277,8 @@ export default function NovoProcessoPage() {
 
 
   useEffect(() => {
-    if (isEditing && processoData) {
+    // Inicializar o formulário apenas uma vez quando os dados estiverem prontos
+    if (isEditing && processoData && parceiros && terminais && !hasInitialized.current) {
       const selectedExporter = parceiros?.find(p => p.id === processoData.exportadorId);
       const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c, index) => ({ ...c, id: String(index) })) || [];
       setExporterContacts(newContacts);
@@ -301,10 +303,12 @@ export default function NovoProcessoPage() {
         armadorId: String(processoData.armadorId || ''),
       });
 
-      if (processoData.portoEmbarqueId && terminais) {
+      if (processoData.portoEmbarqueId) {
         const filtered = terminais.filter((t: any) => String(t.portoId) === String(processoData.portoEmbarqueId));
         setFilteredTerminais(filtered);
       }
+      
+      hasInitialized.current = true;
     }
   }, [isEditing, processoData, terminais, parceiros]);
 
@@ -669,10 +673,10 @@ export default function NovoProcessoPage() {
 
       setFormData((prev: any) => ({
         ...prev,
-        notas_fiscais: [...prev.notas_fiscais, ...newEntries.map(({fileObj, ...rest}) => rest)]
+        notas_fiscais: [...prev.notas_fiscais, ...newEntries.map(({fileObj, ...rest}: any) => rest)]
       }));
 
-      newEntries.forEach((entry) => {
+      newEntries.forEach((entry: any) => {
         const file = entry.fileObj;
         console.time(`Upload-NF-${file.name}`);
         const storageRef = ref(storage!, entry.file.storagePath);
@@ -1927,7 +1931,7 @@ export default function NovoProcessoPage() {
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.originais, 'originais', e.target.value)} />
+                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'originais', e.target.value)} />
                             </TableCell>
                             <TableCell>
                               <Input className="w-24" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'copias', e.target.value)} />
