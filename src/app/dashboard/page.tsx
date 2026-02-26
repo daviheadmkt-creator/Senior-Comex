@@ -18,7 +18,6 @@ import { collection, query, where } from 'firebase/firestore';
 import { differenceInDays, parseISO, format } from 'date-fns';
 import { useSearch } from '@/components/search-provider';
 import { cn } from '@/lib/utils';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const processStatusOptions = [
   "Iniciado / Aguardando Booking",
@@ -56,69 +55,6 @@ const formatDate = (dateString: string | null | undefined) => {
     } catch {
         return 'Data Inválida';
     }
-}
-
-const getStageColor = (processo: any, stage: number) => {
-    const status = processo.status || '';
-    const statusNumber = processStatusOptions.indexOf(status);
-    
-    switch (stage) {
-        case 1: // Booking
-            return statusNumber >= 1 ? 'bg-green-500' : 'bg-muted';
-        case 2: // Drafts
-            if (statusNumber >= 3) return 'bg-green-500';
-            if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return 'bg-destructive animate-pulse';
-            if (statusNumber >= 1) return 'bg-yellow-500';
-            return 'bg-muted';
-        case 3: // Liberação
-            const isDueOk = processo.due_status === 'DESEMABRAÇADA' || processo.due_status === 'AVERBADA' || processo.due_status === 'DESEMBARAÇADA';
-            const isMapaOk = processo.mapa_status === 'DEFERIDA' || processo.mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
-            if (isDueOk && isMapaOk) return 'bg-green-500';
-            if (statusNumber >= 3) return 'bg-yellow-500';
-            return 'bg-muted';
-        case 4: // Embarque
-            if (processo.navio_final || status.toLowerCase().includes('trânsito') || status.toLowerCase().includes('concluído')) return 'bg-green-500';
-            if (statusNumber >= 11) return 'bg-yellow-500';
-            return 'bg-muted';
-        case 5: // Documentação
-            if (processo.documentos_pos_embarque?.some((d: any) => d.nome === 'BL')) return 'bg-green-500';
-            if (statusNumber >= 12) return 'bg-yellow-500';
-            return 'bg-muted';
-        case 6: // Conclusão
-            if (status === "Concluído") return 'bg-green-500';
-            if (processo.awb_courier) return 'bg-yellow-500';
-            return 'bg-muted';
-        default: return 'bg-muted';
-    }
-}
-
-const ProcessStages = ({ processo }: { processo: any }) => {
-    const stages = [1, 2, 3, 4, 5, 6];
-    const stageNames = [
-        "Etapa 1: Booking",
-        "Etapa 2: Drafts",
-        "Etapa 3: Liberação",
-        "Etapa 4: Embarque",
-        "Etapa 5: Documentação",
-        "Etapa 6: Conclusão"
-    ];
-
-    return (
-        <div className="flex gap-1 items-center">
-            {stages.map((stage, i) => (
-                <TooltipProvider key={stage}>
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <div className={cn("h-2.5 w-3 rounded-sm transition-colors", getStageColor(processo, stage))} />
-                        </TooltipTrigger>
-                        <TooltipContent>
-                            <p className="text-xs font-semibold">{stageNames[i]}</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-            ))}
-        </div>
-    );
 }
 
 export default function DashboardPage() {
@@ -208,7 +144,6 @@ export default function DashboardPage() {
                             <TableHead className="hidden sm:table-cell">Produto</TableHead>
                             <TableHead className="hidden lg:table-cell">Navio</TableHead>
                             <TableHead className="hidden xl:table-cell">Origem / Destino</TableHead>
-                            <TableHead>Progresso</TableHead>
                             <TableHead>Status Atual</TableHead>
                             <TableHead className="hidden md:table-cell">Navio / ETA</TableHead>
                             <TableHead className="text-right">Ação</TableHead>
@@ -217,7 +152,7 @@ export default function DashboardPage() {
                     <TableBody>
                         {isLoading && (
                              <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center">
+                                <TableCell colSpan={8} className="h-24 text-center">
                                     <Loader2 className="mx-auto h-6 w-6 animate-spin text-primary" />
                                 </TableCell>
                             </TableRow>
@@ -242,9 +177,6 @@ export default function DashboardPage() {
                                     <span className="font-medium text-primary">→ {processo.portoDescargaNome}</span>
                                 </TableCell>
                                 <TableCell>
-                                    <ProcessStages processo={processo} />
-                                </TableCell>
-                                <TableCell>
                                     <Badge 
                                         variant={getStatusVariant(processo.status)} 
                                         className="text-xs px-2 py-0.5 whitespace-nowrap"
@@ -267,7 +199,7 @@ export default function DashboardPage() {
                         ))}
                          {!isLoading && (!filteredProcessos || filteredProcessos.length === 0) && (
                             <TableRow>
-                                <TableCell colSpan={9} className="h-24 text-center text-muted-foreground italic">
+                                <TableCell colSpan={8} className="h-24 text-center text-muted-foreground italic">
                                     Nenhum processo ativo corresponde à sua busca.
                                 </TableCell>
                             </TableRow>
