@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -36,11 +37,22 @@ import { Combobox } from '@/components/ui/combobox';
 import * as XLSX from 'xlsx';
 import { Progress } from '@/components/ui/progress';
 
+// Configurações de Validação de Ficheiros
+const MAX_FILE_SIZE_MB = 10;
+const ALLOWED_TYPES = [
+  "application/pdf",
+  "application/xml",
+  "text/xml",
+  "image/png",
+  "image/jpg",
+  "image/jpeg",
+  "image/webp"
+];
 
 type FileData = {
   name: string;
-  storagePath: string; // Path in Firebase Storage
-  downloadURL: string; // Public URL for downloading
+  storagePath: string;
+  downloadURL: string;
   type: string;
   size: number;
   uploadState?: 'running' | 'success' | 'error';
@@ -73,7 +85,7 @@ const dueStatusOptions = [
   "DESEMABRAÇADA",
   "SELECIONADA/CANAL LARANJA (AGUARDANDO CONFERENCIA DOCUMENTAL)",
   "SELECIONADA/CANAL VERMELHO (AGUARDANDO CONFERENCIA FISICA)",
-  "DESEMBARAÇADA", // duplicado mas mantido
+  "DESEMBARAÇADA",
   "RETIFICAÇÃO (PENDENTE DE AUTORIZAÇÃO FISCAL)",
   "AVERBADA"
 ];
@@ -399,12 +411,29 @@ export default function NovoProcessoPage() {
     
     window.open(urlToOpen, '_blank');
   };
+
+  const validarArquivo = (file: File) => {
+    if (!ALLOWED_TYPES.includes(file.type)) {
+      throw new Error(`Tipo de ficheiro "${file.type}" não permitido. Use PDF, XML ou Imagens.`);
+    }
+    if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
+      throw new Error(`O ficheiro é demasiado grande. O limite é de ${MAX_FILE_SIZE_MB}MB.`);
+    }
+  };
   
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       const currentUploadTarget = uploadTarget;
       if (!file || !currentUploadTarget || !storage || !pageProcessId) return;
 
+      try {
+        validarArquivo(file);
+      } catch (err: any) {
+        toast({ title: "Arquivo Inválido", description: err.message, variant: "destructive" });
+        return;
+      }
+
+      console.time(`Upload-${file.name}`);
       const targetField = typeof currentUploadTarget === 'string' ? currentUploadTarget : null;
       const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
       const targetId = typeof currentUploadTarget === 'object' ? currentUploadTarget.id : null;
@@ -413,7 +442,6 @@ export default function NovoProcessoPage() {
       const storageRef = ref(storage, filePath);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
-      // Start with 1% to show immediate progress
       const placeholder: FileData = {
           name: file.name,
           storagePath: filePath,
@@ -438,10 +466,15 @@ export default function NovoProcessoPage() {
           });
       }
       
+      let lastProgress = 0;
       uploadTask.on('state_changed',
           (snapshot) => {
               const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
               
+              // Throttle: Só atualiza o estado se o progresso mudar mais de 5% ou for o fim
+              if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
+              lastProgress = progress;
+
               setFormData((prev: any) => {
                   const updateFileProgress = (fileData: FileData | null) => {
                       if (!fileData || fileData.storagePath !== filePath) return fileData;
@@ -461,7 +494,8 @@ export default function NovoProcessoPage() {
               });
           },
           (error) => {
-              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}. Verifique a sua internet ou tente novamente.`, variant: "destructive" });
+              console.timeEnd(`Upload-${file.name}`);
+              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}. Verifique a sua internet.`, variant: "destructive" });
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
               } else if (targetList === 'nota_fiscal') {
@@ -477,6 +511,7 @@ export default function NovoProcessoPage() {
               }
           },
           () => {
+              console.timeEnd(`Upload-${file.name}`);
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                   setFormData((prev: any) => {
                       const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
@@ -534,8 +569,7 @@ export default function NovoProcessoPage() {
         deleteObject(fileRef).then(() => {
             toast({ title: "Anexo Removido" });
         }).catch(error => {
-            // Silently fail or suggest reload if networking issue
-            toast({ title: "Aviso", description: "O ficheiro foi removido do processo, mas pode ainda estar no armazenamento. Recarregue se necessário.", variant: "default" });
+            toast({ title: "Aviso", description: "O ficheiro foi removido do processo, mas pode ainda estar no armazenamento devido a um erro de rede.", variant: "default" });
         });
     }
   };
@@ -589,36 +623,52 @@ export default function NovoProcessoPage() {
 
       const filesArray = Array.from(selectedFiles);
       
-      const newEntries = filesArray.map((file, i) => ({
-        id: `${Date.now()}-${i}-${Math.random()}`,
-        tipo: 'Remessa',
-        chave: '',
-        data_pedido: null,
-        data_recebida: null,
-        file: {
-          name: file.name,
-          storagePath: `processos/${pageProcessId}/${file.name}-${Date.now()}-${i}`,
-          downloadURL: '',
-          type: file.type,
-          size: file.size,
-          uploadState: 'running' as const,
-          uploadProgress: 1,
+      const newEntries = filesArray.map((file, i) => {
+        try {
+          validarArquivo(file);
+          return {
+            id: `${Date.now()}-${i}-${Math.random()}`,
+            tipo: 'Remessa',
+            chave: '',
+            data_pedido: null,
+            data_recebida: null,
+            file: {
+              name: file.name,
+              storagePath: `processos/${pageProcessId}/${file.name}-${Date.now()}-${i}`,
+              downloadURL: '',
+              type: file.type,
+              size: file.size,
+              uploadState: 'running' as const,
+              uploadProgress: 1,
+            },
+            fileObj: file
+          };
+        } catch (err: any) {
+          toast({ title: "Arquivo Ignorado", description: `${file.name}: ${err.message}`, variant: "destructive" });
+          return null;
         }
-      }));
+      }).filter(n => n !== null);
+
+      if (newEntries.length === 0) return;
 
       setFormData((prev: any) => ({
         ...prev,
-        notas_fiscais: [...prev.notas_fiscais, ...newEntries]
+        notas_fiscais: [...prev.notas_fiscais, ...newEntries.map(({fileObj, ...rest}) => rest)]
       }));
 
-      newEntries.forEach((entry, i) => {
-        const file = filesArray[i];
+      newEntries.forEach((entry) => {
+        const file = entry.fileObj;
+        console.time(`Upload-NF-${file.name}`);
         const storageRef = ref(storage!, entry.file.storagePath);
         const uploadTask = uploadBytesResumable(storageRef, file);
 
+        let lastProg = 0;
         uploadTask.on('state_changed',
           (snapshot) => {
             const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
+            if (Math.abs(progress - lastProg) < 5 && progress < 100) return;
+            lastProg = progress;
+
             setFormData((prev: any) => ({
               ...prev,
               notas_fiscais: prev.notas_fiscais.map((nf: any) => 
@@ -627,6 +677,7 @@ export default function NovoProcessoPage() {
             }));
           },
           () => {
+            console.timeEnd(`Upload-NF-${file.name}`);
             toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
             setFormData((prev: any) => ({
               ...prev,
@@ -634,6 +685,7 @@ export default function NovoProcessoPage() {
             }));
           },
           async () => {
+            console.timeEnd(`Upload-NF-${file.name}`);
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
             setFormData((prev: any) => ({
               ...prev,
@@ -690,11 +742,11 @@ export default function NovoProcessoPage() {
     if (statusNumber < 0) return <XCircle className="h-5 w-5 text-gray-400" />;
 
     switch (step) {
-      case 1: // Processo e Booking
+      case 1:
         if (statusNumber >= processStatusOptions.indexOf("Booking Confirmado / Aguardando Draft")) return <CheckCircle className="h-5 w-5 text-green-500" />;
         if (statusNumber >= 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         return <XCircle className="h-5 w-5 text-gray-400" />;
-      case 2: // Drafts
+      case 2:
         {
           const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
           if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
@@ -702,7 +754,7 @@ export default function NovoProcessoPage() {
           if (statusNumber >= processStatusOptions.indexOf("Booking Confirmado / Aguardando Draft")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
-      case 3: // Liberação
+      case 3:
         {
           const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'AVERBADA';
           const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
@@ -711,7 +763,7 @@ export default function NovoProcessoPage() {
           if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
-      case 4: // Confirmação de Embarque
+      case 4:
         if (navio_final || status.toLowerCase().includes('trânsito') || status.toLowerCase().includes('concluído')) {
           return <CheckCircle className="h-5 w-5 text-green-500" />;
         }
@@ -720,7 +772,7 @@ export default function NovoProcessoPage() {
           if (isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
-      case 5: // Docs Pós-Embarque
+      case 5:
         {
           const hasBl = documentos_pos_embarque && documentos_pos_embarque.some((d: any) => d.nome === 'BL');
           if (hasBl) {
@@ -730,7 +782,7 @@ export default function NovoProcessoPage() {
           if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
-      case 6: // Encerramento
+      case 6:
         if (status === "Concluído") return <CheckCircle className="h-5 w-5 text-green-500" />;
         if (awb_courier) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         return <XCircle className="h-5 w-5 text-gray-400" />;
@@ -780,9 +832,10 @@ export default function NovoProcessoPage() {
     const partnerRef = doc(firestore, 'partners', newPartnerId);
     setDoc(partnerRef, { ...newPartnerData }, { merge: true });
 
+    const fieldId = 'armadorId';
     setFormData(prev => ({
       ...prev,
-      armadorId: newPartnerId,
+      [fieldId]: newPartnerId,
     }));
 
     toast({
@@ -1073,7 +1126,7 @@ export default function NovoProcessoPage() {
             <span>A carregar para o servidor...</span>
             <span className="font-mono">{Math.round(file.uploadProgress || 0)}%</span>
           </div>
-          <Progress value={file.uploadProgress} className="h-1.5" />
+          <Progress value={file.uploadProgress} className="h-1.5 transition-all duration-300" />
           <span className="text-[11px] text-muted-foreground truncate max-w-full" title={file.name}>{file.name}</span>
         </div>
       );
@@ -1147,7 +1200,7 @@ export default function NovoProcessoPage() {
           <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-700">
             <p className="font-semibold">Nota sobre Anexos:</p>
-            <p>Os ficheiros são agora enviados para um armazenamento seguro na nuvem. Isto permite anexar documentos maiores sem erros, mas o carregamento pode demorar alguns segundos dependendo do tamanho do ficheiro e da sua internet.</p>
+            <p>Os ficheiros são enviados diretamente para o Firebase Storage de forma binária (mais rápido). O tempo de upload depende exclusivamente da sua internet. Logs de performance disponíveis na consola do navegador.</p>
           </div>
         </div>
 
