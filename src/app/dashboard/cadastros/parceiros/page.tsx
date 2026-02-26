@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -32,14 +31,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
-import { useEffect, useState } from 'react';
+import { useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
+import { useSearch } from '@/components/search-provider';
 
 
 export default function ListaParceirosPage() {
   const firestore = useFirestore();
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm } = useSearch();
 
   const partnersCollection = useMemoFirebase(
     () => (firestore ? collection(firestore, 'partners') : null),
@@ -53,12 +53,17 @@ export default function ListaParceirosPage() {
     deleteDoc(partnerDoc);
   }
 
-  const filteredPartners = partners?.filter(partner => {
-    const searchTermLower = searchTerm.toLowerCase();
-    const nomeFantasia = partner.nome_fantasia?.toLowerCase() || '';
-    const cnpj = partner.cnpj?.toLowerCase() || '';
-    return nomeFantasia.includes(searchTermLower) || cnpj.includes(searchTermLower);
-  });
+  const filteredPartners = useMemo(() => {
+    if (!partners) return [];
+    const term = searchTerm.toLowerCase();
+    return partners.filter(partner => {
+      const nomeFantasia = partner.nome_fantasia?.toLowerCase() || '';
+      const cnpj = partner.cnpj?.toLowerCase() || '';
+      const razaoSocial = partner.razao_social?.toLowerCase() || '';
+      const tipo = partner.tipo_parceiro?.toLowerCase() || '';
+      return nomeFantasia.includes(term) || cnpj.includes(term) || razaoSocial.includes(term) || tipo.includes(term);
+    });
+  }, [partners, searchTerm]);
 
 
   return (
@@ -88,6 +93,7 @@ export default function ListaParceirosPage() {
                     className="pl-8" 
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    type="search"
                 />
             </div>
         </div>
@@ -143,6 +149,11 @@ export default function ListaParceirosPage() {
                 </TableCell>
               </TableRow>
             ))}
+            {!isLoading && filteredPartners?.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-4">Nenhum parceiro encontrado.</TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </CardContent>

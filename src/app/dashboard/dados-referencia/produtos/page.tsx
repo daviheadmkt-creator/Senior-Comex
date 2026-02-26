@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -31,12 +30,15 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
+import { useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where, doc, deleteDoc } from 'firebase/firestore';
+import { useSearch } from '@/components/search-provider';
 
 
 export default function ListaProdutosPage() {
   const firestore = useFirestore();
+  const { searchTerm, setSearchTerm } = useSearch();
   
   const productsQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -44,6 +46,17 @@ export default function ListaProdutosPage() {
   }, [firestore]);
 
   const { data: products, isLoading } = useCollection(productsQuery);
+
+  const filteredProducts = useMemo(() => {
+    if (!products) return [];
+    const term = searchTerm.toLowerCase();
+    return products.filter(product => 
+      (product.nome_fantasia?.toLowerCase() || '').includes(term) ||
+      (product.razao_social?.toLowerCase() || '').includes(term) ||
+      (product.cnpj?.toLowerCase() || '').includes(term) ||
+      ((product as any).unidade?.toLowerCase() || '').includes(term)
+    );
+  }, [products, searchTerm]);
 
   const handleDelete = (id: string) => {
     if (!firestore) return;
@@ -73,7 +86,13 @@ export default function ListaProdutosPage() {
         <div className="flex items-center pb-4">
             <div className="relative w-full max-w-sm">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Buscar por descrição do produto..." className="pl-8" />
+                <Input 
+                  placeholder="Buscar por descrição do produto..." 
+                  className="pl-8" 
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  type="search"
+                />
             </div>
         </div>
         <Table>
@@ -87,7 +106,7 @@ export default function ListaProdutosPage() {
           </TableHeader>
           <TableBody>
             {isLoading && <TableRow><TableCell colSpan={4} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-            {!isLoading && products?.map((product) => (
+            {!isLoading && filteredProducts?.map((product) => (
               <TableRow key={product.id}>
                 <TableCell className="font-medium">{product.nome_fantasia}</TableCell>
                 <TableCell>{product.cnpj}</TableCell>
@@ -123,9 +142,9 @@ export default function ListaProdutosPage() {
                 </TableCell>
               </TableRow>
             ))}
-             {!isLoading && products?.length === 0 && (
+             {!isLoading && filteredProducts?.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={4} className="text-center text-muted-foreground">Nenhum produto encontrado.</TableCell>
+                    <TableCell colSpan={4} className="text-center text-muted-foreground py-4">Nenhum produto encontrado.</TableCell>
                 </TableRow>
             )}
           </TableBody>
@@ -134,4 +153,3 @@ export default function ListaProdutosPage() {
     </Card>
   );
 }
-    

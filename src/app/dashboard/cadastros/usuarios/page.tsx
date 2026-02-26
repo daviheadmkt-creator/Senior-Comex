@@ -33,9 +33,9 @@ import {
 } from '@/components/ui/alert-dialog';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
 import { deleteDoc, doc, getFunctions, httpsCallable } from 'firebase/firestore';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { getAuth } from 'firebase/auth';
+import { useSearch } from '@/components/search-provider';
 
 // This interface must match the one in the Cloud Function return type
 export interface UserRecord {
@@ -55,6 +55,7 @@ export default function ListaUsuariosPage() {
   const firestore = useFirestore();
   const { user: currentUser } = useUser();
   const { toast } = useToast();
+  const { searchTerm, setSearchTerm } = useSearch();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isAdminVerified, setIsAdminVerified] = useState(false);
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -99,6 +100,17 @@ export default function ListaUsuariosPage() {
     }
   }, [currentUser, currentUserData, isUserDocLoading, toast]);
 
+  const filteredUsers = useMemo(() => {
+    if (!users) return [];
+    const term = searchTerm.toLowerCase();
+    return users.filter(user => 
+      (user.nome?.toLowerCase() || '').includes(term) ||
+      (user.email?.toLowerCase() || '').includes(term) ||
+      (user.displayName?.toLowerCase() || '').includes(term) ||
+      (user.funcao?.toLowerCase() || '').includes(term)
+    );
+  }, [users, searchTerm]);
+
 
   const getStatusVariant = (status: string): "destructive" | "default" => {
     return status === 'Inativo' ? 'destructive' : 'default';
@@ -107,8 +119,6 @@ export default function ListaUsuariosPage() {
   const handleDelete = async (uid: string) => {
     if (!firestore) return;
     try {
-        // This is a simplified deletion logic. 
-        // In a real-world app, you would likely call a Cloud Function to delete the user from Firebase Auth as well.
         await deleteDoc(doc(firestore, 'users', uid));
         setUsers(prev => prev.filter(u => u.uid !== uid));
         toast({ title: 'Sucesso', description: 'Usuário excluído.'});
@@ -125,7 +135,7 @@ export default function ListaUsuariosPage() {
        return (
           <TableRow>
             <TableCell colSpan={5} className="text-center">
-              <div className='flex items-center justify-center gap-2'>
+              <div className='flex items-center justify-center gap-2 py-4'>
                 <Loader2 className='h-5 w-5 animate-spin' />
                 <span>Verificando permissões e carregando usuários...</span>
               </div>
@@ -137,24 +147,24 @@ export default function ListaUsuariosPage() {
     if (!isAdmin) {
        return (
           <TableRow>
-            <TableCell colSpan={5} className="text-center text-muted-foreground">
+            <TableCell colSpan={5} className="text-center text-muted-foreground py-4">
               Você não tem permissão para visualizar os usuários.
             </TableCell>
           </TableRow>
        );
     }
     
-    if (!users || users.length === 0) {
+    if (!filteredUsers || filteredUsers.length === 0) {
         return (
              <TableRow>
-                <TableCell colSpan={5} className="text-center text-muted-foreground">
+                <TableCell colSpan={5} className="text-center text-muted-foreground py-4">
                     Nenhum usuário encontrado na base de dados.
                 </TableCell>
             </TableRow>
         );
     }
 
-    return users.map((user) => (
+    return filteredUsers.map((user) => (
           <TableRow key={user.uid}>
             <TableCell className="font-medium">{user.nome || user.displayName || 'N/A'}</TableCell>
             <TableCell>{user.email}</TableCell>
@@ -238,7 +248,13 @@ export default function ListaUsuariosPage() {
         <div className="flex items-center pb-4">
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input placeholder="Buscar por nome ou e-mail..." className="pl-8" />
+            <Input 
+              placeholder="Buscar por nome ou e-mail..." 
+              className="pl-8" 
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              type="search"
+            />
           </div>
         </div>
         <Table>

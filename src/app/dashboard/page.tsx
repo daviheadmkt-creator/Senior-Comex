@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useMemo } from 'react';
@@ -17,6 +16,7 @@ import { Badge } from '@/components/ui/badge';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
 import { differenceInDays, parseISO, format } from 'date-fns';
+import { useSearch } from '@/components/search-provider';
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
     if (!status) return 'outline';
@@ -39,6 +39,7 @@ const formatDate = (dateString: string | null | undefined) => {
 
 export default function DashboardPage() {
   const firestore = useFirestore();
+  const { searchTerm } = useSearch();
   
   const processosQuery = useMemoFirebase(() => {
     if (!firestore) return null;
@@ -47,6 +48,18 @@ export default function DashboardPage() {
 
   const { data: processosAtivos, isLoading } = useCollection(processosQuery);
   
+  const filteredProcessos = useMemo(() => {
+    if (!processosAtivos) return [];
+    const term = searchTerm.toLowerCase();
+    return processosAtivos.filter(p => 
+      (p.po_number || '').toLowerCase().includes(term) ||
+      (p.produtoNome || '').toLowerCase().includes(term) ||
+      (p.processo_interno || '').toLowerCase().includes(term) ||
+      (p.navio || '').toLowerCase().includes(term) ||
+      (p.exportadorNome || '').toLowerCase().includes(term)
+    );
+  }, [processosAtivos, searchTerm]);
+
   const alerts = useMemo(() => {
     if (!processosAtivos) return [];
 
@@ -76,7 +89,6 @@ export default function DashboardPage() {
 
 
       // Alerta de Deadlines (Exemplo com deadline_draft)
-      // Nota: Assumindo que o deadline é salvo como uma string ISO 8601 no Firestore
       if (processo.deadline_draft) {
         try {
             const deadlineDate = parseISO(processo.deadline_draft);
@@ -130,7 +142,7 @@ export default function DashboardPage() {
                                 </TableCell>
                             </TableRow>
                         )}
-                        {!isLoading && processosAtivos && processosAtivos.map((processo) => (
+                        {!isLoading && filteredProcessos && filteredProcessos.map((processo) => (
                             <TableRow key={processo.id}>
                                 <TableCell className="font-medium">{processo.po_number}</TableCell>
                                 <TableCell>{processo.analistaNome || 'N/A'} <br/> <span className='text-xs text-muted-foreground'>{processo.exportadorNome}</span></TableCell>
@@ -151,7 +163,7 @@ export default function DashboardPage() {
                                 </TableCell>
                             </TableRow>
                         ))}
-                         {!isLoading && (!processosAtivos || processosAtivos.length === 0) && (
+                         {!isLoading && (!filteredProcessos || filteredProcessos.length === 0) && (
                             <TableRow>
                                 <TableCell colSpan={9} className="h-24 text-center">
                                     Nenhum processo ativo no momento.

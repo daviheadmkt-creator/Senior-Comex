@@ -35,6 +35,7 @@ import { useState, useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, deleteDoc, doc } from 'firebase/firestore';
 import { format, parseISO } from 'date-fns';
+import { useSearch } from '@/components/search-provider';
 
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -57,7 +58,7 @@ const formatDate = (dateString: string | null | undefined) => {
 }
 
 export default function GestaoProcessosPage() {
-  const [searchTerm, setSearchTerm] = useState('');
+  const { searchTerm, setSearchTerm } = useSearch();
   const firestore = useFirestore();
 
   const processosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'processos') : null, [firestore]);
@@ -70,10 +71,14 @@ export default function GestaoProcessosPage() {
   
   const filteredProcessos = useMemo(() => {
     if (!processos) return [];
+    const term = searchTerm.toLowerCase();
     return processos.filter(processo => 
-      (processo.processo_interno && processo.processo_interno.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(searchTerm.toLowerCase())) ||
-      (processo.po_number && processo.po_number.toLowerCase().includes(searchTerm.toLowerCase()))
+      (processo.processo_interno && processo.processo_interno.toLowerCase().includes(term)) ||
+      (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(term)) ||
+      (processo.po_number && processo.po_number.toLowerCase().includes(term)) ||
+      (processo.produtoNome && processo.produtoNome.toLowerCase().includes(term)) ||
+      (processo.navio && processo.navio.toLowerCase().includes(term)) ||
+      (processo.destino && processo.destino.toLowerCase().includes(term))
     );
   }, [processos, searchTerm]);
 
@@ -104,6 +109,7 @@ export default function GestaoProcessosPage() {
                 className="pl-8" 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
+                type="search"
             />
           </div>
         </div>
@@ -193,4 +199,3 @@ export default function GestaoProcessosPage() {
     </Card>
   );
 }
-    
