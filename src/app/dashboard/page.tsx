@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useMemo } from 'react';
@@ -13,7 +14,8 @@ import { AlertTriangle, FileWarning, CalendarClock, Loader2, CheckCircle2 } from
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { differenceInDays, parseISO } from 'date-fns';
+import { differenceInDays, parseISO, isAfter } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -29,44 +31,72 @@ export default function DashboardPage() {
     if (!processosAtivos) return [];
 
     const generatedAlerts: any[] = [];
-    const today = new Date();
+    const now = new Date();
 
     processosAtivos.forEach(processo => {
+      // 1. Alerta de Status Atrasado (definido manualmente no status)
       if (processo.status && processo.status.toLowerCase().includes('atrasado')) {
         generatedAlerts.push({
-          id: `${processo.id}-atrasado`,
+          id: `${processo.id}-atrasado-status`,
           icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
           message: `Processo ${processo.processo_interno || ''} com status 'Atrasado'.`,
           link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+          borderColor: 'border-l-red-600'
         });
       }
       
+      // 2. Alerta de Pendências (Aguardando ou Correção)
       if (processo.status && (processo.status.toLowerCase().includes('aguardando') || processo.status.toLowerCase().includes('correcao'))) {
         generatedAlerts.push({
           id: `${processo.id}-pendente`,
           icon: <FileWarning className="h-5 w-5 text-orange-500" />,
           message: `Processo ${processo.processo_interno || ''} está pendente: ${processo.status}.`,
           link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+          borderColor: 'border-l-orange-500'
         });
       }
 
-      if (processo.deadline_draft) {
-        try {
-            const deadlineDate = parseISO(processo.deadline_draft);
-            const daysRemaining = differenceInDays(deadlineDate, today);
+      // 3. Monitorização de Deadlines (Draft, VGM, Carga)
+      const deadlines = [
+        { key: 'deadline_draft', label: 'Draft' },
+        { key: 'deadline_vgm', label: 'VGM' },
+        { key: 'deadline_carga', label: 'Carga' }
+      ];
+
+      deadlines.forEach(dl => {
+        const dateStr = processo[dl.key];
+        if (dateStr) {
+          try {
+            const deadlineDate = parseISO(dateStr);
             
-            if (daysRemaining >= 0 && daysRemaining <= 3) {
+            // Verifica se já passou do horário (ATRASADO)
+            if (isAfter(now, deadlineDate)) {
               generatedAlerts.push({
-                id: `${processo.id}-deadline`,
-                icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
-                message: `Deadline de Draft para o processo ${processo.processo_interno || ''} se aproxima (${daysRemaining + 1} dias).`,
+                id: `${processo.id}-${dl.key}-overdue`,
+                icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
+                message: `Deadline de ${dl.label} ATRASADO para o processo ${processo.processo_interno || ''}.`,
                 link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+                borderColor: 'border-l-red-600'
               });
+            } 
+            // Caso contrário, verifica se está nos próximos 3 dias (PRÓXIMO)
+            else {
+              const daysRemaining = differenceInDays(deadlineDate, now);
+              if (daysRemaining >= 0 && daysRemaining <= 3) {
+                generatedAlerts.push({
+                  id: `${processo.id}-${dl.key}-upcoming`,
+                  icon: <CalendarClock className="h-5 w-5 text-yellow-600" />,
+                  message: `Deadline de ${dl.label} para o processo ${processo.processo_interno || ''} se aproxima (${daysRemaining + 1} dias).`,
+                  link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
+                  borderColor: 'border-l-yellow-500'
+                });
+              }
             }
-        } catch(e) {
-             // Invalid date handled silently
+          } catch(e) {
+             // Erro no parse da data ignorado
+          }
         }
-      }
+      });
     });
 
     return generatedAlerts;
@@ -89,7 +119,10 @@ export default function DashboardPage() {
                     )}
                     {!isLoading && alerts.map(alert => (
                         <Link href={alert.link} key={alert.id} passHref>
-                             <div className="flex items-center p-3 rounded-lg border border-l-4 border-l-primary hover:bg-accent cursor-pointer transition-all shadow-sm">
+                             <div className={cn(
+                               "flex items-center p-3 rounded-lg border border-l-4 hover:bg-accent cursor-pointer transition-all shadow-sm",
+                               alert.borderColor || "border-l-primary"
+                             )}>
                                 <div className="mr-4">
                                     {alert.icon}
                                 </div>
