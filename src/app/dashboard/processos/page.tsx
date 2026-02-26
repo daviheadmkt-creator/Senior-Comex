@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -121,7 +120,6 @@ export default function GestaoProcessosPage() {
               <TableHead>PO</TableHead>
               <TableHead>Cliente</TableHead>
               <TableHead>Produto</TableHead>
-              <TableHead>Navio</TableHead>
               <TableHead>Origem / Destino</TableHead>
               <TableHead>Navio / ETA</TableHead>
               <TableHead>Status</TableHead>
@@ -131,7 +129,7 @@ export default function GestaoProcessosPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                     <div className='flex justify-center items-center p-4'>
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
@@ -144,7 +142,6 @@ export default function GestaoProcessosPage() {
                 <TableCell>{processo.po_number}</TableCell>
                 <TableCell>{processo.exportadorNome}</TableCell>
                 <TableCell>{processo.produtoNome}</TableCell>
-                <TableCell>{processo.navio}</TableCell>
                 <TableCell className="text-xs">
                     <span className="text-muted-foreground">{processo.portoEmbarqueNome || 'N/A'}</span>
                     <br />
@@ -198,7 +195,7 @@ export default function GestaoProcessosPage() {
             ))}
              {!isLoading && filteredProcessos.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
                 </TableRow>
             )}
           </TableBody>
