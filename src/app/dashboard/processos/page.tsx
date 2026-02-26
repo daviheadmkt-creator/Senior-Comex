@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -121,7 +122,7 @@ export default function GestaoProcessosPage() {
               <TableHead>Cliente</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Navio</TableHead>
-              <TableHead>Destino</TableHead>
+              <TableHead>Origem / Destino</TableHead>
               <TableHead>Navio / ETA</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ação</TableHead>
@@ -144,7 +145,11 @@ export default function GestaoProcessosPage() {
                 <TableCell>{processo.exportadorNome}</TableCell>
                 <TableCell>{processo.produtoNome}</TableCell>
                 <TableCell>{processo.navio}</TableCell>
-                <TableCell>{processo.destino}</TableCell>
+                <TableCell className="text-xs">
+                    <span className="text-muted-foreground">{processo.portoEmbarqueNome || 'N/A'}</span>
+                    <br />
+                    <span className="font-medium text-primary">→ {processo.portoDescargaNome || 'N/A'}</span>
+                </TableCell>
                 <TableCell className="font-mono text-xs">
                     <span className="font-bold text-foreground block">{processo.navio || 'N/A'}</span>
                     {formatDate(processo.eta)}
