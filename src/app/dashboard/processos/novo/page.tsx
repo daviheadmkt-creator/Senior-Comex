@@ -278,6 +278,7 @@ export default function NovoProcessoPage() {
       setFormData({
         ...initialFormData,
         ...processoData,
+        status: processoData.status || 'Iniciado / Aguardando Booking',
         data_nomeacao: processoData.data_nomeacao || null,
         deadline_draft: processoData.deadline_draft,
         deadline_vgm: processoData.deadline_vgm,
@@ -1160,7 +1161,7 @@ export default function NovoProcessoPage() {
               <p className="text-muted-foreground">{pageDescription}</p>
               {isEditing && (
                 <div className='mt-2'>
-                  <Select value={formData.status || ''} onValueChange={value => handleInputChange('status', value)}>
+                  <Select value={formData.status || 'Iniciado / Aguardando Booking'} onValueChange={value => handleInputChange('status', value)}>
                     <SelectTrigger id="status" className="w-[300px] h-8 text-xs">
                       <div className='flex items-center gap-2'>
                         <span className={cn(
