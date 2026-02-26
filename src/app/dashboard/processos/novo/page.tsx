@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Download } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Download, Info } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -348,7 +348,7 @@ export default function NovoProcessoPage() {
     }
 
     if (file.uploadState === 'running') {
-        toast({ title: "Aguarde", description: "O ficheiro ainda está a ser carregado.", variant: "default"});
+        toast({ title: "Aguarde", description: "O ficheiro ainda está a ser carregado para o servidor.", variant: "default"});
         return;
     }
 
@@ -413,6 +413,7 @@ export default function NovoProcessoPage() {
       const storageRef = ref(storage, filePath);
       const uploadTask = uploadBytesResumable(storageRef, file);
 
+      // Start with 1% to show immediate progress
       const placeholder: FileData = {
           name: file.name,
           storagePath: filePath,
@@ -420,7 +421,7 @@ export default function NovoProcessoPage() {
           type: file.type,
           size: file.size,
           uploadState: 'running',
-          uploadProgress: 0,
+          uploadProgress: 1,
       };
 
       if (targetField) {
@@ -439,7 +440,7 @@ export default function NovoProcessoPage() {
       
       uploadTask.on('state_changed',
           (snapshot) => {
-              const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+              const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
               
               setFormData((prev: any) => {
                   const updateFileProgress = (fileData: FileData | null) => {
@@ -460,7 +461,7 @@ export default function NovoProcessoPage() {
               });
           },
           (error) => {
-              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}. Verifique sua internet.`, variant: "destructive" });
+              toast({ title: "Erro de Upload", description: `Falha ao carregar ${file.name}. Verifique a sua internet ou tente novamente.`, variant: "destructive" });
               if (targetField) {
                   setFormData((prev: any) => ({...prev, [targetField]: null}));
               } else if (targetList === 'nota_fiscal') {
@@ -530,11 +531,13 @@ export default function NovoProcessoPage() {
     
     if (fileToRemove && fileToRemove.storagePath) {
         const fileRef = ref(storage, fileToRemove.storagePath);
-        deleteObject(fileRef).catch(() => {
-            // Silently fail or log, user already saw visual removal
+        deleteObject(fileRef).then(() => {
+            toast({ title: "Anexo Removido" });
+        }).catch(error => {
+            // Silently fail or suggest reload if networking issue
+            toast({ title: "Aviso", description: "O ficheiro foi removido do processo, mas pode ainda estar no armazenamento. Recarregue se necessário.", variant: "default" });
         });
     }
-    toast({ title: "Anexo Removido" });
   };
 
   const handlePortChange = (value: string) => {
@@ -599,7 +602,7 @@ export default function NovoProcessoPage() {
           type: file.type,
           size: file.size,
           uploadState: 'running' as const,
-          uploadProgress: 0,
+          uploadProgress: 1,
         }
       }));
 
@@ -615,7 +618,7 @@ export default function NovoProcessoPage() {
 
         uploadTask.on('state_changed',
           (snapshot) => {
-            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
             setFormData((prev: any) => ({
               ...prev,
               notas_fiscais: prev.notas_fiscais.map((nf: any) => 
@@ -775,7 +778,7 @@ export default function NovoProcessoPage() {
     };
 
     const partnerRef = doc(firestore, 'partners', newPartnerId);
-    setDoc(partnerRef, newPartnerData, { merge: true });
+    setDoc(partnerRef, { ...newPartnerData }, { merge: true });
 
     setFormData(prev => ({
       ...prev,
@@ -799,7 +802,7 @@ export default function NovoProcessoPage() {
     };
 
     const partnerRef = doc(firestore, 'partners', newPartnerId);
-    setDoc(partnerRef, newPartnerData, { merge: true });
+    setDoc(partnerRef, { ...newPartnerData }, { merge: true });
 
     const fieldId = tipo === 'Terminal de Estufagem' ? 'terminalDespachoId' : 'terminalEmbarqueId';
     setFormData(prev => ({
@@ -1008,7 +1011,7 @@ export default function NovoProcessoPage() {
     if (isUploading) {
         toast({
             title: 'Aguarde o Carregamento',
-            description: 'Por favor, espere que todos os ficheiros terminem de carregar antes de guardar.',
+            description: 'Por favor, espere que todos os ficheiros terminem de carregar para o servidor antes de guardar o processo.',
             variant: 'default',
         });
         return;
@@ -1043,14 +1046,14 @@ export default function NovoProcessoPage() {
   
       toast({
         title: "Sucesso!",
-        description: `Processo ${isEditing ? 'atualizado' : 'criado'}.`,
+        description: `Processo ${isEditing ? 'atualizado' : 'criado'} com sucesso.`,
       });
       router.push('/dashboard/processos');
   
     } catch (error: any) {
       toast({
         title: "Erro ao Guardar",
-        description: "Não foi possível guardar o processo. Verifique a sua ligação.",
+        description: "Não foi possível guardar o processo. Verifique a sua ligação à internet.",
         variant: "destructive",
         duration: 9000,
       });
@@ -1061,18 +1064,26 @@ export default function NovoProcessoPage() {
 
   const renderFileState = (file: FileData | null) => {
     if (!file) {
-      return <span className="text-muted-foreground">Nenhum ficheiro anexado.</span>;
+      return <span className="text-muted-foreground italic">Nenhum ficheiro anexado.</span>;
     }
     if (file.uploadState === 'running') {
       return (
-        <div className="flex items-center gap-2 w-full">
-          <span className="flex-1 max-w-[calc(100%-80px)] truncate" title={file.name}>{file.name}</span>
-          <Progress value={file.uploadProgress} className="w-16 h-1.5" />
-          <span className="w-10 text-right font-mono text-xs">{Math.round(file.uploadProgress || 0)}%</span>
+        <div className="flex flex-col gap-1 w-full py-1">
+          <div className="flex justify-between items-center text-[10px] text-primary font-medium uppercase tracking-wider">
+            <span>A carregar para o servidor...</span>
+            <span className="font-mono">{Math.round(file.uploadProgress || 0)}%</span>
+          </div>
+          <Progress value={file.uploadProgress} className="h-1.5" />
+          <span className="text-[11px] text-muted-foreground truncate max-w-full" title={file.name}>{file.name}</span>
         </div>
       );
     }
-    return <span className="text-foreground truncate" title={file.name}>{file.name}</span>;
+    return (
+      <div className="flex items-center gap-2 overflow-hidden">
+        <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
+        <span className="text-foreground truncate font-medium" title={file.name}>{file.name}</span>
+      </div>
+    );
   };
 
   if (isLoading) {
@@ -1127,8 +1138,16 @@ export default function NovoProcessoPage() {
             </Link>
             <Button type="submit" disabled={isSaving || isLoading || isUploading}>
               {(isSaving || isUploading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {isSaving ? 'A guardar...' : isUploading ? 'A carregar...' : 'Salvar Alterações'}
+              {isSaving ? 'A guardar...' : isUploading ? 'A carregar ficheiros...' : 'Salvar Alterações'}
             </Button>
+          </div>
+        </div>
+
+        <div className="bg-blue-50 border border-blue-100 p-3 rounded-md flex items-start gap-3">
+          <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
+          <div className="text-sm text-blue-700">
+            <p className="font-semibold">Nota sobre Anexos:</p>
+            <p>Os ficheiros são agora enviados para um armazenamento seguro na nuvem. Isto permite anexar documentos maiores sem erros, mas o carregamento pode demorar alguns segundos dependendo do tamanho do ficheiro e da sua internet.</p>
           </div>
         </div>
 
@@ -1427,11 +1446,11 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft BL (Bill of Lading)</Label>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
+                      <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
                         {renderFileState(formData.draft_bl_file)}
                       </div>
                        {formData.draft_bl_file ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_bl_file)} title={`Descarregar ${formData.draft_bl_file.name}`} disabled={formData.draft_bl_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
@@ -1440,7 +1459,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button variant="outline" size="icon" type="button" title="Anexar Draft BL" onClick={() => triggerFileUpload('draft_bl_file')}>
+                        <Button variant="outline" size="icon" type="button" title="Anexar Draft BL" onClick={() => triggerFileUpload('draft_bl_file')} className="shrink-0">
                            <Upload className="h-4 w-4" />
                         </Button>
                       )}
@@ -1450,11 +1469,11 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft Certificado Fitossanitário</Label>
                     <div className="flex items-center gap-2">
-                      <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
+                      <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
                          {renderFileState(formData.draft_fito_file)}
                       </div>
                       {formData.draft_fito_file ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_fito_file)} title={`Descarregar ${formData.draft_fito_file.name}`} disabled={formData.draft_fito_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
@@ -1463,7 +1482,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button variant="outline" size="icon" type="button" title="Anexar Draft Fito" onClick={() => triggerFileUpload('draft_fito_file')}>
+                        <Button variant="outline" size="icon" type="button" title="Anexar Draft Fito" onClick={() => triggerFileUpload('draft_fito_file')} className="shrink-0">
                            <Upload className="h-4 w-4" />
                         </Button>
                       )}
@@ -1473,11 +1492,11 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Draft Certificado de Origem</Label>
                     <div className="flex items-center gap-2">
-                       <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
+                       <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
                          {renderFileState(formData.draft_co_file)}
                       </div>
                       {formData.draft_co_file ? (
-                        <div className="flex items-center gap-1">
+                        <div className="flex items-center gap-1 shrink-0">
                           <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.draft_co_file)} title={`Descarregar ${formData.draft_co_file.name}`} disabled={formData.draft_co_file.uploadState === 'running'}>
                             <Download className="h-4 w-4 text-green-600" />
                           </Button>
@@ -1486,7 +1505,7 @@ export default function NovoProcessoPage() {
                           </Button>
                         </div>
                       ) : (
-                        <Button variant="outline" size="icon" type="button" title="Anexar Draft Origem" onClick={() => triggerFileUpload('draft_co_file')}>
+                        <Button variant="outline" size="icon" type="button" title="Anexar Draft Origem" onClick={() => triggerFileUpload('draft_co_file')} className="shrink-0">
                           <Upload className="h-4 w-4" />
                         </Button>
                       )}
@@ -1544,7 +1563,7 @@ export default function NovoProcessoPage() {
                             <Label>Chave de Acesso / Anexo</Label>
                             <div className='flex gap-2'>
                               {nota.file ? (
-                                <div className="flex-1 p-2 h-10 border rounded-md text-sm bg-muted overflow-hidden">
+                                <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
                                   {renderFileState(nota.file)}
                                 </div>
                                ) : (
@@ -1556,7 +1575,7 @@ export default function NovoProcessoPage() {
                                 />
                                )}
                               {nota.file ? (
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 shrink-0">
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} disabled={nota.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
@@ -1565,7 +1584,7 @@ export default function NovoProcessoPage() {
                                   </Button>
                                 </div>
                               ) : (
-                                <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', id: nota.id })}>
+                                <Button variant="outline" size="icon" type="button" title="Anexar XML/PDF" onClick={() => triggerFileUpload({ type: 'nota_fiscal', id: nota.id })} className="shrink-0">
                                     <FileUp className="h-4 w-4" />
                                 </Button>
                               )}
@@ -1665,7 +1684,7 @@ export default function NovoProcessoPage() {
                           </SelectContent>
                         </Select>
                         {formData.due_file ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} disabled={formData.due_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
@@ -1674,7 +1693,7 @@ export default function NovoProcessoPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar DUE" onClick={() => triggerFileUpload('due_file')}>
+                          <Button variant="outline" size="icon" type="button" title="Anexar DUE" onClick={() => triggerFileUpload('due_file')} className="shrink-0">
                             <Upload className="h-4 w-4" />
                           </Button>
                         )}
@@ -1702,7 +1721,7 @@ export default function NovoProcessoPage() {
                           </SelectContent>
                         </Select>
                         {formData.lpco_file ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} disabled={formData.lpco_file.uploadState === 'running'}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
@@ -1711,7 +1730,7 @@ export default function NovoProcessoPage() {
                             </Button>
                           </div>
                         ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar LPCO" onClick={() => triggerFileUpload('lpco_file')}>
+                          <Button variant="outline" size="icon" type="button" title="Anexar LPCO" onClick={() => triggerFileUpload('lpco_file')} className="shrink-0">
                              <Upload className="h-4 w-4" />
                           </Button>
                         )}
@@ -1856,7 +1875,7 @@ export default function NovoProcessoPage() {
                             </TableCell>
                             <TableCell>
                               {docItem.file ? (
-                                <div className="flex items-center gap-1">
+                                <div className="flex items-center gap-1 shrink-0">
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={docItem.file.uploadState === 'running'}>
                                     <Download className="h-4 w-4 text-green-600" />
                                   </Button>
@@ -1865,7 +1884,7 @@ export default function NovoProcessoPage() {
                                   </Button>
                                 </div>
                               ) : (
-                                <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })}>
+                                <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })} className="shrink-0">
                                   <Upload className="h-4 w-4" />
                                 </Button>
                               )}
