@@ -17,7 +17,8 @@ service firebase.storage {
                      request.resource.contentType.matches('image/.*') || 
                      request.resource.contentType == 'application/pdf' || 
                      request.resource.contentType == 'text/xml' || 
-                     request.resource.contentType == 'application/xml'
+                     request.resource.contentType == 'application/xml' ||
+                     request.resource.contentType == 'application/octet-stream'
                    );
     }
   }

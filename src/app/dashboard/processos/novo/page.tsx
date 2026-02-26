@@ -442,7 +442,6 @@ export default function NovoProcessoPage() {
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
       
-      // Upload direto do binário (Jeito Recomendado)
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       const placeholder: FileData = {
@@ -473,8 +472,6 @@ export default function NovoProcessoPage() {
       uploadTask.on('state_changed',
           (snapshot) => {
               const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              
-              // Throttling: Só atualiza o estado se o progresso mudar mais de 5% ou for o fim
               if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
               lastProgress = progress;
 
@@ -498,11 +495,10 @@ export default function NovoProcessoPage() {
           },
           (error) => {
               console.timeEnd(`Upload-${file.name}`);
-              console.error("Upload failed details:", error);
               
               toast({ 
                   title: "Erro no Servidor de Arquivos", 
-                  description: `O carregamento de "${file.name}" foi negado ou falhou. Verifique se o arquivo tem menos de 10MB. Erro: ${error.code}`, 
+                  description: `O carregamento de "${file.name}" foi negado ou falhou. Verifique se o arquivo tem menos de 10MB. Código: ${error.code}`, 
                   variant: "destructive" 
               });
 
@@ -688,8 +684,7 @@ export default function NovoProcessoPage() {
           },
           (error) => {
             console.timeEnd(`Upload-NF-${file.name}`);
-            console.error("NF Upload failed:", error);
-            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}. Verifique as permissões do servidor.`, variant: "destructive" });
+            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}. Verifique as permissões.`, variant: "destructive" });
             setFormData((prev: any) => ({
               ...prev,
               notas_fiscais: prev.notas_fiscais.filter((nf: any) => nf.id !== entry.id)
@@ -1211,7 +1206,7 @@ export default function NovoProcessoPage() {
           <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-700">
             <p className="font-semibold">Nota sobre Anexos:</p>
-            <p>Os ficheiros são enviados diretamente para o Firebase Storage de forma binária (mais rápido). O tempo de upload depende exclusivamente da sua internet. Logs de performance disponíveis na consola do navegador.</p>
+            <p>Os ficheiros são enviados diretamente para o servidor. O tempo de upload depende exclusivamente da sua internet.</p>
           </div>
         </div>
 
