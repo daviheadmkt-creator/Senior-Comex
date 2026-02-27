@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -119,8 +120,7 @@ export default function GestaoProcessosPage() {
             <TableRow>
               <TableHead>Processo Interno</TableHead>
               <TableHead>PO</TableHead>
-              <TableHead>Cliente</TableHead>
-              <TableHead>Analista</TableHead>
+              <TableHead>Cliente / Analista</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Origem / Destino</TableHead>
               <TableHead>Navio / ETA</TableHead>
@@ -131,7 +131,7 @@ export default function GestaoProcessosPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={9} className="text-center">
+                <TableCell colSpan={8} className="text-center">
                     <div className='flex justify-center items-center p-4'>
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
@@ -142,8 +142,14 @@ export default function GestaoProcessosPage() {
               <TableRow key={processo.id}>
                 <TableCell className="font-medium">{processo.processo_interno}</TableCell>
                 <TableCell>{processo.po_number}</TableCell>
-                <TableCell className="max-w-[150px] truncate" title={processo.exportadorNome}>{processo.exportadorNome}</TableCell>
-                <TableCell className="max-w-[120px] truncate font-medium text-blue-600" title={processo.analistaNome}>{processo.analistaNome || 'N/A'}</TableCell>
+                <TableCell className="max-w-[200px]">
+                    <div className="font-medium truncate" title={processo.exportadorNome}>
+                        {processo.exportadorNome}
+                    </div>
+                    <div className="text-xs text-blue-600 font-semibold truncate" title={processo.analistaNome}>
+                        {processo.analistaNome || 'Analista não definido'}
+                    </div>
+                </TableCell>
                 <TableCell className="max-w-[150px] truncate" title={processo.produtoNome}>{processo.produtoNome}</TableCell>
                 <TableCell className="text-xs">
                     <span className="text-muted-foreground">{processo.portoEmbarqueNome || 'N/A'}</span>
@@ -198,7 +204,7 @@ export default function GestaoProcessosPage() {
             ))}
              {!isLoading && filteredProcessos.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
+                    <TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
                 </TableRow>
             )}
           </TableBody>
