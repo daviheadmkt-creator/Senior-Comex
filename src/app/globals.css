@@ -4,73 +4,63 @@
 
 @layer base {
   :root {
-    --background: 240 5% 96%;
-    --foreground: 222 47% 11%;
+    --background: 174 42% 97%;
+    --foreground: 174 60% 10%;
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card-foreground: 174 60% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
-    --primary: 221 83% 53%;
+    --popover-foreground: 174 60% 10%;
+    --primary: 174 42% 51%; /* #4DB6AC */
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 215 20% 45%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215 20% 45%;
-    --accent: 210 40% 98%;
-    --accent-foreground: 222 47% 11%;
+    --secondary: 174 42% 91%; /* #E0F2F1 */
+    --secondary-foreground: 174 60% 20%;
+    --muted: 174 20% 92%;
+    --muted-foreground: 174 20% 40%;
+    --accent: 174 42% 65%; /* #80CBC4 */
+    --accent-foreground: 174 60% 10%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 214 31.8% 91.4%;
-    --input: 214 31.8% 91.4%;
-    --ring: 221 83% 53%;
-    --chart-1: 221 83% 53%;
-    --chart-2: 161 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+    --border: 174 20% 85%;
+    --input: 174 20% 85%;
+    --ring: 174 42% 51%;
     --radius: 0.5rem;
     --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 222 47% 11%;
-    --sidebar-primary: 221 83% 53%;
+    --sidebar-foreground: 174 60% 10%;
+    --sidebar-primary: 174 42% 51%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 210 40% 98%;
-    --sidebar-accent-foreground: 222 47% 11%;
-    --sidebar-border: 214 31.8% 91.4%;
-    --sidebar-ring: 221 83% 53%;
+    --sidebar-accent: 174 42% 95%;
+    --sidebar-accent-foreground: 174 42% 51%;
+    --sidebar-border: 174 20% 90%;
+    --sidebar-ring: 174 42% 51%;
   }
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
-    --card: 222 47% 11%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222 47% 11%;
-    --secondary: 217 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
+    --background: 174 60% 5%;
+    --foreground: 174 20% 98%;
+    --card: 174 60% 5%;
+    --card-foreground: 174 20% 98%;
+    --popover: 174 60% 5%;
+    --popover-foreground: 174 20% 98%;
+    --primary: 174 42% 51%;
+    --primary-foreground: 174 60% 5%;
+    --secondary: 174 30% 15%;
+    --secondary-foreground: 174 20% 98%;
+    --muted: 174 30% 15%;
+    --muted-foreground: 174 20% 65%;
+    --accent: 174 30% 15%;
+    --accent-foreground: 174 20% 98%;
     --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217 32.6% 17.5%;
-    --input: 217 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --chart-1: 221 83% 53%;
-    --chart-2: 161 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 222 47% 11%;
-    --sidebar-foreground: 210 40% 98%;
-    --sidebar-primary: 210 40% 98%;
-    --sidebar-primary-foreground: 222 47% 11%;
-    --sidebar-accent: 217 32.6% 17.5%;
-    --sidebar-accent-foreground: 210 40% 98%;
-    --sidebar-border: 217 32.6% 17.5%;
-    --sidebar-ring: 212.7 26.8% 83.9%;
+    --destructive-foreground: 174 20% 98%;
+    --border: 174 30% 15%;
+    --input: 174 30% 15%;
+    --ring: 174 42% 51%;
+    --sidebar-background: 174 60% 5%;
+    --sidebar-foreground: 174 20% 98%;
+    --sidebar-primary: 174 42% 51%;
+    --sidebar-primary-foreground: 174 60% 5%;
+    --sidebar-accent: 174 30% 15%;
+    --sidebar-accent-foreground: 174 20% 98%;
+    --sidebar-border: 174 30% 15%;
+    --sidebar-ring: 174 42% 51%;
   }
 }
 
@@ -79,6 +69,6 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
   }
 }

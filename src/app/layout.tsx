@@ -1,11 +1,15 @@
 import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from "@/components/ui/toaster";
-import { Inter } from 'next/font/google';
+import { PT_Sans } from 'next/font/google';
 import { ThemeProvider } from '@/components/theme-provider';
 import { FirebaseClientProvider } from '@/firebase/client-provider';
 
-const inter = Inter({ subsets: ['latin'] });
+const ptsans = PT_Sans({ 
+  weight: ['400', '700'],
+  subsets: ['latin'],
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'Senior Assessoria',
@@ -24,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body className={ptsans.className}>
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
