@@ -23,31 +23,12 @@ import {
   Loader2
 } from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
-import { Input } from '@/components/ui/input';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Image from 'next/image';
-import { SearchProvider, useSearch } from '@/components/search-provider';
-
-function HeaderSearch() {
-  const { searchTerm, setSearchTerm } = useSearch();
-  return (
-    <div className="hidden md:flex items-center gap-4">
-      <div className="relative">
-        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-        <Input 
-          placeholder="Buscar..." 
-          className="pl-8 bg-background" 
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-          type="search"
-        />
-      </div>
-    </div>
-  );
-}
+import { SearchProvider } from '@/components/search-provider';
 
 export default function DashboardLayout({
   children,
@@ -191,8 +172,7 @@ export default function DashboardLayout({
         <SidebarInset>
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-6">
              <SidebarTrigger />
-            <HeaderSearch />
-
+            
             <div className="flex-1 flex justify-end items-center gap-4">
               <UserNav />
             </div>
