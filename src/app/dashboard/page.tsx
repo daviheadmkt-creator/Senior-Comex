@@ -14,8 +14,187 @@ import { AlertTriangle, FileWarning, CalendarClock, Loader2, CheckCircle2 } from
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
-import { differenceInDays, parseISO, isAfter } from 'date-fns';
+import { differenceInDays, parseISO, isAfter, format } from 'date-fns';
 import { cn } from '@/lib/utils';
+
+const formatDate = (dateString: string | null | undefined) => {
+  if (!dateString) return '---';
+  try {
+    return format(parseISO(dateString), 'dd/MM/yyyy');
+  } catch {
+    return '---';
+  }
+};
+
+const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
+  if (!processos || processos.length === 0) return null;
+
+  return (
+    <Card className="mt-6 overflow-hidden border-[#1a472a]">
+      <CardHeader className="bg-[#1a472a] text-white py-4">
+        <CardTitle className="text-lg">Painel de Controle Operacional (Planilha de Acompanhamento)</CardTitle>
+        <CardDescription className="text-white/70">Visão consolidada de marcos, documentos e conformidade fiscal.</CardDescription>
+      </CardHeader>
+      <CardContent className="p-0">
+        <div className="overflow-x-auto">
+          <table className="w-full border-collapse border border-[#1a472a] text-[10px]">
+            <thead>
+              <tr className="bg-[#1a472a] text-white text-center h-12">
+                <th className="border border-white/20 px-2 min-w-[110px]">DEAD LINE</th>
+                <th className="border border-white/20 px-2 min-w-[130px]">STATUS</th>
+                <th className="border border-white/20 px-2 min-w-[160px]">DADOS CONTAINERS<br/>NOTAS REMESSA<br/>NOTAS EXPORTAÇÃO</th>
+                <th className="border border-white/20 px-2 min-w-[160px]">LPCO<br/>INSPEÇÃO (MAPA)<br/>TRATAMENTO(FUMIGAÇÃO)</th>
+                <th className="border border-white/20 px-2 min-w-[160px]">DUE<br/>DESEMBARAÇO<br/>AVERBAÇÃO</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">BL</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">CERTIFICADO<br/>ORIGEM</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">CERTIFICADO<br/>FITO</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">LAUDO<br/>PRAGAS</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">CERTIFICADO<br/>FUMIGAÇÃO</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">CERTIFICADO<br/>SUPERVISORA</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">INVOICE<br/>(FERRARI)</th>
+                <th className="border border-white/20 px-2 min-w-[100px]">PACKING LIST<br/>(FERRARI)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {processos.map((processo) => {
+                const getDocStatus = (name: string) => {
+                  const doc = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
+                  return {
+                    status: doc ? 'APROVADO' : '---',
+                    action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIO EM') : '---',
+                    date: doc?.data_liberacao ? formatDate(doc.data_liberacao) : '---'
+                  };
+                };
+
+                const getNFDate = (type: string) => {
+                  const nf = processo.notas_fiscais?.find((n: any) => n.tipo === type);
+                  return nf?.data_recebida ? formatDate(nf.data_recebida) : '---';
+                };
+
+                const bl = getDocStatus('BL');
+                const origem = getDocStatus('ORIGEM');
+                const fito = getDocStatus('FITO');
+                const pragas = getDocStatus('HEALTH');
+                const fumigacao = getDocStatus('FUMIGATION');
+                const supervisora = getDocStatus('QUALITY');
+                const invoice = getDocStatus('INVOICE');
+                const packing = getDocStatus('PACKING LIST');
+
+                return (
+                  <tr key={processo.id} className="bg-[#a3c18a] text-[#1a472a] font-bold border-b border-[#1a472a]/30">
+                    {/* DEAD LINE */}
+                    <td className="border-r border-[#1a472a]/30 p-0">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>DRAFT</span> <span className="text-red-600 font-bold ml-2">{formatDate(processo.deadline_draft)}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>VGM</span> <span className="text-red-600 font-bold ml-2">{formatDate(processo.deadline_vgm)}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>CARGA</span> <span className="text-red-600 font-bold ml-2">{formatDate(processo.deadline_carga)}</span></div>
+                      </div>
+                    </td>
+                    {/* STATUS */}
+                    <td className="border-r border-[#1a472a]/30 px-2 py-1 text-center font-bold uppercase align-middle bg-[#a3c18a] min-h-[60px]">
+                      <div className="flex flex-col gap-1">
+                        <span className="text-[9px] text-[#1a472a]/60 font-medium">{processo.processo_interno}</span>
+                        {processo.status}
+                      </div>
+                    </td>
+                    {/* DADOS CONTAINERS / NOTAS */}
+                    <td className="border-r border-[#1a472a]/30 p-0">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>CONTAINERS</span> <span className="text-red-600 font-bold ml-2">{processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>REMESSA</span> <span className="text-red-600 font-bold ml-2">{getNFDate('Remessa')}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>EXPORTAÇÃO</span> <span className="text-red-600 font-bold ml-2">{getNFDate('Exportação')}</span></div>
+                      </div>
+                    </td>
+                    {/* LPCO / INSPEÇÃO / TRATAMENTO */}
+                    <td className="border-r border-[#1a472a]/30 p-0">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>LPCO</span> <span className="text-gray-700 font-bold ml-2">{processo.lpco_protocolo || '---'}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>INSPEÇÃO</span> <span className="text-red-600 font-bold ml-2">{processo.mapa_status?.includes('DEFERIDA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>TRATAMENTO</span> <span className="text-red-600 font-bold ml-2">{fumigacao.date}</span></div>
+                      </div>
+                    </td>
+                    {/* DUE / DESEMBARAÇO / AVERBAÇÃO */}
+                    <td className="border-r border-[#1a472a]/30 p-0">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>DUE</span> <span className="text-gray-700 font-bold ml-2 truncate max-w-[80px]">{processo.due_numero || '---'}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>DESEMBARAÇO</span> <span className="text-red-600 font-bold ml-2">{processo.due_status?.includes('DESEMBARAÇADA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>AVERBADA</span> <span className="text-red-600 font-bold ml-2">{processo.due_status === 'AVERBADA' ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                      </div>
+                    </td>
+                    {/* BL */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{bl.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{bl.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{bl.date}</div>
+                      </div>
+                    </td>
+                    {/* CERT ORIGEM */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{origem.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{origem.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{origem.date}</div>
+                      </div>
+                    </td>
+                    {/* CERT FITO */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{fito.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{fito.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{fito.date}</div>
+                      </div>
+                    </td>
+                    {/* LAUDO PRAGAS */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{pragas.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{pragas.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{pragas.date}</div>
+                      </div>
+                    </td>
+                    {/* CERT FUMIGACAO */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{fumigacao.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{fumigacao.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{fumigacao.date}</div>
+                      </div>
+                    </td>
+                    {/* CERT SUPERVISORA */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{supervisora.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{supervisora.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{supervisora.date}</div>
+                      </div>
+                    </td>
+                    {/* INVOICE */}
+                    <td className="border-r border-[#1a472a]/30 p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{invoice.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{invoice.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{invoice.date}</div>
+                      </div>
+                    </td>
+                    {/* PACKING LIST */}
+                    <td className="p-0 text-center">
+                      <div className="grid grid-rows-3 h-full divide-y divide-[#1a472a]/20 divide-dotted">
+                        <div className="py-1.5 uppercase text-[#1a472a] font-bold">{packing.status}</div>
+                        <div className="py-1.5 uppercase text-red-600 font-bold leading-tight">{packing.action}</div>
+                        <div className="py-1.5 text-red-600 font-bold">{packing.date}</div>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
 
 export default function DashboardPage() {
   const firestore = useFirestore();
@@ -142,6 +321,10 @@ export default function DashboardPage() {
                  </div>
             </CardContent>
         </Card>
+
+        {!isLoading && processosAtivos && processosAtivos.length > 0 && (
+          <ProcessoSpreadsheet processos={processosAtivos} />
+        )}
     </div>
   );
 }
