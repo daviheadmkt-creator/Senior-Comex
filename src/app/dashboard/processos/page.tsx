@@ -123,7 +123,7 @@ export default function GestaoProcessosPage() {
               <TableHead>Cliente / Analista</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Origem / Destino</TableHead>
-              <TableHead>Navio / ETA</TableHead>
+              <TableHead>Navio / Datas</TableHead>
               <TableHead>Status</TableHead>
               <TableHead>Ação</TableHead>
             </TableRow>
@@ -157,8 +157,17 @@ export default function GestaoProcessosPage() {
                     <span className="font-medium text-primary">→ {processo.portoDescargaNome || 'N/A'}</span>
                 </TableCell>
                 <TableCell className="font-mono text-xs">
-                    <span className="font-bold text-foreground block">{processo.navio || 'N/A'}</span>
-                    {formatDate(processo.eta)}
+                    <span className="font-bold text-foreground block truncate max-w-[150px]" title={processo.navio}>{processo.navio || 'N/A'}</span>
+                    <div className="mt-1 flex flex-col gap-0.5 text-[10px]">
+                        <div className="flex gap-1">
+                            <span className="text-muted-foreground font-semibold">ETD:</span>
+                            <span>{formatDate(processo.etd)}</span>
+                        </div>
+                        <div className="flex gap-1 border-t pt-0.5">
+                            <span className="text-primary font-bold">ETA:</span>
+                            <span className="text-primary font-bold">{formatDate(processo.eta)}</span>
+                        </div>
+                    </div>
                 </TableCell>
                 <TableCell>
                   <Badge variant={getStatusVariant(processo.status || 'N/A')}>
