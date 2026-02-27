@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -76,6 +75,7 @@ export default function GestaoProcessosPage() {
     return processos.filter(processo => 
       (processo.processo_interno && processo.processo_interno.toLowerCase().includes(term)) ||
       (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(term)) ||
+      (processo.analistaNome && processo.analistaNome.toLowerCase().includes(term)) ||
       (processo.po_number && processo.po_number.toLowerCase().includes(term)) ||
       (processo.produtoNome && processo.produtoNome.toLowerCase().includes(term)) ||
       (processo.navio && processo.navio.toLowerCase().includes(term)) ||
@@ -106,7 +106,7 @@ export default function GestaoProcessosPage() {
           <div className="relative w-full max-w-sm">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input 
-                placeholder="Buscar por Processo, Cliente ou PO..." 
+                placeholder="Buscar por Processo, Cliente ou Analista..." 
                 className="pl-8" 
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
@@ -120,6 +120,7 @@ export default function GestaoProcessosPage() {
               <TableHead>Processo Interno</TableHead>
               <TableHead>PO</TableHead>
               <TableHead>Cliente</TableHead>
+              <TableHead>Analista</TableHead>
               <TableHead>Produto</TableHead>
               <TableHead>Origem / Destino</TableHead>
               <TableHead>Navio / ETA</TableHead>
@@ -130,7 +131,7 @@ export default function GestaoProcessosPage() {
           <TableBody>
             {isLoading && (
               <TableRow>
-                <TableCell colSpan={8} className="text-center">
+                <TableCell colSpan={9} className="text-center">
                     <div className='flex justify-center items-center p-4'>
                         <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                     </div>
@@ -141,8 +142,9 @@ export default function GestaoProcessosPage() {
               <TableRow key={processo.id}>
                 <TableCell className="font-medium">{processo.processo_interno}</TableCell>
                 <TableCell>{processo.po_number}</TableCell>
-                <TableCell>{processo.exportadorNome}</TableCell>
-                <TableCell>{processo.produtoNome}</TableCell>
+                <TableCell className="max-w-[150px] truncate" title={processo.exportadorNome}>{processo.exportadorNome}</TableCell>
+                <TableCell className="max-w-[120px] truncate font-medium text-blue-600" title={processo.analistaNome}>{processo.analistaNome || 'N/A'}</TableCell>
+                <TableCell className="max-w-[150px] truncate" title={processo.produtoNome}>{processo.produtoNome}</TableCell>
                 <TableCell className="text-xs">
                     <span className="text-muted-foreground">{processo.portoEmbarqueNome || 'N/A'}</span>
                     <br />
@@ -196,7 +198,7 @@ export default function GestaoProcessosPage() {
             ))}
              {!isLoading && filteredProcessos.length === 0 && (
                 <TableRow>
-                    <TableCell colSpan={8} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
+                    <TableCell colSpan={9} className="text-center text-muted-foreground">Nenhum processo encontrado.</TableCell>
                 </TableRow>
             )}
           </TableBody>
