@@ -30,6 +30,10 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
 
   return (
     <Card className="mt-6 overflow-hidden border-primary/30">
+      <CardHeader className="bg-primary text-primary-foreground py-4">
+        <CardTitle className="text-lg">Painel de Controle Operacional</CardTitle>
+        <CardDescription className="text-primary-foreground/80">Visão consolidada de marcos, documentos e conformidade fiscal.</CardDescription>
+      </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-primary/20 text-[10px]">
@@ -38,7 +42,7 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
                 <th className="border border-primary-foreground/20 px-2 min-w-[110px]">DEAD LINE</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[130px]">STATUS</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DADOS CONTAINERS<br/>NOTAS REMESSA<br/>NOTAS EXPORTAÇÃO</th>
-                <th className="border border-primary-foreground/20 px-2 min-w-[160px]">LPCO<br/>INSPEÇÃO (MAPA)<br/>TRATAMENTO(FUMIGAÇÃO)</th>
+                <th className="border border-primary-foreground/20 px-2 min-w-[160px]">LPCO<br/>INSPEÇÃO (MAPA)<br/>TRATAMENTO</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DUE<br/>DESEMBARAÇO<br/>AVERBAÇÃO</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[100px]">BL</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>ORIGEM</th>
@@ -56,7 +60,7 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
                   const doc = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
                   return {
                     status: doc ? 'APROVADO' : '---',
-                    action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIO EM') : '---',
+                    action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO EM') : '---',
                     date: doc?.data_liberacao ? formatDate(doc.data_liberacao) : '---'
                   };
                 };
@@ -89,7 +93,7 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
                     <td className="border-r border-primary/10 px-2 py-1 text-center font-bold uppercase align-middle bg-accent/10 min-h-[60px]">
                       <div className="flex flex-col gap-1">
                         <span className="text-[9px] text-primary/60 font-medium">{processo.processo_interno}</span>
-                        {processo.status}
+                        {processo.status || 'N/A'}
                       </div>
                     </td>
                     {/* DADOS CONTAINERS / NOTAS */}
@@ -243,7 +247,7 @@ export default function DashboardPage() {
               generatedAlerts.push({
                 id: `${processo.id}-${dl.key}-overdue`,
                 icon: <AlertTriangle className="h-5 w-5 text-red-600" />,
-                message: `Deadline de ${dl.label} ATRASADO para o processo ${processo.processo_interno || ''}.`,
+                message: `ATRASADO: Deadline de ${dl.label} para o processo ${processo.processo_interno || ''} expirou em ${format(deadlineDate, 'dd/MM/yyyy HH:mm')}.`,
                 link: `/dashboard/processos/novo?id=${processo.id}&edit=true`,
                 borderColor: 'border-l-red-600'
               });

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -135,7 +134,7 @@ export default function GestaoProcessosPage() {
                       const doc = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
                       return {
                         status: doc ? 'APROVADO' : '---',
-                        action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIO EM') : '---',
+                        action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO EM') : '---',
                         date: doc?.data_liberacao ? formatDate(doc.data_liberacao) : '---'
                       };
                     };
@@ -182,7 +181,7 @@ export default function GestaoProcessosPage() {
                         {/* STATUS / LOGÍSTICA */}
                         <td className="border-r border-primary/10 p-0 text-center font-bold uppercase bg-accent/10">
                           <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                            <div className="px-2 py-1.5 flex items-center justify-center text-[9px] leading-tight">{processo.status}</div>
+                            <div className="px-2 py-1.5 flex items-center justify-center text-[9px] leading-tight">{processo.status || 'N/A'}</div>
                             <div className="px-2 py-1.5 flex flex-col justify-center text-[8px] font-normal leading-tight">
                                 <span className="truncate max-w-[120px]">{processo.navio || 'SEM NAVIO'}</span>
                                 <span className="text-[7px] truncate max-w-[120px]">{processo.portoEmbarqueNome} → {processo.portoDescargaNome}</span>
