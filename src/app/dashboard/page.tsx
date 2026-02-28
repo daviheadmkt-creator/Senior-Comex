@@ -30,10 +30,6 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
 
   return (
     <Card className="mt-6 overflow-hidden border-primary/30">
-      <CardHeader className="bg-primary text-primary-foreground py-4">
-        <CardTitle className="text-lg">Painel de Controle Operacional</CardTitle>
-        <CardDescription className="text-primary-foreground/80">Visão consolidada de marcos, documentos e conformidade fiscal.</CardDescription>
-      </CardHeader>
       <CardContent className="p-0">
         <div className="overflow-x-auto">
           <table className="w-full border-collapse border border-primary/20 text-[10px]">
