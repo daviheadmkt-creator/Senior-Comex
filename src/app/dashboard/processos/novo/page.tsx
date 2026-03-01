@@ -37,7 +37,7 @@ import { Combobox } from '@/components/ui/combobox';
 import * as XLSX from 'xlsx';
 import { Progress } from '@/components/ui/progress';
 
-// Configurações de Validação de Ficheiros (Sincronizado com storage.rules)
+// Configurações de Validação de Ficheiros
 const MAX_FILE_SIZE_MB = 10;
 const ALLOWED_TYPES = [
   "application/pdf",
@@ -56,7 +56,7 @@ type FileData = {
   downloadURL: string;
   type: string;
   size: number;
-  uploadState?: 'running' | 'success' | 'error';
+  uploadState?: 'running' | 'success' | 'error' | 'finalizing';
   uploadProgress?: number;
 };
 
@@ -503,6 +503,9 @@ export default function NovoProcessoPage() {
               });
           },
           () => {
+              // ESTADO DE FINALIZAÇÃO (Geração de URL)
+              setUploadProgresses(prev => ({ ...prev, [filePath]: 100 }));
+              
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                   setUploadProgresses(prev => {
                       const newState = { ...prev };
