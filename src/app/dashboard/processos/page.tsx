@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -99,7 +100,7 @@ export default function GestaoProcessosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestão de Processos</h1>
           <p className="text-muted-foreground">
-            Acompanhe e gerencie todos os processos de exportação ativos.
+            Acompanhamento técnico e operacional de todos os processos ativos.
           </p>
         </div>
         <Link href="/dashboard/processos/novo" passHref>
@@ -125,94 +126,226 @@ export default function GestaoProcessosPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/50 border-b">
-                <tr>
-                  <th className="px-4 py-3 text-left font-medium">Processo</th>
-                  <th className="px-4 py-3 text-left font-medium">Cliente / Analista</th>
-                  <th className="px-4 py-3 text-left font-medium">Produto</th>
-                  <th className="px-4 py-3 text-left font-medium">Logística</th>
-                  <th className="px-4 py-3 text-left font-medium">Status</th>
-                  <th className="px-4 py-3 text-center font-medium">Ações</th>
+        <CardContent className="p-0">
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-primary/20 text-[10px]">
+              <thead>
+                <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold">
+                  <th className="border border-primary-foreground/20 px-2 min-w-[120px]">PROCESSO / CLIENTE</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[130px]">STATUS</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[140px]">LOGÍSTICA</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DADOS CONTAINERS<br/>NOTAS REMESSA<br/>NOTAS EXPORTAÇÃO</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[160px]">LPCO<br/>INSPEÇÃO (MAPA)<br/>TRATAMENTO</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DUE<br/>DESEMBARAÇO<br/>AVERBAÇÃO</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">BL</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>ORIGEM</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>FITO</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">LAUDO<br/>PRAGAS</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>FUMIGAÇÃO</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>SUPERVISORA</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">INVOICE<br/>(FERRARI)</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">PACKING LIST<br/>(FERRARI)</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">AÇÕES</th>
+                  <th className="border border-primary-foreground/20 px-2 min-w-[110px]">DEAD LINE</th>
                 </tr>
               </thead>
-              <tbody className="divide-y">
+              <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center">
+                    <td colSpan={16} className="px-4 py-8 text-center bg-background">
                       <div className='flex justify-center items-center gap-2'>
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        <span>Carregando processos...</span>
+                        <span className="text-sm">Carregando processos...</span>
                       </div>
                     </td>
                   </tr>
                 )}
-                {!isLoading && filteredProcessos.map((processo) => (
-                  <tr key={processo.id} className="hover:bg-accent/5 transition-colors">
-                    <td className="px-4 py-3">
-                      <div className="font-bold">{processo.processo_interno}</div>
-                      <div className="text-[10px] text-muted-foreground">PO: {processo.po_number || '---'}</div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="font-medium uppercase">{processo.exportadorNome}</div>
-                      <div className="text-xs text-blue-600 font-semibold">{processo.analistaNome || 'Sem Analista'}</div>
-                    </td>
-                    <td className="px-4 py-3 text-xs">
-                      {processo.produtoNome || '---'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="text-[11px] font-medium truncate max-w-[180px]">{processo.navio || 'SEM NAVIO'}</div>
-                      <div className="text-[10px] text-muted-foreground">
-                        ETD: {formatDate(processo.etd)} | ETA: {formatDate(processo.eta)}
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <Badge variant={getStatusVariant(processo.status)} className="text-[10px] whitespace-nowrap">
-                        {processo.status || 'N/A'}
-                      </Badge>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className='flex gap-1 justify-center'>
-                        {processo.exportadorId && (
-                            <Link href={`/portal/${processo.exportadorId}`} passHref target="_blank">
-                                <Button variant="outline" size="icon" className="h-8 w-8" title="Portal do Cliente">
-                                    <Globe className="h-4 w-4" />
-                                </Button>
-                            </Link>
-                        )}
-                        <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`} passHref>
-                          <Button variant="outline" size="icon" className="h-8 w-8 text-green-600 hover:text-green-700" title="Editar">
-                            <Pencil className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="icon" className="h-8 w-8 text-red-600 hover:text-red-700" title="Excluir">
-                              <Trash2 className="h-4 w-4" />
+                {!isLoading && filteredProcessos.map((processo) => {
+                  const getDocStatus = (name: string) => {
+                    const doc = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
+                    return {
+                      status: doc ? 'APROVADO' : '---',
+                      action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO EM') : '---',
+                      date: doc?.data_liberacao ? formatDate(doc.data_liberacao) : '---'
+                    };
+                  };
+
+                  const getNFDate = (type: string) => {
+                    const nf = processo.notas_fiscais?.find((n: any) => n.tipo === type);
+                    return nf?.data_recebida ? formatDate(nf.data_recebida) : '---';
+                  };
+
+                  const bl = getDocStatus('BL');
+                  const origem = getDocStatus('ORIGEM');
+                  const fito = getDocStatus('FITO');
+                  const pragas = getDocStatus('HEALTH');
+                  const fumigacao = getDocStatus('FUMIGATION');
+                  const supervisora = getDocStatus('QUALITY');
+                  const invoice = getDocStatus('INVOICE');
+                  const packing = getDocStatus('PACKING LIST');
+
+                  return (
+                    <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors">
+                      {/* IDENTIFICAÇÃO */}
+                      <td className="border-r border-primary/10 px-2 py-1 align-middle bg-accent/5">
+                        <div className="flex flex-col">
+                          <span className="font-bold text-foreground">{processo.processo_interno}</span>
+                          <span className="text-[9px] uppercase truncate max-w-[110px]">{processo.exportadorNome}</span>
+                          <span className="text-[9px] text-blue-600 font-bold">{processo.analistaNome || 'SEM ANALISTA'}</span>
+                        </div>
+                      </td>
+                      {/* STATUS */}
+                      <td className="border-r border-primary/10 px-2 py-1 text-center font-bold uppercase align-middle">
+                        <Badge variant={getStatusVariant(processo.status)} className="text-[9px] px-1 h-5 w-full justify-center">
+                          {processo.status || 'N/A'}
+                        </Badge>
+                      </td>
+                      {/* LOGÍSTICA */}
+                      <td className="border-r border-primary/10 px-2 py-1 align-middle">
+                        <div className="flex flex-col gap-0.5">
+                          <span className="truncate max-w-[120px]">{processo.navio || 'SEM NAVIO'}</span>
+                          <span className="text-[8px] text-muted-foreground font-normal">ETD: {formatDate(processo.etd)}</span>
+                          <span className="text-[8px] text-muted-foreground font-normal">ETA: {formatDate(processo.eta)}</span>
+                        </div>
+                      </td>
+                      {/* DADOS CONTAINERS / NOTAS */}
+                      <td className="border-r border-primary/10 p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>CONTAINERS</span> <span className="text-destructive font-bold ml-2">{processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>REMESSA</span> <span className="text-destructive font-bold ml-2">{getNFDate('Remessa')}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold ml-2">{getNFDate('Exportação')}</span></div>
+                        </div>
+                      </td>
+                      {/* LPCO / INSPEÇÃO / TRATAMENTO */}
+                      <td className="border-r border-primary/10 p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>LPCO</span> <span className="text-muted-foreground font-bold ml-2">{processo.lpco_protocolo || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>INSPEÇÃO</span> <span className="text-destructive font-bold ml-2">{processo.mapa_status?.includes('DEFERIDA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>TRATAMENTO</span> <span className="text-destructive font-bold ml-2">{fumigacao.date}</span></div>
+                        </div>
+                      </td>
+                      {/* DUE / DESEMBARAÇO / AVERBAÇÃO */}
+                      <td className="border-r border-primary/10 p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>DUE</span> <span className="text-muted-foreground font-bold ml-2 truncate max-w-[80px]">{processo.due_numero || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold ml-2">{processo.due_status?.includes('DESEMBARAÇADA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>AVERBADA</span> <span className="text-destructive font-bold ml-2">{processo.due_status === 'AVERBADA' ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                        </div>
+                      </td>
+                      {/* BL */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{bl.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{bl.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{bl.date}</div>
+                        </div>
+                      </td>
+                      {/* CERT ORIGEM */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{origem.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{origem.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{origem.date}</div>
+                        </div>
+                      </td>
+                      {/* CERT FITO */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{fito.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{fito.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{fito.date}</div>
+                        </div>
+                      </td>
+                      {/* LAUDO PRAGAS */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{pragas.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{pragas.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{pragas.date}</div>
+                        </div>
+                      </td>
+                      {/* CERT FUMIGACAO */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{fumigacao.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{fumigacao.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{fumigacao.date}</div>
+                        </div>
+                      </td>
+                      {/* CERT SUPERVISORA */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{supervisora.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{supervisora.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{supervisora.date}</div>
+                        </div>
+                      </td>
+                      {/* INVOICE */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{invoice.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{invoice.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{invoice.date}</div>
+                        </div>
+                      </td>
+                      {/* PACKING LIST */}
+                      <td className="border-r border-primary/10 p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-1.5 uppercase text-primary font-bold">{packing.status}</div>
+                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{packing.action}</div>
+                          <div className="py-1.5 text-destructive font-bold">{packing.date}</div>
+                        </div>
+                      </td>
+                      {/* AÇÕES */}
+                      <td className="border-r border-primary/10 px-2 py-1 text-center align-middle bg-accent/5">
+                        <div className="flex flex-col gap-1 items-center">
+                          <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10">
+                              <Pencil className="h-3.5 w-3.5" />
                             </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Excluir Processo</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação não pode ser desfeita.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => handleDelete(processo.id)}>Excluir</AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          </Link>
+                          {processo.exportadorId && (
+                            <Link href={`/portal/${processo.exportadorId}`} target="_blank">
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600">
+                                <Globe className="h-3.5 w-3.5" />
+                              </Button>
+                            </Link>
+                          )}
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Excluir Processo</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação não pode ser desfeita.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => handleDelete(processo.id)}>Excluir</AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </div>
+                      </td>
+                      {/* DEAD LINE */}
+                      <td className="p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_draft)}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>VGM</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_vgm)}</span></div>
+                          <div className="flex justify-between px-2 py-1.5 italic"><span>CARGA</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_carga)}</span></div>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
                 {!isLoading && filteredProcessos.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-muted-foreground">Nenhum processo encontrado.</td>
+                    <td colSpan={16} className="px-4 py-8 text-center text-muted-foreground bg-background">Nenhum processo encontrado.</td>
                   </tr>
                 )}
               </tbody>
