@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, FileWarning, CalendarClock, Loader2, CheckCircle2 } from 'lucide-react';
+import { AlertTriangle, FileWarning, CalendarClock, Loader2, CheckCircle2, Pencil } from 'lucide-react';
 import Link from 'next/link';
 import { useCollection, useFirestore, useMemoFirebase } from '@/firebase';
 import { collection, query, where } from 'firebase/firestore';
@@ -35,7 +35,6 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
           <table className="w-full border-collapse border border-primary/20 text-[10px]">
             <thead>
               <tr className="bg-primary text-primary-foreground text-center h-12">
-                <th className="border border-primary-foreground/20 px-2 min-w-[110px]">DEAD LINE</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[130px]">STATUS</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DADOS CONTAINERS<br/>NOTAS REMESSA<br/>NOTAS EXPORTAÇÃO</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[160px]">LPCO<br/>INSPEÇÃO (MAPA)<br/>TRATAMENTO</th>
@@ -48,6 +47,8 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
                 <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>SUPERVISORA</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[100px]">INVOICE<br/>(FERRARI)</th>
                 <th className="border border-primary-foreground/20 px-2 min-w-[100px]">PACKING LIST<br/>(FERRARI)</th>
+                <th className="border border-primary-foreground/20 px-2 min-w-[60px]">AÇÕES</th>
+                <th className="border border-primary-foreground/20 px-2 min-w-[110px]">DEAD LINE</th>
               </tr>
             </thead>
             <tbody>
@@ -77,14 +78,6 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
 
                 return (
                   <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors">
-                    {/* DEAD LINE */}
-                    <td className="border-r border-primary/10 p-0">
-                      <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                        <div className="flex justify-between px-2 py-1.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_draft)}</span></div>
-                        <div className="flex justify-between px-2 py-1.5 italic"><span>VGM</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_vgm)}</span></div>
-                        <div className="flex justify-between px-2 py-1.5 italic"><span>CARGA</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_carga)}</span></div>
-                      </div>
-                    </td>
                     {/* STATUS */}
                     <td className="border-r border-primary/10 px-2 py-1 text-center font-bold uppercase align-middle bg-accent/10 min-h-[60px]">
                       <div className="flex flex-col gap-1">
@@ -173,11 +166,27 @@ const ProcessoSpreadsheet = ({ processos }: { processos: any[] }) => {
                       </div>
                     </td>
                     {/* PACKING LIST */}
-                    <td className="p-0 text-center">
+                    <td className="border-r border-primary/10 p-0 text-center">
                       <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
                         <div className="py-1.5 uppercase text-primary font-bold">{packing.status}</div>
                         <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{packing.action}</div>
                         <div className="py-1.5 text-destructive font-bold">{packing.date}</div>
+                      </div>
+                    </td>
+                    {/* AÇÕES */}
+                    <td className="border-r border-primary/10 px-2 py-1 text-center align-middle">
+                      <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 text-primary">
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </Link>
+                    </td>
+                    {/* DEAD LINE */}
+                    <td className="p-0">
+                      <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_draft)}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>VGM</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_vgm)}</span></div>
+                        <div className="flex justify-between px-2 py-1.5 italic"><span>CARGA</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_carga)}</span></div>
                       </div>
                     </td>
                   </tr>
