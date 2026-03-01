@@ -95,7 +95,7 @@ export default function GestaoProcessosPage() {
   }, [processos, searchTerm]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative min-h-[calc(100vh-120px)]">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestão de Processos</h1>
@@ -103,12 +103,6 @@ export default function GestaoProcessosPage() {
             Acompanhamento técnico e operacional de todos os processos ativos.
           </p>
         </div>
-        <Link href="/dashboard/processos/novo" passHref>
-          <Button>
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Novo Processo
-          </Button>
-        </Link>
       </div>
 
       <Card>
@@ -353,6 +347,14 @@ export default function GestaoProcessosPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Botão Flutuante Novo Processo */}
+      <Link href="/dashboard/processos/novo" passHref>
+        <Button className="fixed bottom-8 right-8 rounded-full shadow-2xl h-14 w-14 p-0 md:h-auto md:w-auto md:px-6 md:py-4 z-50 transition-transform hover:scale-105 active:scale-95">
+          <PlusCircle className="h-6 w-6 md:mr-2" />
+          <span className="hidden md:inline font-bold">Novo Processo</span>
+        </Button>
+      </Link>
     </div>
   );
 }
