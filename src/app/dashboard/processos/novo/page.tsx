@@ -134,12 +134,13 @@ const initialFormData = {
   exportadorNome: '',
   portoEmbarqueNome: '',
   portoDescargaNome: '',
-  terminalDescargaNome: '',
+  terminalDespachoNome: '',
   terminalEmbarqueNome: '',
   destino: '',
   status: 'Iniciado / Aguardando Booking',
   booking_number: '',
   armadorId: '',
+  armadorNome: '',
   navio: '',
   viagem: '',
   containers: [] as any[],
@@ -291,6 +292,7 @@ export default function NovoProcessoPage() {
         portoEmbarqueId: String(processoData.portoEmbarqueId || ''),
         portoDescargaId: String(processoData.portoDescargaId || ''),
         armadorId: String(processoData.armadorId || ''),
+        armadorNome: String(processoData.armadorNome || ''),
       });
 
       if (processoData.portoEmbarqueId) {
@@ -855,6 +857,7 @@ export default function NovoProcessoPage() {
     setFormData(prev => ({
       ...prev,
       [fieldId]: newPartnerId,
+      armadorNome: partnerName
     }));
 
     toast({
@@ -877,9 +880,11 @@ export default function NovoProcessoPage() {
     setDoc(partnerRef, { ...newPartnerData }, { merge: true });
 
     const fieldId = tipo === 'Terminal de Estufagem' ? 'terminalDespachoId' : 'terminalEmbarqueId';
+    const fieldName = tipo === 'Terminal de Estufagem' ? 'terminalDespachoNome' : 'terminalEmbarqueNome';
     setFormData(prev => ({
       ...prev,
       [fieldId]: newPartnerId,
+      [fieldName]: terminalName
     }));
 
     toast({
@@ -1374,7 +1379,13 @@ export default function NovoProcessoPage() {
                       <Combobox
                         items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                         value={formData.armadorId}
-                        onValueChange={(value) => handleInputChange('armadorId', value)}
+                        onValueChange={(value) => {
+                            handleInputChange('armadorId', value);
+                            const selected = parceiros?.find(p => p.id === value);
+                            if (selected) {
+                                handleInputChange('armadorNome', selected.nome_fantasia || selected.razao_social);
+                            }
+                        }}
                         placeholder={isLoadingParceiros ? "Carregando..." : "Selecionar os armadores.."}
                         searchPlaceholder="Buscar ou criar armador..."
                         noResultsText="Nenhum armador encontrado."
@@ -1426,7 +1437,13 @@ export default function NovoProcessoPage() {
                       <Combobox
                         items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                         value={formData.terminalDespachoId}
-                        onValueChange={(value) => handleInputChange('terminalDespachoId', value)}
+                        onValueChange={(value) => {
+                            handleInputChange('terminalDespachoId', value);
+                            const selected = parceiros?.find(p => p.id === value);
+                            if (selected) {
+                                handleInputChange('terminalDespachoNome', selected.nome_fantasia || selected.razao_social);
+                            }
+                        }}
                         placeholder={isLoadingParceiros ? "Carregando..." : "Selecione ou crie um terminal"}
                         searchPlaceholder="Buscar ou criar terminal..."
                         noResultsText="Nenhum terminal encontrado."
@@ -1439,7 +1456,13 @@ export default function NovoProcessoPage() {
                       <Combobox
                         items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                         value={formData.terminalEmbarqueId}
-                        onValueChange={(value) => handleInputChange('terminalEmbarqueId', value)}
+                        onValueChange={(value) => {
+                            handleInputChange('terminalEmbarqueId', value);
+                            const selected = parceiros?.find(p => p.id === value);
+                            if (selected) {
+                                handleInputChange('terminalEmbarqueNome', selected.nome_fantasia || selected.razao_social);
+                            }
+                        }}
                         placeholder={isLoadingParceiros ? "Carregando..." : "Selecione ou crie um terminal"}
                         searchPlaceholder="Buscar ou criar terminal..."
                         noResultsText="Nenhum terminal encontrado."

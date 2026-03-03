@@ -88,7 +88,8 @@ export default function GestaoProcessosPage() {
       (processo.po_number && processo.po_number.toLowerCase().includes(term)) ||
       (processo.produtoNome && processo.produtoNome.toLowerCase().includes(term)) ||
       (processo.navio && processo.navio.toLowerCase().includes(term)) ||
-      (processo.destino && processo.destino.toLowerCase().includes(term))
+      (processo.destino && processo.destino.toLowerCase().includes(term)) ||
+      (processo.armadorNome && processo.armadorNome.toLowerCase().includes(term))
     );
   }, [processos, searchTerm]);
 
@@ -109,7 +110,7 @@ export default function GestaoProcessosPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                  placeholder="Buscar por Processo, Cliente ou Analista..." 
+                  placeholder="Buscar por Processo, Cliente, Armador..." 
                   className="pl-8" 
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
