@@ -123,9 +123,9 @@ export default function GestaoProcessosPage() {
             <table className="w-full border-collapse border border-primary/20 text-[9px]">
               <thead>
                 <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
-                  <th className="px-2 min-w-[80px] sticky left-0 z-20 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">AÇÕES</th>
-                  <th className="px-2 min-w-[90px] sticky left-[80px] z-20 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">ANALISTA</th>
-                  <th className="px-2 min-w-[120px] sticky left-[170px] z-20 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
+                  <th className="px-2 min-w-[80px]">AÇÕES</th>
+                  <th className="px-2 min-w-[90px]">ANALISTA</th>
+                  <th className="px-2 min-w-[120px]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA</th>
                   <th className="px-2 min-w-[120px]">NAVIO</th>
@@ -188,8 +188,8 @@ export default function GestaoProcessosPage() {
 
                   return (
                     <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
-                      {/* 1. AÇÕES (FIXO) */}
-                      <td className="px-2 py-1 text-center sticky left-0 z-10 bg-[#f8fcfb] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                      {/* 1. AÇÕES */}
+                      <td className="px-2 py-1 text-center">
                         <div className="flex gap-1 justify-center">
                           <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-primary">
@@ -225,11 +225,11 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 2. ANALISTA (FIXO) */}
-                      <td className="px-2 py-1 text-center text-blue-600 uppercase sticky left-[80px] z-10 bg-[#f8fcfb] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">{processo.analistaNome || '---'}</td>
+                      {/* 2. ANALISTA */}
+                      <td className="px-2 py-1 text-center text-blue-600 uppercase">{processo.analistaNome || '---'}</td>
                       
-                      {/* 3. PO / CLIENTE (FIXO) */}
-                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-[#f8fcfb] shadow-[2px_0_5px_rgba(0,0,0,0.05)]">
+                      {/* 3. PO / CLIENTE */}
+                      <td className="px-2 py-1">
                         <div className="flex flex-col">
                           <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
                           <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
