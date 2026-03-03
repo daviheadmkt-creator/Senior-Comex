@@ -134,7 +134,7 @@ const initialFormData = {
   exportadorNome: '',
   portoEmbarqueNome: '',
   portoDescargaNome: '',
-  terminalDespachoNome: '',
+  terminalDescargaNome: '',
   terminalEmbarqueNome: '',
   destino: '',
   status: 'Iniciado / Aguardando Booking',
@@ -430,8 +430,8 @@ export default function NovoProcessoPage() {
       }
 
       const targetField = typeof currentUploadTarget === 'string' ? currentUploadTarget : null;
-      const targetList = typeof currentUploadTarget === 'object' ? currentUploadTarget.type : null;
-      const targetId = typeof currentUploadTarget === 'object' ? currentUploadTarget.id : null;
+      const targetList = typeof currentUploadTarget === 'object' ? (currentUploadTarget as any).type : null;
+      const targetId = typeof currentUploadTarget === 'object' ? (currentUploadTarget as any).id : null;
       
       const fileNameInStorage = `${file.name}-${Date.now()}`;
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
@@ -516,8 +516,6 @@ export default function NovoProcessoPage() {
                       if (targetField) {
                           updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
                       } else if (targetList === 'nota_fiscal') {
-                          // Nota: Para listas, o ideal é atualizar no submit final ou usar um reducer de lista atômica
-                          // Mas para garantir o "Auto-Save" que o usuário pediu, vamos logar sucesso
                           toast({ title: "Arquivo Sincronizado", description: "O anexo foi guardado na base de dados.", variant: "default" });
                       }
                   }
@@ -564,12 +562,12 @@ export default function NovoProcessoPage() {
     if (typeof target === 'string') {
         fileToRemove = formData[target];
         handleInputChange(target, null);
-    } else if (target.type === 'nota_fiscal') {
+    } else if (typeof target === 'object' && target.type === 'nota_fiscal') {
         const nf = formData.notas_fiscais.find((n: any) => n.id === target.id);
         fileToRemove = nf?.file;
         const newNotas = formData.notas_fiscais.map((n: any) => n.id === target.id ? { ...n, file: null } : n);
         setFormData((prev: any) => ({ ...prev, notas_fiscais: newNotas }));
-    } else if (target.type === 'documento_pos_embarque') {
+    } else if (typeof target === 'object' && target.type === 'documento_pos_embarque') {
         const docItem = formData.documentos_pos_embarque.find((d: any) => d.id === target.id);
         fileToRemove = docItem?.file;
         const newDocs = formData.documentos_pos_embarque.map((d: any) => d.id === target.id ? { ...d, file: null } : d);
@@ -1141,7 +1139,6 @@ export default function NovoProcessoPage() {
       return <span className="text-muted-foreground italic">Nenhum ficheiro anexado.</span>;
     }
     
-    // VERIFICA O PROGRESSO NO ESTADO ISOLADO
     const currentProgress = uploadProgresses[file.storagePath] ?? (file.uploadState === 'success' ? 100 : 0);
     
     if (currentProgress > 0 && currentProgress < 100) {
@@ -1152,6 +1149,19 @@ export default function NovoProcessoPage() {
             <span className="font-mono">{Math.round(currentProgress)}%</span>
           </div>
           <Progress value={currentProgress} className="h-1.5 transition-all duration-300" />
+          <span className="text-[11px] text-muted-foreground truncate max-w-full" title={file.name}>{file.name}</span>
+        </div>
+      );
+    }
+
+    if (currentProgress === 100 && file.uploadState !== 'success') {
+      return (
+        <div className="flex flex-col gap-1 w-full py-1">
+          <div className="flex justify-between items-center text-[10px] text-primary font-medium uppercase tracking-wider">
+            <span>A processar no servidor...</span>
+            <Loader2 className="h-3 w-3 animate-spin" />
+          </div>
+          <Progress value={100} className="h-1.5" />
           <span className="text-[11px] text-muted-foreground truncate max-w-full" title={file.name}>{file.name}</span>
         </div>
       );
@@ -1447,66 +1457,72 @@ export default function NovoProcessoPage() {
                   <div className="grid md:grid-cols-3 gap-6">
                     <div className="space-y-2">
                       <Label>Deadline Draft</Label>
-                      <div className="flex items-center gap-2">
-                        <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
+                      <DatePicker date={formData.deadline_draft} onDateChange={date => handleInputChange('deadline_draft', date)} showTime />
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
+                          {renderFileState(formData.deadline_draft_file)}
+                        </div>
                         {formData.deadline_draft_file ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_draft_file)} title={`Descarregar ${formData.deadline_draft_file.name}`} disabled={uploadProgresses[formData.deadline_draft_file.storagePath] > 0}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_draft_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={uploadProgresses[formData.deadline_draft_file.storagePath] > 0}>
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_draft_file')}>
+                          <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_draft_file')} className="shrink-0">
                              <Upload className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
-                       {uploadProgresses[formData.deadline_draft_file?.storagePath] > 0 && <Progress value={uploadProgresses[formData.deadline_draft_file.storagePath]} className="mt-1 h-1" />}
                     </div>
                     <div className="space-y-2">
                       <Label>Deadline VGM</Label>
-                      <div className="flex items-center gap-2">
-                        <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
+                      <DatePicker date={formData.deadline_vgm} onDateChange={date => handleInputChange('deadline_vgm', date)} showTime />
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
+                          {renderFileState(formData.deadline_vgm_file)}
+                        </div>
                         {formData.deadline_vgm_file ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_vgm_file)} title={`Descarregar ${formData.deadline_vgm_file.name}`} disabled={uploadProgresses[formData.deadline_vgm_file.storagePath] > 0}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_vgm_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={uploadProgresses[formData.deadline_vgm_file.storagePath] > 0}>
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_vgm_file')}>
+                          <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_vgm_file')} className="shrink-0">
                              <Upload className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
-                      {uploadProgresses[formData.deadline_vgm_file?.storagePath] > 0 && <Progress value={uploadProgresses[formData.deadline_vgm_file.storagePath]} className="mt-1 h-1" />}
                     </div>
                     <div className="space-y-2">
                       <Label>Deadline Carga</Label>
-                      <div className="flex items-center gap-2">
-                        <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
+                      <DatePicker date={formData.deadline_carga} onDateChange={date => handleInputChange('deadline_carga', date)} showTime />
+                      <div className="mt-2 flex items-center gap-2">
+                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
+                          {renderFileState(formData.deadline_carga_file)}
+                        </div>
                         {formData.deadline_carga_file ? (
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.deadline_carga_file)} title={`Descarregar ${formData.deadline_carga_file.name}`} disabled={uploadProgresses[formData.deadline_carga_file.storagePath] > 0}>
                               <Download className="h-4 w-4 text-green-600" />
                             </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo">
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('deadline_carga_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={uploadProgresses[formData.deadline_carga_file.storagePath] > 0}>
                               <XCircle className="h-4 w-4" />
                             </Button>
                           </div>
                         ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_carga_file')}>
+                          <Button variant="outline" size="icon" type="button" title="Anexar Comprovante" onClick={() => triggerFileUpload('deadline_carga_file')} className="shrink-0">
                              <Upload className="h-4 w-4" />
                           </Button>
                         )}
                       </div>
-                      {uploadProgresses[formData.deadline_carga_file?.storagePath] > 0 && <Progress value={uploadProgresses[formData.deadline_carga_file.storagePath]} className="mt-1 h-1" />}
                     </div>
                   </div>
 
@@ -1651,18 +1667,9 @@ export default function NovoProcessoPage() {
                           <div className="space-y-2 col-span-2">
                             <Label>Chave de Acesso / Anexo</Label>
                             <div className='flex gap-2'>
-                              {nota.file ? (
-                                <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
-                                  {renderFileState(nota.file)}
-                                </div>
-                               ) : (
-                                <Input
-                                  value={nota.chave || ''}
-                                  onChange={(e) => handleNotaFiscalChange(nota.id, 'chave', e.target.value)}
-                                  placeholder="Chave da NF"
-                                  disabled={!!nota.file}
-                                />
-                               )}
+                              <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
+                                {renderFileState(nota.file)}
+                              </div>
                               {nota.file ? (
                                 <div className="flex items-center gap-1 shrink-0">
                                   <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(nota.file)} title={`Descarregar ${nota.file.name}`} disabled={uploadProgresses[nota.file.storagePath] > 0}>
@@ -1763,7 +1770,7 @@ export default function NovoProcessoPage() {
                       <Label htmlFor="due_status">Status da DUE</Label>
                       <div className='flex items-center gap-2'>
                         <Select value={formData.due_status || ''} onValueChange={value => handleInputChange('due_status', value)}>
-                          <SelectTrigger id="due_status">
+                          <SelectTrigger id="due_status" className="flex-1">
                             <SelectValue placeholder="Selecione o status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1772,6 +1779,9 @@ export default function NovoProcessoPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
+                          {renderFileState(formData.due_file)}
+                        </div>
                         {formData.due_file ? (
                           <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} disabled={uploadProgresses[formData.due_file.storagePath] > 0}>
@@ -1787,7 +1797,6 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
-                      {uploadProgresses[formData.due_file?.storagePath] > 0 && <Progress value={uploadProgresses[formData.due_file.storagePath]} className="mt-1 h-1" />}
                     </div>
                   </div>
 
@@ -1800,7 +1809,7 @@ export default function NovoProcessoPage() {
                       <Label htmlFor="mapa_status">Status da Inspeção MAPA (LPCO)</Label>
                       <div className="flex items-center gap-2">
                         <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
-                          <SelectTrigger id="mapa_status">
+                          <SelectTrigger id="mapa_status" className="flex-1">
                             <SelectValue placeholder="Selecione o status" />
                           </SelectTrigger>
                           <SelectContent>
@@ -1809,6 +1818,9 @@ export default function NovoProcessoPage() {
                             ))}
                           </SelectContent>
                         </Select>
+                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
+                          {renderFileState(formData.lpco_file)}
+                        </div>
                         {formData.lpco_file ? (
                           <div className="flex items-center gap-1 shrink-0">
                             <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} disabled={uploadProgresses[formData.lpco_file.storagePath] > 0}>
@@ -1824,7 +1836,6 @@ export default function NovoProcessoPage() {
                           </Button>
                         )}
                       </div>
-                       {uploadProgresses[formData.lpco_file?.storagePath] > 0 && <Progress value={uploadProgresses[formData.lpco_file.storagePath]} className="mt-1 h-1" />}
                     </div>
                   </div>
 
@@ -1963,21 +1974,25 @@ export default function NovoProcessoPage() {
                               />
                             </TableCell>
                             <TableCell>
-                              {docItem.file ? (
-                                <div className="flex items-center gap-1 shrink-0">
-                                  <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
-                                    <Download className="h-4 w-4 text-green-600" />
-                                  </Button>
-                                  <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
-                                    <XCircle className="h-4 w-4 text-destructive" />
-                                  </Button>
+                              <div className="flex items-center gap-2">
+                                <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden min-w-[120px]">
+                                  {renderFileState(docItem.file)}
                                 </div>
-                              ) : (
-                                <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })} className="shrink-0">
-                                  <Upload className="h-4 w-4" />
-                                </Button>
-                              )}
-                               {uploadProgresses[docItem.file?.storagePath] > 0 && <Progress value={uploadProgresses[docItem.file.storagePath]} className="mt-1 h-1" />}
+                                {docItem.file ? (
+                                  <div className="flex items-center gap-1 shrink-0">
+                                    <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
+                                      <Download className="h-4 w-4 text-green-600" />
+                                    </Button>
+                                    <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
+                                      <XCircle className="h-4 w-4 text-destructive" />
+                                    </Button>
+                                  </div>
+                                ) : (
+                                  <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })} className="shrink-0">
+                                    <Upload className="h-4 w-4" />
+                                  </Button>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell>
                               <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file?.storagePath] > 0}>
