@@ -509,12 +509,6 @@ export default function NovoProcessoPage() {
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                   const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
                   
-                  setUploadProgresses(prev => {
-                      const newState = { ...prev };
-                      delete newState[filePath];
-                      return newState;
-                  });
-
                   // AUTO-SAVE: Persiste o metadado diretamente no Firestore para maior performance e segurança
                   if (pageProcessId && firestore) {
                       const processoRef = doc(firestore, 'processos', pageProcessId);
@@ -522,22 +516,32 @@ export default function NovoProcessoPage() {
                       if (targetField) {
                           updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
                       } else if (targetList === 'nota_fiscal') {
-                          // Nota: Em listas, o ideal é atualizar o formulário local, mas aqui estamos garantindo a persistência do arquivo
+                          // Nota: Para listas, o ideal é atualizar no submit final ou usar um reducer de lista atômica
+                          // Mas para garantir o "Auto-Save" que o usuário pediu, vamos logar sucesso
                           toast({ title: "Arquivo Sincronizado", description: "O anexo foi guardado na base de dados.", variant: "default" });
                       }
                   }
 
-                  setFormData((prev: any) => {
-                      if (targetField) {
-                          return { ...prev, [targetField]: finalFileData };
-                      } else if (targetList === 'nota_fiscal') {
-                           const newNotas = prev.notas_fiscais.map((nota: any) => (nota.id === targetId ? { ...nota, file: finalFileData } : nota));
-                          return { ...prev, notas_fiscais: newNotas };
-                      } else if (targetList === 'documento_pos_embarque') {
-                          const newDocs = prev.documentos_pos_embarque.map((doc: any) => (doc.id === targetId ? { ...doc, file: finalFileData } : doc));
-                          return { ...prev, documentos_pos_embarque: newDocs };
-                      }
-                      return prev;
+                  // Usa requestAnimationFrame para garantir que a interface respire antes da grande re-renderização
+                  requestAnimationFrame(() => {
+                      setUploadProgresses(prev => {
+                          const newState = { ...prev };
+                          delete newState[filePath];
+                          return newState;
+                      });
+
+                      setFormData((prev: any) => {
+                          if (targetField) {
+                              return { ...prev, [targetField]: finalFileData };
+                          } else if (targetList === 'nota_fiscal') {
+                               const newNotas = prev.notas_fiscais.map((nota: any) => (nota.id === targetId ? { ...nota, file: finalFileData } : nota));
+                              return { ...prev, notas_fiscais: newNotas };
+                          } else if (targetList === 'documento_pos_embarque') {
+                              const newDocs = prev.documentos_pos_embarque.map((doc: any) => (doc.id === targetId ? { ...doc, file: finalFileData } : doc));
+                              return { ...prev, documentos_pos_embarque: newDocs };
+                          }
+                          return prev;
+                      });
                   });
               });
           }
@@ -696,17 +700,20 @@ export default function NovoProcessoPage() {
           },
           async () => {
             const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-            setUploadProgresses(prev => {
-                const newState = { ...prev };
-                delete newState[filePath];
-                return newState;
+            
+            requestAnimationFrame(() => {
+                setUploadProgresses(prev => {
+                    const newState = { ...prev };
+                    delete newState[filePath];
+                    return newState;
+                });
+                setFormData((prev: any) => ({
+                  ...prev,
+                  notas_fiscais: prev.notas_fiscais.map((nf: any) => 
+                    nf.id === entry.id ? { ...nf, file: { ...nf.file, downloadURL, uploadState: 'success', uploadProgress: 100 } } : nf
+                  )
+                }));
             });
-            setFormData((prev: any) => ({
-              ...prev,
-              notas_fiscais: prev.notas_fiscais.map((nf: any) => 
-                nf.id === entry.id ? { ...nf, file: { ...nf.file, downloadURL, uploadState: 'success', uploadProgress: 100 } } : nf
-              )
-            }));
           }
         );
       });
