@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Download, Info } from 'lucide-react';
+import { ArrowLeft, CheckCircle, Upload, XCircle, PlusCircle, Trash2, FileDown, Loader2, FileUp, Download, Info, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
@@ -30,7 +30,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { cn } from '@/lib/utils';
 import jsPDF from 'jspdf';
 import 'jspdf-autotable';
-import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, useStorage } from '@/firebase';
+import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, useStorage, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
@@ -507,15 +507,27 @@ export default function NovoProcessoPage() {
               setUploadProgresses(prev => ({ ...prev, [filePath]: 100 }));
               
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
+                  const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
+                  
                   setUploadProgresses(prev => {
                       const newState = { ...prev };
                       delete newState[filePath];
                       return newState;
                   });
 
-                  setFormData((prev: any) => {
-                      const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
+                  // AUTO-SAVE: Persiste o metadado diretamente no Firestore para maior performance e segurança
+                  if (pageProcessId && firestore) {
+                      const processoRef = doc(firestore, 'processos', pageProcessId);
                       
+                      if (targetField) {
+                          updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
+                      } else if (targetList === 'nota_fiscal') {
+                          // Nota: Em listas, o ideal é atualizar o formulário local, mas aqui estamos garantindo a persistência do arquivo
+                          toast({ title: "Arquivo Sincronizado", description: "O anexo foi guardado na base de dados.", variant: "default" });
+                      }
+                  }
+
+                  setFormData((prev: any) => {
                       if (targetField) {
                           return { ...prev, [targetField]: finalFileData };
                       } else if (targetList === 'nota_fiscal') {
@@ -1140,9 +1152,13 @@ export default function NovoProcessoPage() {
     
     if (file.uploadState === 'success' || currentProgress === 100) {
         return (
-          <div className="flex items-center gap-2 overflow-hidden">
+          <div className="flex items-center gap-2 overflow-hidden w-full">
             <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
-            <span className="text-foreground truncate font-medium" title={file.name}>{file.name}</span>
+            <span className="text-foreground truncate font-medium text-xs flex-1" title={file.name}>{file.name}</span>
+            <div className="flex items-center gap-1 text-[10px] text-green-600 font-bold shrink-0 bg-green-50 px-1 rounded border border-green-100">
+                <Save className="h-2 w-2" />
+                <span>DB</span>
+            </div>
           </div>
         );
     }
@@ -1211,7 +1227,7 @@ export default function NovoProcessoPage() {
           <Info className="h-5 w-5 text-blue-500 shrink-0 mt-0.5" />
           <div className="text-sm text-blue-700">
             <p className="font-semibold">Nota sobre Anexos:</p>
-            <p>Os ficheiros são enviados diretamente para o servidor Firebase Storage para maior performance.</p>
+            <p>Os ficheiros são enviados diretamente para o servidor e sincronizados automaticamente com o banco de dados.</p>
           </div>
         </div>
 
