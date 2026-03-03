@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -123,6 +122,7 @@ export default function GestaoProcessosPage() {
             <table className="w-full border-collapse border border-primary/20 text-[9px]">
               <thead>
                 <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
+                  <th className="px-2 min-w-[80px]">AÇÕES</th>
                   <th className="px-2 min-w-[90px]">ANALISTA</th>
                   <th className="px-2 min-w-[120px]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
@@ -130,7 +130,6 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[120px]">NAVIO</th>
                   <th className="px-2 min-w-[100px]">ORIGEM</th>
                   <th className="px-2 min-w-[100px]">DESTINO</th>
-                  <th className="px-2 min-w-[80px]">AÇÕES</th>
                   <th className="px-2 min-w-[90px]">CONTAINERS / KGS</th>
                   <th className="px-2 min-w-[110px]">DEAD LINE / PRAZO</th>
                   <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
@@ -188,43 +187,7 @@ export default function GestaoProcessosPage() {
 
                   return (
                     <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
-                      {/* 1. ANALISTA */}
-                      <td className="px-2 py-1 text-center bg-accent/5 text-blue-600 uppercase">{processo.analistaNome || '---'}</td>
-                      
-                      {/* 2. PO / CLIENTE */}
-                      <td className="px-2 py-1 bg-accent/5">
-                        <div className="flex flex-col">
-                          <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
-                          <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
-                        </div>
-                      </td>
-
-                      {/* 3. PRODUTO / DATA NOMEAÇÃO */}
-                      <td className="px-2 py-1">
-                        <div className="flex flex-col">
-                          <span className="uppercase text-foreground">{processo.produtoNome || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
-                        </div>
-                      </td>
-
-                      {/* 4. RESERVA / AGÊNCIA */}
-                      <td className="px-2 py-1">
-                        <div className="flex flex-col">
-                          <span className="text-foreground">{processo.booking_number || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{processo.armadorNome || '---'}</span>
-                        </div>
-                      </td>
-
-                      {/* 5. NAVIO */}
-                      <td className="px-2 py-1 truncate max-w-[120px] uppercase text-foreground">{processo.navio || '---'}</td>
-
-                      {/* 6. ORIGEM */}
-                      <td className="px-2 py-1 text-center text-destructive">{processo.portoEmbarqueNome || '---'}</td>
-
-                      {/* 7. DESTINO */}
-                      <td className="px-2 py-1 text-center">{processo.portoDescargaNome || '---'}</td>
-
-                      {/* 8. AÇÕES */}
+                      {/* 1. AÇÕES */}
                       <td className="px-2 py-1 text-center bg-accent/5">
                         <div className="flex gap-1 justify-center">
                           <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
@@ -260,6 +223,42 @@ export default function GestaoProcessosPage() {
                           </AlertDialog>
                         </div>
                       </td>
+
+                      {/* 2. ANALISTA */}
+                      <td className="px-2 py-1 text-center bg-accent/5 text-blue-600 uppercase">{processo.analistaNome || '---'}</td>
+                      
+                      {/* 3. PO / CLIENTE */}
+                      <td className="px-2 py-1 bg-accent/5">
+                        <div className="flex flex-col">
+                          <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
+                          <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
+                        </div>
+                      </td>
+
+                      {/* 4. PRODUTO / DATA NOMEAÇÃO */}
+                      <td className="px-2 py-1">
+                        <div className="flex flex-col">
+                          <span className="uppercase text-foreground">{processo.produtoNome || '---'}</span>
+                          <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
+                        </div>
+                      </td>
+
+                      {/* 5. RESERVA / AGÊNCIA */}
+                      <td className="px-2 py-1">
+                        <div className="flex flex-col">
+                          <span className="text-foreground">{processo.booking_number || '---'}</span>
+                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{processo.armadorNome || '---'}</span>
+                        </div>
+                      </td>
+
+                      {/* 6. NAVIO */}
+                      <td className="px-2 py-1 truncate max-w-[120px] uppercase text-foreground">{processo.navio || '---'}</td>
+
+                      {/* 7. ORIGEM */}
+                      <td className="px-2 py-1 text-center text-destructive">{processo.portoEmbarqueNome || '---'}</td>
+
+                      {/* 8. DESTINO */}
+                      <td className="px-2 py-1 text-center">{processo.portoDescargaNome || '---'}</td>
 
                       {/* 9. CONTAINERS / KGS */}
                       <td className="px-2 py-1 text-center">
