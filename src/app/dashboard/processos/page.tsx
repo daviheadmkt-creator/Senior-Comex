@@ -4,9 +4,7 @@
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -98,9 +96,9 @@ export default function GestaoProcessosPage() {
     <div className="space-y-6 relative min-h-[calc(100vh-120px)]">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold tracking-tight">Gestão de Processos</h1>
+          <h1 className="text-2xl font-bold tracking-tight">Gestão de Processos (Follow-up)</h1>
           <p className="text-muted-foreground">
-            Acompanhamento técnico e operacional de todos os processos ativos.
+            Acompanhamento técnico e operacional detalhado de todos os processos.
           </p>
         </div>
       </div>
@@ -122,45 +120,53 @@ export default function GestaoProcessosPage() {
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-primary/20 text-[10px]">
+            <table className="w-full border-collapse border border-primary/20 text-[9px]">
               <thead>
-                <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold">
-                  <th className="border border-primary-foreground/20 px-2 min-w-[120px]">PROCESSO / CLIENTE</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[140px]">LOGÍSTICA</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[80px]">AÇÕES</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[110px]">DEAD LINE</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[130px]">STATUS</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DADOS CONTAINERS<br/>NOTAS REMESSA<br/>NOTAS EXPORTAÇÃO</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[160px]">LPCO<br/>INSPEÇÃO (MAPA)<br/>TRATAMENTO</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[160px]">DUE<br/>DESEMBARAÇO<br/>AVERBAÇÃO</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">BL</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>ORIGEM</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>FITO</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">LAUDO<br/>PRAGAS</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>FUMIGAÇÃO</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">CERTIFICADO<br/>SUPERVISORA</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">INVOICE<br/>(FERRARI)</th>
-                  <th className="border border-primary-foreground/20 px-2 min-w-[100px]">PACKING LIST<br/>(FERRARI)</th>
+                <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
+                  <th className="px-2 min-w-[90px]">ANALISTA</th>
+                  <th className="px-2 min-w-[120px]">PO / CLIENTE</th>
+                  <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
+                  <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA</th>
+                  <th className="px-2 min-w-[120px]">NAVIO</th>
+                  <th className="px-2 min-w-[100px]">ORIGEM</th>
+                  <th className="px-2 min-w-[100px]">DESTINO</th>
+                  <th className="px-2 min-w-[80px]">AÇÕES</th>
+                  <th className="px-2 min-w-[90px]">CONTAINERS / KGS</th>
+                  <th className="px-2 min-w-[110px]">DEAD LINE / PRAZO</th>
+                  <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
+                  <th className="px-2 min-w-[150px]">ARMAZEM / TERMINAIS</th>
+                  <th className="px-2 min-w-[150px]">DADOS / NOTAS FISCAIS</th>
+                  <th className="px-2 min-w-[150px]">LPCO / INSPEÇÃO (MAPA)</th>
+                  <th className="px-2 min-w-[150px]">DUE / DESEMBARAÇO</th>
+                  <th className="px-2 min-w-[80px]">BL</th>
+                  <th className="px-2 min-w-[80px]">CERT. ORIGEM</th>
+                  <th className="px-2 min-w-[80px]">CERT. FITO</th>
+                  <th className="px-2 min-w-[80px]">LAUDO PRAGAS</th>
+                  <th className="px-2 min-w-[80px]">CERT. FUMIG.</th>
+                  <th className="px-2 min-w-[80px]">CERT. SUPERV.</th>
+                  <th className="px-2 min-w-[80px]">INVOICE</th>
+                  <th className="px-2 min-w-[80px]">PACKING LIST</th>
+                  <th className="px-2 min-w-[100px]">REF. SENIOR</th>
                 </tr>
               </thead>
               <tbody>
                 {isLoading && (
                   <tr>
-                    <td colSpan={16} className="px-4 py-8 text-center bg-background">
+                    <td colSpan={24} className="px-4 py-8 text-center bg-background">
                       <div className='flex justify-center items-center gap-2'>
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        <span className="text-sm">Carregando processos...</span>
+                        <span className="text-sm font-medium">Carregando dados da planilha...</span>
                       </div>
                     </td>
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
                   const getDocStatus = (name: string) => {
-                    const doc = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
+                    const docItem = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
                     return {
-                      status: doc ? 'APROVADO' : '---',
-                      action: doc ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO EM') : '---',
-                      date: doc?.data_liberacao ? formatDate(doc.data_liberacao) : '---'
+                      status: docItem ? 'APROVADO' : '---',
+                      action: docItem ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO') : '---',
+                      date: docItem?.data_liberacao ? formatDate(docItem.data_liberacao) : '---'
                     };
                   };
 
@@ -169,59 +175,81 @@ export default function GestaoProcessosPage() {
                     return nf?.data_recebida ? formatDate(nf.data_recebida) : '---';
                   };
 
-                  const bl = getDocStatus('BL');
-                  const origem = getDocStatus('ORIGEM');
-                  const fito = getDocStatus('FITO');
-                  const pragas = getDocStatus('HEALTH');
-                  const fumigacao = getDocStatus('FUMIGATION');
-                  const supervisora = getDocStatus('QUALITY');
-                  const invoice = getDocStatus('INVOICE');
-                  const packing = getDocStatus('PACKING LIST');
+                  const docs = {
+                    bl: getDocStatus('BL'),
+                    origem: getDocStatus('ORIGEM'),
+                    fito: getDocStatus('FITO'),
+                    health: getDocStatus('HEALTH'),
+                    fumigation: getDocStatus('FUMIGATION'),
+                    quality: getDocStatus('QUALITY'),
+                    invoice: getDocStatus('INVOICE'),
+                    packing: getDocStatus('PACKING LIST'),
+                  };
 
                   return (
-                    <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors">
-                      {/* 1. IDENTIFICAÇÃO */}
-                      <td className="border-r border-primary/10 px-2 py-1 align-middle bg-accent/5">
+                    <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
+                      {/* 1. ANALISTA */}
+                      <td className="px-2 py-1 text-center bg-accent/5 text-blue-600 uppercase">{processo.analistaNome || '---'}</td>
+                      
+                      {/* 2. PO / CLIENTE */}
+                      <td className="px-2 py-1 bg-accent/5">
                         <div className="flex flex-col">
-                          <span className="font-bold text-foreground">{processo.processo_interno}</span>
-                          <span className="text-[9px] uppercase truncate max-w-[110px]">{processo.exportadorNome}</span>
-                          <span className="text-[9px] text-blue-600 font-bold">{processo.analistaNome || 'SEM ANALISTA'}</span>
+                          <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
+                          <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
                         </div>
                       </td>
-                      {/* 2. LOGÍSTICA */}
-                      <td className="border-r border-primary/10 px-2 py-1 align-middle">
-                        <div className="flex flex-col gap-0.5">
-                          <span className="truncate max-w-[120px]">{processo.navio || 'SEM NAVIO'}</span>
-                          <span className="text-[8px] text-muted-foreground font-normal">ETD: {formatDate(processo.etd)}</span>
-                          <span className="text-[8px] text-muted-foreground font-normal">ETA: {formatDate(processo.eta)}</span>
+
+                      {/* 3. PRODUTO / DATA NOMEAÇÃO */}
+                      <td className="px-2 py-1">
+                        <div className="flex flex-col">
+                          <span className="uppercase text-foreground">{processo.produtoNome || '---'}</span>
+                          <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
                         </div>
                       </td>
-                      {/* 3. AÇÕES */}
-                      <td className="border-r border-primary/10 px-2 py-1 text-center align-middle bg-accent/5">
+
+                      {/* 4. RESERVA / AGÊNCIA */}
+                      <td className="px-2 py-1">
+                        <div className="flex flex-col">
+                          <span className="text-foreground">{processo.booking_number || '---'}</span>
+                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{processo.armadorNome || '---'}</span>
+                        </div>
+                      </td>
+
+                      {/* 5. NAVIO */}
+                      <td className="px-2 py-1 truncate max-w-[120px] uppercase text-foreground">{processo.navio || '---'}</td>
+
+                      {/* 6. ORIGEM */}
+                      <td className="px-2 py-1 text-center text-destructive">{processo.portoEmbarqueNome || '---'}</td>
+
+                      {/* 7. DESTINO */}
+                      <td className="px-2 py-1 text-center">{processo.portoDescargaNome || '---'}</td>
+
+                      {/* 8. AÇÕES */}
+                      <td className="px-2 py-1 text-center bg-accent/5">
                         <div className="flex gap-1 justify-center">
                           <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
-                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10">
-                              <Pencil className="h-3.5 w-3.5" />
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-primary">
+                              <Pencil className="h-3 w-3" />
                             </Button>
                           </Link>
                           {processo.exportadorId && (
                             <Link href={`/portal/${processo.exportadorId}`} target="_blank">
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600">
-                                <Globe className="h-3.5 w-3.5" />
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600">
+                                <Globe className="h-3 w-3" />
                               </Button>
                             </Link>
                           )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive">
-                                <Trash2 className="h-3.5 w-3.5" />
+                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir Processo</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação não pode ser desfeita.
+                                  Excluir o processo {processo.processo_interno}? Ação irreversível.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -232,114 +260,135 @@ export default function GestaoProcessosPage() {
                           </AlertDialog>
                         </div>
                       </td>
-                      {/* 4. DEAD LINE */}
-                      <td className="border-r border-primary/10 p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_draft)}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>VGM</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_vgm)}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>CARGA</span> <span className="text-destructive font-bold ml-2">{formatDate(processo.deadline_carga)}</span></div>
+
+                      {/* 9. CONTAINERS / KGS */}
+                      <td className="px-2 py-1 text-center">
+                        <div className="flex flex-col">
+                          <span className="text-foreground">{processo.containers?.length || 0} CTR</span>
+                          <span className="text-[8px] font-normal text-muted-foreground">{processo.quantidade || '---'}</span>
                         </div>
                       </td>
-                      {/* 5. STATUS */}
-                      <td className="border-r border-primary/10 px-2 py-1 text-center font-bold uppercase align-middle">
-                        <Badge variant={getStatusVariant(processo.status)} className="text-[9px] px-1 h-5 w-full justify-center">
+
+                      {/* 10. DEAD LINE / PRAZO */}
+                      <td className="p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="flex justify-between px-2 py-0.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_draft)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5 italic"><span>VGM</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_vgm)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5 italic"><span>CARGA</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_carga)}</span></div>
+                        </div>
+                      </td>
+
+                      {/* 11. REMARK (STATUS) */}
+                      <td className="px-2 py-1 text-center align-middle">
+                        <Badge variant={getStatusVariant(processo.status)} className="text-[8px] px-1 h-5 w-full justify-center">
                           {processo.status || 'N/A'}
                         </Badge>
                       </td>
-                      {/* 6. DADOS CONTAINERS / NOTAS */}
-                      <td className="border-r border-primary/10 p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>CONTAINERS</span> <span className="text-destructive font-bold ml-2">{processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>REMESSA</span> <span className="text-destructive font-bold ml-2">{getNFDate('Remessa')}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold ml-2">{getNFDate('Exportação')}</span></div>
+
+                      {/* 12. ARMAZEM / TERMINAIS */}
+                      <td className="p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted uppercase text-[8px]">
+                          <div className="px-2 py-0.5 flex justify-between"><span>ARMAZÉM</span> <span className="truncate max-w-[80px] text-foreground">{processo.viagem || '---'}</span></div>
+                          <div className="px-2 py-0.5 flex justify-between"><span>DESPACHO</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalDespachoNome || '---'}</span></div>
+                          <div className="px-2 py-0.5 flex justify-between"><span>EMBARQUE</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalEmbarqueNome || '---'}</span></div>
                         </div>
                       </td>
-                      {/* 7. LPCO / INSPEÇÃO / TRATAMENTO */}
-                      <td className="border-r border-primary/10 p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>LPCO</span> <span className="text-muted-foreground font-bold ml-2">{processo.lpco_protocolo || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>INSPEÇÃO</span> <span className="text-destructive font-bold ml-2">{processo.mapa_status?.includes('DEFERIDA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>TRATAMENTO</span> <span className="text-destructive font-bold ml-2">{fumigacao.date}</span></div>
+
+                      {/* 13. DADOS / NOTAS FISCAIS */}
+                      <td className="p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
+                          <div className="flex justify-between px-2 py-0.5"><span>CONTAINERS</span> <span className="text-destructive font-bold">{processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{getNFDate('Remessa')}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold">{getNFDate('Exportação')}</span></div>
                         </div>
                       </td>
-                      {/* 8. DUE / DESEMBARAÇO / AVERBAÇÃO */}
-                      <td className="border-r border-primary/10 p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>DUE</span> <span className="text-muted-foreground font-bold ml-2 truncate max-w-[80px]">{processo.due_numero || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold ml-2">{processo.due_status?.includes('DESEMBARAÇADA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-1.5 italic"><span>AVERBADA</span> <span className="text-destructive font-bold ml-2">{processo.due_status === 'AVERBADA' ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+
+                      {/* 14. LPCO / INSPEÇÃO */}
+                      <td className="p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
+                          <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{processo.lpco_protocolo || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{processo.mapa_status?.includes('DEFERIDA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{docs.fumigation.date}</span></div>
                         </div>
                       </td>
-                      {/* 9. BL */}
-                      <td className="border-r border-primary/10 p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{bl.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{bl.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{bl.date}</div>
+
+                      {/* 15. DUE / DESEMBARAÇO */}
+                      <td className="p-0">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
+                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[70px]">{processo.due_numero || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{processo.due_status?.includes('DESEMBARAÇADA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{processo.due_status === 'AVERBADA' ? formatDate(processo.data_nomeacao) : '---'}</span></div>
                         </div>
                       </td>
-                      {/* 10. CERT ORIGEM */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+
+                      {/* 16 - 23 DOCUMENTAÇÃO (COLUNAS INDIVIDUAIS) */}
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{origem.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{origem.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{origem.date}</div>
+                          <div className="py-0.5 text-primary">{docs.bl.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.bl.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.bl.date}</div>
                         </div>
                       </td>
-                      {/* 11. CERT FITO */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{fito.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{fito.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{fito.date}</div>
+                          <div className="py-0.5 text-primary">{docs.origem.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.origem.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.origem.date}</div>
                         </div>
                       </td>
-                      {/* 12. LAUDO PRAGAS */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{pragas.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{pragas.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{pragas.date}</div>
+                          <div className="py-0.5 text-primary">{docs.fito.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.fito.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.fito.date}</div>
                         </div>
                       </td>
-                      {/* 13. CERT FUMIGACAO */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{fumigacao.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{fumigacao.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{fumigacao.date}</div>
+                          <div className="py-0.5 text-primary">{docs.health.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.health.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.health.date}</div>
                         </div>
                       </td>
-                      {/* 14. CERT SUPERVISORA */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{supervisora.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{supervisora.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{supervisora.date}</div>
+                          <div className="py-0.5 text-primary">{docs.fumigation.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.fumigation.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.fumigation.date}</div>
                         </div>
                       </td>
-                      {/* 15. INVOICE */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{invoice.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{invoice.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{invoice.date}</div>
+                          <div className="py-0.5 text-primary">{docs.quality.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.quality.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.quality.date}</div>
                         </div>
                       </td>
-                      {/* 16. PACKING LIST */}
-                      <td className="border-r border-primary/10 p-0 text-center">
+                      <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-1.5 uppercase text-primary font-bold">{packing.status}</div>
-                          <div className="py-1.5 uppercase text-destructive font-bold leading-tight">{packing.action}</div>
-                          <div className="py-1.5 text-destructive font-bold">{packing.date}</div>
+                          <div className="py-0.5 text-primary">{docs.invoice.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.invoice.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.invoice.date}</div>
                         </div>
+                      </td>
+                      <td className="p-0 text-center">
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-0.5 text-primary">{docs.packing.status}</div>
+                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.packing.action}</div>
+                          <div className="py-0.5 text-destructive">{docs.packing.date}</div>
+                        </div>
+                      </td>
+
+                      {/* 24. REFERENCIA SENIOR */}
+                      <td className="px-2 py-1 text-center text-[8px] text-muted-foreground uppercase">
+                        {processo.processo_interno || '---'}
                       </td>
                     </tr>
                   );
                 })}
                 {!isLoading && filteredProcessos.length === 0 && (
                   <tr>
-                    <td colSpan={16} className="px-4 py-8 text-center text-muted-foreground bg-background">Nenhum processo encontrado.</td>
+                    <td colSpan={24} className="px-4 py-12 text-center text-muted-foreground bg-background">Nenhum processo encontrado na base de dados.</td>
                   </tr>
                 )}
               </tbody>
