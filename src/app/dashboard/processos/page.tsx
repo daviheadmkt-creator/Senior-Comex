@@ -127,7 +127,7 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[90px]">ANALISTA</th>
                   <th className="px-2 min-w-[120px]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
-                  <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA</th>
+                  <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
                   <th className="px-2 min-w-[120px]">NAVIO</th>
                   <th className="px-2 min-w-[100px]">ORIGEM</th>
                   <th className="px-2 min-w-[100px]">DESTINO</th>
@@ -244,7 +244,7 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 5. RESERVA / AGÊNCIA */}
+                      {/* 5. RESERVA / AGÊNCIA / ARMADOR */}
                       <td className="px-2 py-1">
                         <div className="flex flex-col">
                           <span className="text-foreground">{processo.booking_number || '---'}</span>

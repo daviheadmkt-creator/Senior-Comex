@@ -1102,6 +1102,9 @@ export default function NovoProcessoPage() {
       const selectedAnalista = exporterContacts.find(c => String(c.id) === String(formData.analistaId));
       const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
       const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
+      const selectedArmador = parceiros?.find(p => String(p.id) === String(formData.armadorId));
+      const selectedTerminalDespacho = parceiros?.find(p => String(p.id) === String(formData.terminalDespachoId));
+      const selectedTerminalEmbarque = parceiros?.find(p => String(p.id) === String(formData.terminalEmbarqueId));
   
       const dataToSave = {
         ...formData,
@@ -1112,6 +1115,9 @@ export default function NovoProcessoPage() {
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
+        armadorNome: selectedArmador?.nome_fantasia || formData.armadorNome || 'N/A',
+        terminalDespachoNome: selectedTerminalDespacho?.nome_fantasia || formData.terminalDespachoNome || 'N/A',
+        terminalEmbarqueNome: selectedTerminalEmbarque?.nome_fantasia || formData.terminalEmbarqueNome || 'N/A',
       };
       
       const processoRef = doc(firestore, 'processos', docId);
