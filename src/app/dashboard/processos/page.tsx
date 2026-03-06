@@ -28,10 +28,16 @@ import { useSearch } from '@/components/search-provider';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
-const formatDate = (dateString: string | null | undefined) => {
+/**
+ * Formata uma string de data ISO para o padrão brasileiro.
+ * @param dateString A string de data ISO.
+ * @param includeTime Se true, inclui o horário (HH:mm).
+ */
+const formatDate = (dateString: string | null | undefined, includeTime: boolean = false) => {
     if (!dateString) return '---';
     try {
-        return format(parseISO(dateString), 'dd/MM/yyyy');
+        const date = parseISO(dateString);
+        return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
     } catch {
         return '---';
     }
@@ -144,7 +150,7 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[100px]">ORIGEM / ETD</th>
                   <th className="px-2 min-w-[100px]">DESTINO / ETA</th>
                   <th className="px-2 min-w-[90px]">CONTAINERS / KGS</th>
-                  <th className="px-2 min-w-[110px]">DEAD LINE / PRAZO</th>
+                  <th className="px-2 min-w-[140px]">DEAD LINE / PRAZO</th>
                   <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
                   <th className="px-2 min-w-[150px]">ARMAZEM / TERMINAIS</th>
                   <th className="px-2 min-w-[150px]">DADOS / NOTAS FISCAIS</th>
@@ -294,9 +300,9 @@ export default function GestaoProcessosPage() {
                       {/* 10. DEAD LINE / PRAZO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-0.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_draft)}</span></div>
-                          <div className="flex justify-between px-2 py-0.5 italic"><span>VGM</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_vgm)}</span></div>
-                          <div className="flex justify-between px-2 py-0.5 italic"><span>CARGA</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_carga)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_draft, true)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5 italic"><span>VGM</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_vgm, true)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5 italic"><span>CARGA</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_carga, true)}</span></div>
                         </div>
                       </td>
 
