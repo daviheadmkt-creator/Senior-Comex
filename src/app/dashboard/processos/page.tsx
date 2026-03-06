@@ -122,7 +122,7 @@ export default function GestaoProcessosPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                  placeholder="Buscar Analista, PO, Produto, Navio..." 
+                  placeholder="Buscar Analista, PO, Produto, Navio, Origem..." 
                   className="pl-8" 
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
@@ -142,8 +142,8 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
                   <th className="px-2 min-w-[120px]">NAVIO</th>
-                  <th className="px-2 min-w-[100px]">ORIGEM</th>
-                  <th className="px-2 min-w-[100px]">DESTINO</th>
+                  <th className="px-2 min-w-[100px]">ORIGEM / ETD</th>
+                  <th className="px-2 min-w-[100px]">DESTINO / ETA</th>
                   <th className="px-2 min-w-[90px]">CONTAINERS / KGS</th>
                   <th className="px-2 min-w-[110px]">DEAD LINE / PRAZO</th>
                   <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
@@ -268,11 +268,21 @@ export default function GestaoProcessosPage() {
                       {/* 6. NAVIO */}
                       <td className="px-2 py-1 truncate max-w-[120px] uppercase text-foreground">{processo.navio || '---'}</td>
 
-                      {/* 7. ORIGEM */}
-                      <td className="px-2 py-1 text-center text-destructive">{processo.portoEmbarqueNome || '---'}</td>
+                      {/* 7. ORIGEM / ETD */}
+                      <td className="px-2 py-1 text-center">
+                        <div className="flex flex-col">
+                          <span className="text-destructive font-bold">{processo.portoEmbarqueNome || '---'}</span>
+                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{formatDate(processo.etd)}</span>
+                        </div>
+                      </td>
 
-                      {/* 8. DESTINO */}
-                      <td className="px-2 py-1 text-center">{processo.portoDescargaNome || '---'}</td>
+                      {/* 8. DESTINO / ETA */}
+                      <td className="px-2 py-1 text-center">
+                        <div className="flex flex-col">
+                          <span className="text-foreground font-bold">{processo.portoDescargaNome || '---'}</span>
+                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{formatDate(processo.eta)}</span>
+                        </div>
+                      </td>
 
                       {/* 9. CONTAINERS / KGS */}
                       <td className="px-2 py-1 text-center">
