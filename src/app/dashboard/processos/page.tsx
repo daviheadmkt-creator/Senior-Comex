@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -312,8 +311,8 @@ export default function GestaoProcessosPage() {
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted uppercase text-[8px]">
                           <div className="px-2 py-0.5 flex justify-between"><span>ARMAZÉM</span> <span className="truncate max-w-[80px] text-foreground">{processo.viagem || '---'}</span></div>
-                          <div className="px-2 py-0.5 flex justify-between"><span>DESPACHO</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalDespachoNome || '---'}</span></div>
-                          <div className="px-2 py-0.5 flex justify-between"><span>EMBARQUE</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalEmbarqueNome || '---'}</span></div>
+                          <div className="px-2 py-0.5 flex justify-between"><span>EMBARQUE</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalDespachoNome || '---'}</span></div>
+                          <div className="px-2 py-0.5 flex justify-between"><span>DESCARGA</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalEmbarqueNome || '---'}</span></div>
                         </div>
                       </td>
 

@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -179,7 +178,7 @@ export default function TerminaisPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Terminais Cadastrados</CardTitle>
-                    <CardDescription>Gerencie os terminais de estufagem e embarque.</CardDescription>
+                    <CardDescription>Gerencie os terminais de embarque e descarga vinculados aos portos.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <Table>

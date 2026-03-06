@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -29,8 +28,8 @@ const partnerTypes = [
     "Despachante Aduaneiro",
     "Agente de Carga",
     "Armador",
-    "Terminal de Estufagem",
     "Terminal de Embarque",
+    "Terminal de Descarga",
     "Empresa de Inspeção",
     "Empresa de Fumigação",
     "Transportadora Terrestre",
@@ -308,5 +307,3 @@ export default function NovoParceiroPage() {
     </div>
   );
 }
-
-    

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -866,7 +865,7 @@ export default function NovoProcessoPage() {
     });
   };
 
-  const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Estufagem' | 'Terminal de Embarque') => {
+  const handleCreateTerminal = (terminalName: string, tipo: 'Terminal de Embarque' | 'Terminal de Descarga') => {
     if (!firestore) return;
 
     const newPartnerId = doc(collection(firestore, 'partners')).id;
@@ -879,8 +878,8 @@ export default function NovoProcessoPage() {
     const partnerRef = doc(firestore, 'partners', newPartnerId);
     setDoc(partnerRef, { ...newPartnerData }, { merge: true });
 
-    const fieldId = tipo === 'Terminal de Estufagem' ? 'terminalDespachoId' : 'terminalEmbarqueId';
-    const fieldName = tipo === 'Terminal de Estufagem' ? 'terminalDespachoNome' : 'terminalEmbarqueNome';
+    const fieldId = tipo === 'Terminal de Embarque' ? 'terminalDespachoId' : 'terminalEmbarqueId';
+    const fieldName = tipo === 'Terminal de Embarque' ? 'terminalDespachoNome' : 'terminalEmbarqueNome';
     setFormData(prev => ({
       ...prev,
       [fieldId]: newPartnerId,
@@ -1433,9 +1432,9 @@ export default function NovoProcessoPage() {
 
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
-                      <Label htmlFor="terminalDespachoId">Terminal de Estufagem</Label>
+                      <Label htmlFor="terminalDespachoId">Terminal de Embarque</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Estufagem').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                         value={formData.terminalDespachoId}
                         onValueChange={(value) => {
                             handleInputChange('terminalDespachoId', value);
@@ -1448,13 +1447,13 @@ export default function NovoProcessoPage() {
                         searchPlaceholder="Buscar ou criar terminal..."
                         noResultsText="Nenhum terminal encontrado."
                         creatable
-                        onCreate={(name) => handleCreateTerminal(name, 'Terminal de Estufagem')}
+                        onCreate={(name) => handleCreateTerminal(name, 'Terminal de Embarque')}
                       />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="terminalEmbarqueId">Terminal de Embarque</Label>
+                      <Label htmlFor="terminalEmbarqueId">Terminal de Descarga</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Descarga').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
                         value={formData.terminalEmbarqueId}
                         onValueChange={(value) => {
                             handleInputChange('terminalEmbarqueId', value);
@@ -1467,7 +1466,7 @@ export default function NovoProcessoPage() {
                         searchPlaceholder="Buscar ou criar terminal..."
                         noResultsText="Nenhum terminal encontrado."
                         creatable
-                        onCreate={(name) => handleCreateTerminal(name, 'Terminal de Embarque')}
+                        onCreate={(name) => handleCreateTerminal(name, 'Terminal de Descarga')}
                       />
                     </div>
                   </div>
