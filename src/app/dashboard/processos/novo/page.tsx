@@ -1107,21 +1107,21 @@ export default function NovoProcessoPage() {
       const selectedPortoEmbarque = portos?.find(p => String(p.id) === String(formData.portoEmbarqueId));
       const selectedPortoDescarga = portos?.find(p => String(p.id) === String(formData.portoDescargaId));
       const selectedArmador = parceiros?.find(p => String(p.id) === String(formData.armadorId));
-      const selectedTerminalDespacho = parceiros?.find(p => String(p.id) === String(formData.terminalDespachoId));
-      const selectedTerminalEmbarque = parceiros?.find(p => String(p.id) === String(formData.terminalEmbarqueId));
+      const selectedTerminalEmbarque = parceiros?.find(p => String(p.id) === String(formData.terminalDespachoId));
+      const selectedTerminalDescarga = parceiros?.find(p => String(p.id) === String(formData.terminalEmbarqueId));
   
       const dataToSave = {
         ...formData,
         id: docId,
         status: formData.status || processoData?.status || 'Iniciado / Aguardando Booking',
-        exportadorNome: selectedExporter?.nome_fantasia || formData.exportadorNome || 'N/A',
+        exportadorNome: selectedExporter?.nome_fantasia || selectedExporter?.razao_social || formData.exportadorNome || 'N/A',
         analistaNome: selectedAnalista?.nome || formData.analistaNome || 'N/A',
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
         portoDescargaNome: selectedPortoDescarga?.name || formData.portoDescargaNome || 'N/A',
         destino: selectedPortoDescarga?.name || formData.destino || 'N/A',
-        armadorNome: selectedArmador?.nome_fantasia || formData.armadorNome || 'N/A',
-        terminalDespachoNome: selectedTerminalDespacho?.nome_fantasia || formData.terminalDespachoNome || 'N/A',
-        terminalEmbarqueNome: selectedTerminalEmbarque?.nome_fantasia || formData.terminalEmbarqueNome || 'N/A',
+        armadorNome: selectedArmador?.nome_fantasia || selectedArmador?.razao_social || formData.armadorNome || 'N/A',
+        terminalDespachoNome: selectedTerminalEmbarque?.nome_fantasia || selectedTerminalEmbarque?.razao_social || formData.terminalDespachoNome || 'N/A',
+        terminalEmbarqueNome: selectedTerminalDescarga?.nome_fantasia || selectedTerminalDescarga?.razao_social || formData.terminalEmbarqueNome || 'N/A',
       };
       
       const processoRef = doc(firestore, 'processos', docId);
@@ -1374,9 +1374,9 @@ export default function NovoProcessoPage() {
                       }} placeholder="Insira o número do booking" />
                     </div>
                     <div className="space-y-2">
-                      <Label htmlFor="armadorId">Armador</Label>
+                      <Label htmlFor="armadorId">Agente / Armador</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Armador' || p.tipo_parceiro === 'Agente de Carga').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
                         value={formData.armadorId}
                         onValueChange={(value) => {
                             handleInputChange('armadorId', value);
@@ -1385,9 +1385,9 @@ export default function NovoProcessoPage() {
                                 handleInputChange('armadorNome', selected.nome_fantasia || selected.razao_social);
                             }
                         }}
-                        placeholder={isLoadingParceiros ? "Carregando..." : "Selecionar os armadores.."}
-                        searchPlaceholder="Buscar ou criar armador..."
-                        noResultsText="Nenhum armador encontrado."
+                        placeholder={isLoadingParceiros ? "Carregando..." : "Selecionar agente/armador.."}
+                        searchPlaceholder="Buscar ou criar parceiro..."
+                        noResultsText="Nenhum parceiro encontrado."
                         creatable
                         onCreate={handleCreatePartner}
                       />
@@ -1434,7 +1434,7 @@ export default function NovoProcessoPage() {
                     <div className="space-y-2">
                       <Label htmlFor="terminalDespachoId">Terminal de Embarque</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
                         value={formData.terminalDespachoId}
                         onValueChange={(value) => {
                             handleInputChange('terminalDespachoId', value);
@@ -1453,7 +1453,7 @@ export default function NovoProcessoPage() {
                     <div className="space-y-2">
                       <Label htmlFor="terminalEmbarqueId">Terminal de Descarga</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Descarga').map(p => ({ value: p.id, label: p.nome_fantasia })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Descarga').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
                         value={formData.terminalEmbarqueId}
                         onValueChange={(value) => {
                             handleInputChange('terminalEmbarqueId', value);
