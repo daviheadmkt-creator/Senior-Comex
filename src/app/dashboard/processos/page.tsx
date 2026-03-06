@@ -81,16 +81,28 @@ export default function GestaoProcessosPage() {
   const filteredProcessos = useMemo(() => {
     if (!processos) return [];
     const term = searchTerm.toLowerCase();
-    return [...processos].sort((a, b) => (b.processo_interno || '').localeCompare(a.processo_interno || '')).filter(processo => 
-      (processo.processo_interno && processo.processo_interno.toLowerCase().includes(term)) ||
-      (processo.exportadorNome && processo.exportadorNome.toLowerCase().includes(term)) ||
-      (processo.analistaNome && processo.analistaNome.toLowerCase().includes(term)) ||
-      (processo.po_number && processo.po_number.toLowerCase().includes(term)) ||
-      (processo.produtoNome && processo.produtoNome.toLowerCase().includes(term)) ||
-      (processo.navio && processo.navio.toLowerCase().includes(term)) ||
-      (processo.destino && processo.destino.toLowerCase().includes(term)) ||
-      (processo.armadorNome && processo.armadorNome.toLowerCase().includes(term))
-    );
+    
+    return [...processos]
+      .sort((a, b) => (b.processo_interno || '').localeCompare(a.processo_interno || ''))
+      .filter(processo => {
+        const searchFields = [
+          processo.processo_interno,
+          processo.exportadorNome,
+          processo.analistaNome,
+          processo.po_number,
+          processo.produtoNome,
+          processo.booking_number,
+          processo.armadorNome,
+          processo.navio,
+          processo.portoEmbarqueNome,
+          processo.portoDescargaNome,
+          processo.destino
+        ];
+
+        return searchFields.some(field => 
+          field && String(field).toLowerCase().includes(term)
+        );
+      });
   }, [processos, searchTerm]);
 
   return (
@@ -110,7 +122,7 @@ export default function GestaoProcessosPage() {
             <div className="relative w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
-                  placeholder="Buscar por Processo, Cliente, Armador..." 
+                  placeholder="Buscar Analista, PO, Produto, Navio..." 
                   className="pl-8" 
                   value={searchTerm}
                   onChange={e => setSearchTerm(e.target.value)}
