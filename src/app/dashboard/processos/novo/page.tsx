@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -46,7 +47,7 @@ const ALLOWED_TYPES = [
   "image/jpg",
   "image/jpeg",
   "image/webp",
-  "application/octet-stream" 
+  "application/octet-stream" // fallback para ficheiros sem mime-type definido pelo browser
 ];
 
 type FileData = {
@@ -424,8 +425,11 @@ export default function NovoProcessoPage() {
   };
 
   const validarArquivo = (file: File) => {
-    if (!ALLOWED_TYPES.includes(file.type)) {
-      throw new Error(`Tipo de ficheiro "${file.type}" não permitido. Use PDF, XML ou Imagens.`);
+    // Se o browser não identificar o tipo (ex: alguns XMLs), aceitamos se a extensão for compatível
+    const isExtensionOk = file.name.endsWith('.pdf') || file.name.endsWith('.xml');
+    
+    if (!ALLOWED_TYPES.includes(file.type) && !isExtensionOk) {
+      throw new Error(`Tipo de ficheiro "${file.type || 'desconhecido'}" não permitido. Use PDF, XML ou Imagens.`);
     }
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) {
       throw new Error(`O ficheiro é demasiado grande. O limite é de ${MAX_FILE_SIZE_MB}MB.`);
@@ -448,7 +452,7 @@ export default function NovoProcessoPage() {
       const targetList = typeof currentUploadTarget === 'object' ? (currentUploadTarget as any).type : null;
       const targetId = typeof currentUploadTarget === 'object' ? (currentUploadTarget as any).id : null;
       
-      const fileNameInStorage = `${file.name}-${Date.now()}`;
+      const fileNameInStorage = `${Date.now()}-${file.name}`;
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
       
@@ -458,7 +462,7 @@ export default function NovoProcessoPage() {
           name: file.name,
           storagePath: filePath,
           downloadURL: '',
-          type: file.type,
+          type: file.type || 'application/octet-stream',
           size: file.size,
           uploadState: 'running',
           uploadProgress: 1,
@@ -488,9 +492,10 @@ export default function NovoProcessoPage() {
               setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
           (error) => {
+              console.error("Upload error:", error);
               toast({ 
                   title: "Erro no Upload", 
-                  description: `Falha ao carregar "${file.name}".`, 
+                  description: `Falha ao carregar "${file.name}". Verifique o CORS ou a ligação.`, 
                   variant: "destructive" 
               });
 
@@ -525,7 +530,7 @@ export default function NovoProcessoPage() {
                       if (targetField) {
                           updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
                       } else if (targetList === 'nota_fiscal') {
-                          toast({ title: "Arquivo Sincronizado", description: "O anexo foi guardado na base de dados.", variant: "default" });
+                          // Notas Fiscais são listas, a sincronização total ocorre no Submit principal para este campo
                       }
                   }
 
@@ -644,7 +649,8 @@ export default function NovoProcessoPage() {
       const newEntries = filesArray.map((file, i) => {
         try {
           validarArquivo(file);
-          const filePath = `processos/${pageProcessId}/${file.name}-${Date.now()}-${i}`;
+          const fileNameInStorage = `${Date.now()}-${i}-${file.name}`;
+          const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
           return {
             id: `${Date.now()}-${i}-${Math.random()}`,
             tipo: 'Remessa',
@@ -655,7 +661,7 @@ export default function NovoProcessoPage() {
               name: file.name,
               storagePath: filePath,
               downloadURL: '',
-              type: file.type,
+              type: file.type || 'application/octet-stream',
               size: file.size,
               uploadState: 'running' as const,
               uploadProgress: 1,
@@ -693,6 +699,7 @@ export default function NovoProcessoPage() {
             setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
           (error) => {
+            console.error("Multiple upload error:", error);
             toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
             setUploadProgresses(prev => {
                 const newState = { ...prev };
@@ -822,10 +829,11 @@ export default function NovoProcessoPage() {
     const newContactsForState = updatedContacts.map((c, i) => ({ ...c, id: String(i) }));
     setExporterContacts(newContactsForState);
 
+    const contact = newContactsForState.find(c => c.id === newContactId);
     setFormData(prev => ({
       ...prev,
       analistaId: newContactId,
-      analistaNome: contactName
+      analistaNome: contact?.nome || contactName
     }));
 
     toast({
@@ -1306,7 +1314,7 @@ export default function NovoProcessoPage() {
                     <div className="space-y-2">
                       <Label htmlFor="exportadorId">Unidade Carregadora (Exportador)</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => a.nome_fantasia.localeCompare(b.nome_fantasia)).map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social} | ${p.cnpj || 'N/A'}` })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').sort((a, b) => (a.nome_fantasia || a.razao_social).localeCompare(b.nome_fantasia || b.razao_social)).map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social} | ${p.cnpj || 'N/A'}` })) || []}
                         value={formData.exportadorId}
                         onValueChange={(value) => {
                           handleInputChange('exportadorId', value);
@@ -1427,7 +1435,7 @@ export default function NovoProcessoPage() {
                     <div className="space-y-2">
                       <Label htmlFor="terminalDespachoId">Terminal de Embarque</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque' || p.tipo_parceiro === 'Terminal de Descarga').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
                         value={formData.terminalDespachoId}
                         onValueChange={(value) => {
                             handleInputChange('terminalDespachoId', value);
@@ -1446,7 +1454,7 @@ export default function NovoProcessoPage() {
                     <div className="space-y-2">
                       <Label htmlFor="terminalEmbarqueId">Terminal de Descarga</Label>
                       <Combobox
-                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Descarga').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
+                        items={parceiros?.filter(p => p.tipo_parceiro === 'Terminal de Embarque' || p.tipo_parceiro === 'Terminal de Descarga').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []}
                         value={formData.terminalEmbarqueId}
                         onValueChange={(value) => {
                             handleInputChange('terminalEmbarqueId', value);
