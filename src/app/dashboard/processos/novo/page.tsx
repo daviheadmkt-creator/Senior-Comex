@@ -99,10 +99,10 @@ const dueStatusOptions = [
   "REGISTRADA",
   "AGUARDANDO ENTREGA DO CARGA/PARAMETRIZAÇÃO",
   "DESEMABRAÇADA",
-  "SELECIONADA/CANAL LARANJA (AGUARDANDO CONFERENCIA DOCUMENTAL)",
-  "SELECIONADA/CANAL VERMELHO (AGUARDANDO CONFERENCIA FISICA)",
+  "SELECIONADA/CANAL LARANJA",
+  "SELECIONADA/CANAL VERMELHO",
   "DESEMBARAÇADA",
-  "RETIFICAÇÃO (PENDENTE DE AUTORIZAÇÃO FISCAL)",
+  "RETIFICAÇÃO",
   "AVERBADA"
 ];
 
@@ -116,6 +116,20 @@ const lpcoStatusOptions = [
   "INDEFERIDA",
   "DEFERIDA",
   "DEFERIDA/CERTIFICADO EMITIDO"
+];
+
+const treatmentStatusOptions = [
+  "SOLICITADO",
+  "AGENDADO",
+  "REALIZADO",
+  "CERTIFICADO EMITIDO",
+  "CANCELADO"
+];
+
+const treatmentTypeOptions = [
+  "BROMETO OFICIAL",
+  "FOSFINA OFICIAL",
+  "FOSFINA NÃO OFICIAL"
 ];
 
 const documentTypes = [
@@ -134,6 +148,12 @@ const documentTypes = [
   "DOC SENT (ALL PDF)"
 ];
 
+const fiscalDocTypes = [
+  "DUE",
+  "LPCO",
+  "TRATAMENTO"
+];
+
 const initialFormData = {
   id: '',
   processo_interno: '',
@@ -149,6 +169,7 @@ const initialFormData = {
   exportadorNome: '',
   portoEmbarqueNome: '',
   portoDescargaNome: '',
+  terminalDescargaNome: '',
   terminalDespachoNome: '',
   terminalEmbarqueNome: '',
   destino: '',
@@ -161,6 +182,7 @@ const initialFormData = {
   containers: [] as any[],
   documentos_pos_embarque: [] as { id: string | number; nome: string; originais: number; copias: number; data_emissao: string | null; data_liberacao: string | null; file: FileData | null }[],
   notas_fiscais: [] as { id: string | number; tipo: string; chave: string; data_pedido: string | null; data_recebida: string | null; file: FileData | null }[],
+  documentos_fiscais: [] as { id: string | number; tipo: string; identificacao: string; status: string; data: string | null; file: FileData | null }[],
   due_numero: '',
   due_status: 'RASCUNHO SALVO',
   due_file: null as FileData | null,
@@ -236,7 +258,7 @@ export default function NovoProcessoPage() {
   const nfFileInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
   
-  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', id: string | number } | { type: 'documento_pos_embarque', id: string | number } | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<string | { type: 'nota_fiscal', id: string | number } | { type: 'documento_pos_embarque', id: string | number } | { type: 'documento_fiscal', id: string | number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
@@ -312,6 +334,7 @@ export default function NovoProcessoPage() {
         containers: processoData.containers || [],
         documentos_pos_embarque: processoData.documentos_pos_embarque || [],
         notas_fiscais: processoData.notas_fiscais || [],
+        documentos_fiscais: processoData.documentos_fiscais || [],
         analistaId: String(processoData.analistaId || ''),
         analistaNome: String(processoData.analistaNome || ''),
         portoEmbarqueId: String(processoData.portoEmbarqueId || ''),
@@ -404,8 +427,14 @@ export default function NovoProcessoPage() {
 
             const updatedNotas = prev.notas_fiscais.map(updateItemFile);
             const updatedDocs = prev.documentos_pos_embarque.map(updateItemFile);
+            const updatedFiscal = prev.documentos_fiscais.map(updateItemFile);
             
-            let updatedState = { ...prev, notas_fiscais: updatedNotas, documentos_pos_embarque: updatedDocs };
+            let updatedState = { 
+              ...prev, 
+              notas_fiscais: updatedNotas, 
+              documentos_pos_embarque: updatedDocs,
+              documentos_fiscais: updatedFiscal
+            };
             
             Object.keys(updatedState).forEach(key => {
                 const potentialFile = updatedState[key];
@@ -455,12 +484,8 @@ export default function NovoProcessoPage() {
       const currentUploadTarget = uploadTarget;
       
       if (!file || !currentUploadTarget || !storage || !pageProcessId) {
-          console.error("Upload aborted: Missing dependencies", { file, target: currentUploadTarget, storage: !!storage, id: pageProcessId });
           return;
       }
-
-      console.log('--- INÍCIO DE UPLOAD (ROBUSTO) ---');
-      console.log('Arquivo:', file.name, 'Tipo original:', file.type, 'Tamanho:', (file.size / 1024 / 1024).toFixed(2), 'MB');
 
       try {
         validarArquivo(file);
@@ -469,7 +494,6 @@ export default function NovoProcessoPage() {
         return;
       }
 
-      // Verifica Autenticação
       if (!currentUser) {
           toast({ title: "Erro de Autenticação", description: "Sessão expirada. Por favor, faça login novamente.", variant: "destructive" });
           return;
@@ -484,7 +508,6 @@ export default function NovoProcessoPage() {
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
       
-      // Força o content type se o navegador falhar em identificar
       let explicitContentType = file.type;
       if (!explicitContentType) {
           if (file.name.toLowerCase().endsWith('.xml')) explicitContentType = 'application/xml';
@@ -511,7 +534,6 @@ export default function NovoProcessoPage() {
           uploadProgress: 1,
       };
 
-      // Define o placeholder no estado
       setFormData((prev: any) => {
           if (targetField) {
               return { ...prev, [targetField]: placeholder };
@@ -521,6 +543,9 @@ export default function NovoProcessoPage() {
           } else if (targetList === 'documento_pos_embarque') {
               const newDocs = prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: placeholder } : doc);
               return { ...prev, documentos_pos_embarque: newDocs };
+          } else if (targetList === 'documento_fiscal') {
+              const newFiscal = prev.documentos_fiscais.map((df: any) => df.id === targetId ? { ...df, file: placeholder } : df);
+              return { ...prev, documentos_fiscais: newFiscal };
           }
           return prev;
       });
@@ -536,22 +561,6 @@ export default function NovoProcessoPage() {
                   setUploadProgresses(prev => ({ ...prev, [filePath]: Math.max(1, progress) }));
               },
               (error: any) => {
-                  console.error("--- ERRO FIREBASE STORAGE ---", error);
-                  
-                  let errorMsg = `Erro: ${error.code}. `;
-                  if (error.code === 'storage/unauthorized') {
-                      errorMsg += "Acesso negado. Verifique se o CORS foi aplicado no bucket.";
-                  } else {
-                      errorMsg += "Falha na ligação com o servidor de ficheiros.";
-                  }
-
-                  toast({ 
-                      title: "Falha no Upload", 
-                      description: errorMsg, 
-                      variant: "destructive" 
-                  });
-                  
-                  // Limpeza em caso de erro
                   setUploadProgresses(prev => {
                       const newState = { ...prev };
                       delete newState[filePath];
@@ -561,14 +570,15 @@ export default function NovoProcessoPage() {
                       if (targetField) return { ...prev, [targetField]: null };
                       if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: null } : nf) };
                       if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: null } : doc) };
+                      if (targetList === 'documento_fiscal') return { ...prev, documentos_fiscais: prev.documentos_fiscais.map((df: any) => df.id === targetId ? { ...df, file: null } : df) };
                       return prev;
                   });
+                  toast({ title: "Falha no Upload", description: error.code, variant: "destructive" });
               },
               async () => {
                   const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                   const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
                   
-                  // Auto-save para campos de raiz
                   if (pageProcessId && firestore && targetField) {
                       const processoRef = doc(firestore, 'processos', pageProcessId);
                       updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
@@ -584,13 +594,12 @@ export default function NovoProcessoPage() {
                       if (targetField) return { ...prev, [targetField]: finalFileData };
                       if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nota: any) => nota.id === targetId ? { ...nota, file: finalFileData } : nota) };
                       if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: finalFileData } : doc) };
+                      if (targetList === 'documento_fiscal') return { ...prev, documentos_fiscais: prev.documentos_fiscais.map((df: any) => df.id === targetId ? { ...df, file: finalFileData } : df) };
                       return prev;
                   });
-                  console.log('--- UPLOAD CONCLUÍDO COM SUCESSO ---');
               }
           );
       } catch (err: any) {
-          console.error("--- ERRO AO INICIAR UPLOAD ---", err);
           toast({ title: "Erro de Sistema", description: "Não foi possível iniciar o envio do ficheiro.", variant: "destructive" });
       }
 
@@ -621,13 +630,16 @@ export default function NovoProcessoPage() {
         fileToRemove = docItem?.file;
         const newDocs = formData.documentos_pos_embarque.map((d: any) => d.id === target.id ? { ...d, file: null } : d);
         setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: newDocs }));
+    } else if (typeof target === 'object' && target.type === 'documento_fiscal') {
+        const dfItem = formData.documentos_fiscais.find((df: any) => df.id === target.id);
+        fileToRemove = dfItem?.file;
+        const newFiscal = formData.documentos_fiscais.map((df: any) => df.id === target.id ? { ...df, file: null } : df);
+        setFormData((prev: any) => ({ ...prev, documentos_fiscais: newFiscal }));
     }
     
     if (fileToRemove && fileToRemove.storagePath) {
         const fileRef = ref(storage, fileToRemove.storagePath);
-        deleteObject(fileRef).catch(() => {
-            // Ignora se o arquivo já não existir no storage
-        });
+        deleteObject(fileRef).catch(() => {});
     }
   };
 
@@ -665,6 +677,43 @@ export default function NovoProcessoPage() {
       removeFile({ type: 'documento_pos_embarque', id });
     }
     setFormData(prev => ({ ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.filter((d: any) => d.id !== id) }));
+  };
+
+  const handleFiscalDocChange = (id: string | number, field: string, value: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      documentos_fiscais: prev.documentos_fiscais.map((df: any) => {
+        if (df.id === id) {
+          const updated = { ...df, [field]: value };
+          // Reset status if type changes
+          if (field === 'tipo') {
+            if (value === 'DUE') updated.status = 'RASCUNHO SALVO';
+            else if (value === 'LPCO') updated.status = 'RASCUNHO SALVO';
+            else if (value === 'TRATAMENTO') {
+              updated.status = 'SOLICITADO';
+              updated.identificacao = 'BROMETO OFICIAL';
+            }
+          }
+          return updated;
+        }
+        return df;
+      })
+    }));
+  };
+
+  const addFiscalDoc = () => {
+    setFormData(prev => ({
+      ...prev,
+      documentos_fiscais: [...prev.documentos_fiscais, { id: Date.now(), tipo: 'DUE', identificacao: '', status: 'RASCUNHO SALVO', data: null, file: null }]
+    }));
+  };
+
+  const removeFiscalDoc = (id: string | number) => {
+    const docToRemove = formData.documentos_fiscais.find((df: any) => df.id === id);
+    if (docToRemove && docToRemove.file) {
+      removeFile({ type: 'documento_fiscal', id });
+    }
+    setFormData(prev => ({ ...prev, documentos_fiscais: prev.documentos_fiscais.filter((df: any) => df.id !== id) }));
   };
 
   const handleNotaFiscalChange = (id: string | number, field: string, value: any) => {
@@ -735,16 +784,12 @@ export default function NovoProcessoPage() {
 
         setUploadProgresses(prev => ({ ...prev, [filePath]: 1 }));
 
-        let lastProg = 0;
         uploadTask.on('state_changed',
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            if (Math.abs(progress - lastProg) < 5 && progress < 100) return;
-            lastProg = progress;
             setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
           (error: any) => {
-            console.error("Multiple upload error:", error);
             setUploadProgresses(prev => {
                 const newState = { ...prev };
                 delete newState[filePath];
@@ -808,7 +853,7 @@ export default function NovoProcessoPage() {
   };
 
   const getStepStatusIcon = (step: number) => {
-    const { status, due_status, mapa_status } = formData;
+    const { status, documentos_fiscais } = formData;
 
     if (!status) return <XCircle className="h-5 w-5 text-gray-400" />;
 
@@ -828,8 +873,8 @@ export default function NovoProcessoPage() {
         }
       case 3:
         {
-          const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'AVERBADA';
-          if (isDueOk && statusNumber >= processStatusOptions.indexOf("DUE AVERBADA")) return <CheckCircle className="h-5 w-5 text-green-500" />;
+          const hasAverbada = documentos_fiscais?.some((df: any) => df.tipo === 'DUE' && df.status === 'AVERBADA');
+          if (hasAverbada || statusNumber >= processStatusOptions.indexOf("DUE AVERBADA")) return <CheckCircle className="h-5 w-5 text-green-500" />;
           if (statusNumber >= processStatusOptions.indexOf("DUE REGISTRADA")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
@@ -1703,7 +1748,8 @@ export default function NovoProcessoPage() {
             </AccordionTrigger>
             <AccordionContent>
               <Card>
-                <CardContent className="space-y-6 pt-6">
+                <CardContent className="space-y-8 pt-6">
+                  {/* NOTAS FISCAIS */}
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-md font-medium">Notas Fiscais</h3>
@@ -1772,6 +1818,116 @@ export default function NovoProcessoPage() {
                     </div>
                   </div>
 
+                  {/* DOCUMENTOS FISCAIS (DUE, LPCO, TRATAMENTO) */}
+                  <div>
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-md font-medium">Inspeção e Fiscalização (DUE, LPCO, Tratamento)</h3>
+                      <Button type="button" variant="outline" size="sm" onClick={addFiscalDoc}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Adicionar Documento / Tratamento
+                      </Button>
+                    </div>
+                    <div className="overflow-x-auto">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead className="w-[150px]">Tipo</TableHead>
+                            <TableHead className="min-w-[200px]">Nº / Tipo Tratamento</TableHead>
+                            <TableHead className="w-[250px]">Status</TableHead>
+                            <TableHead className="w-[180px]">Data</TableHead>
+                            <TableHead>Anexo</TableHead>
+                            <TableHead className="w-[50px]"></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formData.documentos_fiscais?.map((df: any) => (
+                            <TableRow key={df.id}>
+                              <TableCell>
+                                <Select value={df.tipo} onValueChange={(val) => handleFiscalDocChange(df.id, 'tipo', val)}>
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {fiscalDocTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                {df.tipo === 'TRATAMENTO' ? (
+                                  <Select value={df.identificacao} onValueChange={(val) => handleFiscalDocChange(df.id, 'identificacao', val)}>
+                                    <SelectTrigger className="h-9">
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {treatmentTypeOptions.map(tt => <SelectItem key={t} value={tt}>{tt}</SelectItem>)}
+                                    </SelectContent>
+                                  </Select>
+                                ) : (
+                                  <Input 
+                                    className="h-9" 
+                                    value={df.identificacao || ''} 
+                                    placeholder={df.tipo === 'DUE' ? "Ex: 24BR00..." : "Ex: Protocolo LPCO"}
+                                    onChange={(e) => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} 
+                                  />
+                                )}
+                              </TableCell>
+                              <TableCell>
+                                <Select value={df.status} onValueChange={(val) => handleFiscalDocChange(df.id, 'status', val)}>
+                                  <SelectTrigger className="h-9">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    {df.tipo === 'DUE' && dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {df.tipo === 'LPCO' && lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                    {df.tipo === 'TRATAMENTO' && treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}
+                                  </SelectContent>
+                                </Select>
+                              </TableCell>
+                              <TableCell>
+                                <DatePicker 
+                                  date={df.data} 
+                                  onDateChange={(val) => handleFiscalDocChange(df.id, 'data', val)} 
+                                />
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <div className="flex-1 p-2 min-h-9 border rounded-md text-[10px] bg-muted flex items-center overflow-hidden min-w-[100px]">
+                                    {renderFileState(df.file)}
+                                  </div>
+                                  {df.file ? (
+                                    <div className="flex items-center gap-1 shrink-0">
+                                      <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleDownload(df.file)} disabled={uploadProgresses[df.file.storagePath] > 0}>
+                                        <Download className="h-3 w-3 text-green-600" />
+                                      </Button>
+                                      <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFiscalDoc(df.id)} disabled={uploadProgresses[df.file.storagePath] > 0}>
+                                        <XCircle className="h-3 w-3 text-destructive" />
+                                      </Button>
+                                    </div>
+                                  ) : (
+                                    <Button variant="outline" size="icon" type="button" className="h-8 w-8 shrink-0" onClick={() => triggerFileUpload({ type: 'documento_fiscal', id: df.id })}>
+                                      <Upload className="h-3 w-3" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removeFiscalDoc(df.id)} disabled={uploadProgresses[df.file?.storagePath] > 0}>
+                                  <Trash2 className="h-3 w-3 text-destructive" />
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!formData.documentos_fiscais || formData.documentos_fiscais.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={6} className="text-center text-muted-foreground py-4">Nenhum documento fiscal ou tratamento adicionado.</TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </div>
+
+                  {/* DADOS DOS CONTAINERS */}
                   <div>
                     <div className="flex justify-between items-center mb-4">
                       <h3 className="text-md font-medium">Dados dos Contêineres</h3>
@@ -1828,84 +1984,7 @@ export default function NovoProcessoPage() {
                     </div>
                   </div>
 
-                  <div className='grid md:grid-cols-2 gap-4 items-end'>
-                    <div className="space-y-2">
-                      <Label htmlFor="due_numero">Nº da DUE</Label>
-                      <Input id="due_numero" value={formData.due_numero || ''} onChange={e => handleInputChange('due_numero', e.target.value)} placeholder="Ex: 24BR0001234567" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="due_status">Status da DUE</Label>
-                      <div className='flex items-center gap-2'>
-                        <Select value={formData.due_status || ''} onValueChange={value => handleInputChange('due_status', value)}>
-                          <SelectTrigger id="due_status" className="flex-1">
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {dueStatusOptions.map(status => (
-                              <SelectItem key={status} value={status}>{status}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
-                          {renderFileState(formData.due_file)}
-                        </div>
-                        {formData.due_file ? (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.due_file)} title={`Descarregar ${formData.due_file.name}`} disabled={uploadProgresses[formData.due_file.storagePath] > 0}>
-                              <Download className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('due_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={uploadProgresses[formData.due_file.storagePath] > 0}>
-                                <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar DUE" onClick={() => triggerFileUpload('due_file')} className="shrink-0">
-                            <Upload className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="grid md:grid-cols-2 gap-4 items-end">
-                    <div className="space-y-2">
-                      <Label htmlFor="lpco_protocolo">Protocolo LPCO</Label>
-                      <Input id="lpco_protocolo" value={formData.lpco_protocolo || ''} onChange={e => handleInputChange('lpco_protocolo', e.target.value)} placeholder="Ex: E2500273876" />
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="mapa_status">Status da Inspeção MAPA (LPCO)</Label>
-                      <div className="flex items-center gap-2">
-                        <Select value={formData.mapa_status || ''} onValueChange={value => handleInputChange('mapa_status', value)}>
-                          <SelectTrigger id="mapa_status" className="flex-1">
-                            <SelectValue placeholder="Selecione o status" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {lpcoStatusOptions.map(status => (
-                              <SelectItem key={status} value={status}>{status}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden">
-                          {renderFileState(formData.lpco_file)}
-                        </div>
-                        {formData.lpco_file ? (
-                          <div className="flex items-center gap-1 shrink-0">
-                            <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(formData.lpco_file)} title={`Descarregar ${formData.lpco_file.name}`} disabled={uploadProgresses[formData.lpco_file.storagePath] > 0}>
-                              <Download className="h-4 w-4 text-green-600" />
-                            </Button>
-                            <Button type="button" variant="ghost" size="icon" onClick={() => removeFile('lpco_file')} className="text-destructive hover:text-destructive" title="Remover anexo" disabled={uploadProgresses[formData.lpco_file.storagePath] > 0}>
-                                <XCircle className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button variant="outline" size="icon" type="button" title="Anexar LPCO" onClick={() => triggerFileUpload('lpco_file')} className="shrink-0">
-                             <Upload className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
+                  {/* CONTAINERS PARA INSPEÇÃO */}
                   <div>
                     <h3 className="text-md font-medium mb-2">Contêineres para Inspeção</h3>
                     <div className="space-y-2 rounded-md border p-4">
@@ -2014,7 +2093,7 @@ export default function NovoProcessoPage() {
                           <TableRow key={docItem.id}>
                             <TableCell>
                               <Select value={docItem.nome || ''} onValueChange={value => handlePostShipmentDocChange(docItem.id, 'nome', value)}>
-                                <SelectTrigger className="min-w-[180px]"><SelectValue placeholder="Selecione" /></SelectTrigger>
+                                <SelectTrigger className="min-w-[180px] h-9"><SelectValue placeholder="Selecione" /></SelectTrigger>
                                 <SelectContent>
                                   {documentTypes.map(type => (
                                     <SelectItem key={type} value={type}>{type}</SelectItem>
@@ -2023,10 +2102,10 @@ export default function NovoProcessoPage() {
                               </Select>
                             </TableCell>
                             <TableCell>
-                              <Input className="w-24" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'originais', e.target.value)} />
+                              <Input className="w-24 h-9" type="number" min="0" value={docItem.originais || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'originais', e.target.value)} />
                             </TableCell>
                             <TableCell>
-                              <Input className="w-24" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'copias', e.target.value)} />
+                              <Input className="w-24 h-9" type="number" min="0" value={docItem.copias || '0'} onChange={e => handlePostShipmentDocChange(docItem.id, 'copias', e.target.value)} />
                             </TableCell>
                             <TableCell>
                               <DatePicker
@@ -2042,28 +2121,28 @@ export default function NovoProcessoPage() {
                             </TableCell>
                             <TableCell>
                               <div className="flex items-center gap-2">
-                                <div className="flex-1 p-2 min-h-10 border rounded-md text-sm bg-muted flex items-center overflow-hidden min-w-[120px]">
+                                <div className="flex-1 p-2 min-h-9 border rounded-md text-[10px] bg-muted flex items-center overflow-hidden min-w-[120px]">
                                   {renderFileState(docItem.file)}
                                 </div>
                                 {docItem.file ? (
                                   <div className="flex items-center gap-1 shrink-0">
-                                    <Button type="button" variant="outline" size="icon" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
-                                      <Download className="h-4 w-4 text-green-600" />
+                                    <Button type="button" variant="outline" size="icon" className="h-8 w-8" onClick={() => handleDownload(docItem.file)} title={`Descarregar ${docItem.file.name}`} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
+                                      <Download className="h-3 w-3 text-green-600" />
                                     </Button>
-                                    <Button type="button" variant="ghost" size="icon" title="Remover Anexo" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
-                                      <XCircle className="h-4 w-4 text-destructive" />
+                                    <Button type="button" variant="ghost" size="icon" className="h-8 w-8" title="Remover Anexo" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file.storagePath] > 0}>
+                                      <XCircle className="h-3 w-3 text-destructive" />
                                     </Button>
                                   </div>
                                 ) : (
-                                  <Button variant="outline" size="icon" type="button" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })} className="shrink-0">
-                                    <Upload className="h-4 w-4" />
+                                  <Button variant="outline" size="icon" type="button" className="h-8 w-8 shrink-0" title="Anexar" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: docItem.id })}>
+                                    <Upload className="h-3 w-3" />
                                   </Button>
                                 )}
                               </div>
                             </TableCell>
                             <TableCell>
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file?.storagePath] > 0}>
-                                <Trash2 className="h-4 w-4 text-destructive" />
+                              <Button type="button" variant="ghost" size="icon" className="h-8 w-8" onClick={() => removePostShipmentDoc(docItem.id)} disabled={uploadProgresses[docItem.file?.storagePath] > 0}>
+                                <Trash2 className="h-3 w-3 text-destructive" />
                               </Button>
                             </TableCell>
                           </TableRow>
