@@ -29,6 +29,15 @@ import { doc } from 'firebase/firestore';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Image from 'next/image';
 import { SearchProvider } from '@/components/search-provider';
+import Link from 'next/link';
+import {
+  Menubar,
+  MenubarContent,
+  MenubarItem,
+  MenubarMenu,
+  MenubarSeparator,
+  MenubarTrigger,
+} from "@/components/ui/menubar";
 
 export default function DashboardLayout({
   children,
@@ -94,7 +103,7 @@ export default function DashboardLayout({
           <SidebarContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                  <SidebarMenuButton href="/dashboard" isActive>
+                  <SidebarMenuButton href="/dashboard">
                       <LayoutDashboard />
                       <span>Visão Geral</span>
                   </SidebarMenuButton>
@@ -173,6 +182,52 @@ export default function DashboardLayout({
           <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-6">
              <SidebarTrigger />
             
+            {/* Menu Horizontal Superior para Desktop */}
+            <div className="hidden lg:flex flex-1 items-center px-4">
+                <Menubar className="border-none bg-transparent shadow-none">
+                    <MenubarMenu>
+                        <Link href="/dashboard" passHref legacyBehavior>
+                            <MenubarTrigger className="cursor-pointer font-semibold hover:bg-accent/50">Dashboard</MenubarTrigger>
+                        </Link>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <Link href="/dashboard/processos" passHref legacyBehavior>
+                            <MenubarTrigger className="cursor-pointer font-semibold hover:bg-accent/50">Processos</MenubarTrigger>
+                        </Link>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger className="font-semibold hover:bg-accent/50 cursor-pointer">Cadastros</MenubarTrigger>
+                        <MenubarContent>
+                            <Link href="/dashboard/cadastros/parceiros" passHref legacyBehavior>
+                                <MenubarItem className="cursor-pointer">Parceiros</MenubarItem>
+                            </Link>
+                            {isUserAdmin && (
+                                <>
+                                    <MenubarSeparator />
+                                    <Link href="/dashboard/cadastros/usuarios" passHref legacyBehavior>
+                                        <MenubarItem className="cursor-pointer">Usuários</MenubarItem>
+                                    </Link>
+                                </>
+                            )}
+                        </MenubarContent>
+                    </MenubarMenu>
+                    <MenubarMenu>
+                        <MenubarTrigger className="font-semibold hover:bg-accent/50 cursor-pointer">Referência</MenubarTrigger>
+                        <MenubarContent>
+                            <Link href="/dashboard/dados-referencia/produtos" passHref legacyBehavior>
+                                <MenubarItem className="cursor-pointer">Produtos</MenubarItem>
+                            </Link>
+                            <Link href="/dashboard/dados-referencia/portos" passHref legacyBehavior>
+                                <MenubarItem className="cursor-pointer">Portos</MenubarItem>
+                            </Link>
+                            <Link href="/dashboard/dados-referencia/terminais" passHref legacyBehavior>
+                                <MenubarItem className="cursor-pointer">Terminais</MenubarItem>
+                            </Link>
+                        </MenubarContent>
+                    </MenubarMenu>
+                </Menubar>
+            </div>
+
             <div className="flex-1 flex justify-end items-center gap-4">
               <UserNav />
             </div>
