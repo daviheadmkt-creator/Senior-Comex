@@ -555,9 +555,13 @@ export default function NovoProcessoPage() {
       try {
           const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
+          let lastProgress = 0;
           uploadTask.on('state_changed',
               (snapshot) => {
                   const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                  // Throttle progress updates to avoid lag
+                  if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
+                  lastProgress = progress;
                   setUploadProgresses(prev => ({ ...prev, [filePath]: Math.max(1, progress) }));
               },
               (error: any) => {
@@ -579,11 +583,6 @@ export default function NovoProcessoPage() {
                   const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
                   const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
                   
-                  if (pageProcessId && firestore && targetField) {
-                      const processoRef = doc(firestore, 'processos', pageProcessId);
-                      updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
-                  }
-
                   setUploadProgresses(prev => {
                       const newState = { ...prev };
                       delete newState[filePath];
@@ -591,11 +590,37 @@ export default function NovoProcessoPage() {
                   });
 
                   setFormData((prev: any) => {
-                      if (targetField) return { ...prev, [targetField]: finalFileData };
-                      if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nota: any) => nota.id === targetId ? { ...nota, file: finalFileData } : nota) };
-                      if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: finalFileData } : doc) };
-                      if (targetList === 'documento_fiscal') return { ...prev, documentos_fiscais: prev.documentos_fiscais.map((df: any) => df.id === targetId ? { ...df, file: finalFileData } : df) };
-                      return prev;
+                      let newState = { ...prev };
+                      if (targetField) {
+                          newState = { ...prev, [targetField]: finalFileData };
+                      } else if (targetList === 'nota_fiscal') {
+                          newState = { ...prev, notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: finalFileData } : nf) };
+                      } else if (targetList === 'documento_pos_embarque') {
+                          newState = { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: finalFileData } : doc) };
+                      } else if (targetList === 'documento_fiscal') {
+                          newState = { ...prev, documentos_fiscais: prev.documentos_fiscais.map((df: any) => df.id === targetId ? { ...df, file: finalFileData } : df) };
+                      }
+
+                      // Sincronização automática com Firestore
+                      if (pageProcessId && firestore) {
+                          const processoRef = doc(firestore, 'processos', pageProcessId);
+                          const dataToSync: any = {};
+                          if (targetField) {
+                              dataToSync[targetField] = finalFileData;
+                          } else if (targetList === 'nota_fiscal') {
+                              dataToSync.notas_fiscais = newState.notas_fiscais;
+                          } else if (targetList === 'documento_pos_embarque') {
+                              dataToSync.documentos_pos_embarque = newState.documentos_pos_embarque;
+                          } else if (targetList === 'documento_fiscal') {
+                              dataToSync.documentos_fiscais = newState.documentos_fiscais;
+                          }
+                          
+                          if (Object.keys(dataToSync).length > 0) {
+                              updateDocumentNonBlocking(processoRef, dataToSync);
+                          }
+                      }
+
+                      return newState;
                   });
               }
           );
@@ -613,30 +638,47 @@ export default function NovoProcessoPage() {
   };
 
   const removeFile = (target: string | { type: string, id: string | number }) => {
-    if (!storage) return;
+    if (!storage || !firestore || !pageProcessId) return;
 
     let fileToRemove: FileData | null = null;
+    let fieldToUpdate: string | null = null;
+    let listToUpdate: any[] | null = null;
     
     if (typeof target === 'string') {
         fileToRemove = formData[target];
+        fieldToUpdate = target;
         handleInputChange(target, null);
     } else if (typeof target === 'object' && target.type === 'nota_fiscal') {
         const nf = formData.notas_fiscais.find((n: any) => n.id === target.id);
         fileToRemove = nf?.file;
         const newNotas = formData.notas_fiscais.map((n: any) => n.id === target.id ? { ...n, file: null } : n);
+        listToUpdate = newNotas;
         setFormData((prev: any) => ({ ...prev, notas_fiscais: newNotas }));
     } else if (typeof target === 'object' && target.type === 'documento_pos_embarque') {
         const docItem = formData.documentos_pos_embarque.find((d: any) => d.id === target.id);
         fileToRemove = docItem?.file;
         const newDocs = formData.documentos_pos_embarque.map((d: any) => d.id === target.id ? { ...d, file: null } : d);
+        listToUpdate = newDocs;
         setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: newDocs }));
     } else if (typeof target === 'object' && target.type === 'documento_fiscal') {
         const dfItem = formData.documentos_fiscais.find((df: any) => df.id === target.id);
         fileToRemove = dfItem?.file;
         const newFiscal = formData.documentos_fiscais.map((df: any) => df.id === target.id ? { ...df, file: null } : df);
+        listToUpdate = newFiscal;
         setFormData((prev: any) => ({ ...prev, documentos_fiscais: newFiscal }));
     }
     
+    // Sincronização automática pós-remoção
+    const processoRef = doc(firestore, 'processos', pageProcessId);
+    if (fieldToUpdate) {
+        updateDocumentNonBlocking(processoRef, { [fieldToUpdate]: null });
+    } else if (listToUpdate) {
+        const fieldName = (target as any).type === 'nota_fiscal' ? 'notas_fiscais' : 
+                          (target as any).type === 'documento_pos_embarque' ? 'documentos_pos_embarque' : 
+                          'documentos_fiscais';
+        updateDocumentNonBlocking(processoRef, { [fieldName]: listToUpdate });
+    }
+
     if (fileToRemove && fileToRemove.storagePath) {
         const fileRef = ref(storage, fileToRemove.storagePath);
         deleteObject(fileRef).catch(() => {});
@@ -784,9 +826,12 @@ export default function NovoProcessoPage() {
 
         setUploadProgresses(prev => ({ ...prev, [filePath]: 1 }));
 
+        let lastProg = 0;
         uploadTask.on('state_changed',
           (snapshot) => {
             const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (Math.abs(progress - lastProg) < 5 && progress < 100) return;
+            lastProg = progress;
             setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
           (error: any) => {
@@ -807,12 +852,19 @@ export default function NovoProcessoPage() {
                 delete newState[filePath];
                 return newState;
             });
-            setFormData((prev: any) => ({
-              ...prev,
-              notas_fiscais: prev.notas_fiscais.map((nf: any) => 
-                nf.id === entry.id ? { ...nf, file: { ...nf.file, downloadURL, uploadState: 'success', uploadProgress: 100 } } : nf
-              )
-            }));
+            setFormData((prev: any) => {
+                const updatedList = prev.notas_fiscais.map((nf: any) => 
+                    nf.id === entry.id ? { ...nf, file: { ...nf.file, downloadURL, uploadState: 'success', uploadProgress: 100 } } : nf
+                );
+                
+                // Auto-sync NF list
+                if (pageProcessId && firestore) {
+                    const processoRef = doc(firestore, 'processos', pageProcessId);
+                    updateDocumentNonBlocking(processoRef, { notas_fiscais: updatedList });
+                }
+
+                return { ...prev, notas_fiscais: updatedList };
+            });
           }
         );
       });
@@ -1859,7 +1911,7 @@ export default function NovoProcessoPage() {
                                       <SelectValue />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {treatmentTypeOptions.map(tt => <SelectItem key={t} value={tt}>{tt}</SelectItem>)}
+                                      {treatmentTypeOptions.map(tt => <SelectItem key={tt} value={tt}>{tt}</SelectItem>)}
                                     </SelectContent>
                                   </Select>
                                 ) : (
