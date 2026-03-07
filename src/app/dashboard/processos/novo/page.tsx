@@ -60,20 +60,35 @@ type FileData = {
 };
 
 const processStatusOptions = [
-  "Iniciado / Aguardando Booking",
-  "Booking Confirmado / Aguardando Draft",
-  "DRAFTS_EM_APROVAÇÃO",
-  "DRAFTS_APROVADOS",
-  "CORRECAO_DE_DRAFT_SOLICITADA",
-  "CARGA_EM_TRANSITO_PARA_ESTUFAGEM",
-  "AGUARDANDO_EMISSAO_NF_EXPORTACAO",
-  "DUE_DESEMBARACADA",
-  "DOSSIÊ_SUBMETIDO / AGUARDANDO_ANÁLISE_FISCAL",
-  "INSPECAO_MAPA_AGENDADA",
-  "INSPECAO_MAPA_REALIZADA / AGUARDANDO_RELACRE",
-  "PRONTO_PARA_EMBARQUE",
-  "Em trânsito",
-  "DOCUMENTOS_ORIGINAIS_COLETADOS / AGUARDANDO_ENVIO",
+  "NOMEAÇÃO RECEBIDA",
+  "AGUARDANDO INSTRUÇÃO DOCUMENTARIA",
+  "AGUARDANDO APROVAÇÃO DO DRAFT",
+  "DRAFT APROVADOS",
+  "DRAFT ENVIADOS AO AGENTE/ARMADOR",
+  "AGUARDANDO DADOS DOS CONTAINERS",
+  "AGUARDANDO NF REMESSAS",
+  "AGUARDANDO NF EXPORTAÇÃO",
+  "AGUARDANDO ENTREDA DOS CONTAINERS",
+  "DUE REGISTRADA",
+  "AGUARDANDO DESEMBARAÇO",
+  "DUE DESEMABARAÇADA",
+  "DUE AVERBADA",
+  "LPCO REGISTRADO",
+  "LPCO EM ANALISE",
+  "LPCO EM EXIGENCIA / NFA",
+  "AGUARDANDO INSPEÇÃO DO MAPA",
+  "LIBERADO PARA EMBARQUE",
+  "PROCESSO EMBARCADO",
+  "PROCESSO EMBARCADO (QUEBRA DE LOTE)",
+  "AGUARDANDO LIBERAÇÃO DO BL",
+  "AGUARDANDO LIBERAÇÃO/CERTIFICADO ORIGEM",
+  "AGUARDANDO LIBERAÇÃO/CERTIFICADO FITO",
+  "AGUARDANDO LIBERAÇÃO/CERTIFICADO FUMIGAÇÃO",
+  "AGUARDANDO LIBERAÇÃO/CERTIFICADO SUPERVISORA",
+  "AGUARDANDO LIBERAÇÃO/CERTIFICADO NON-GMO(MAPA)",
+  "AGUARDANDO ENDEREÇO PARA ENVIO DOS DOCTOS",
+  "SET DOC ENVIADOS (DHL)",
+  "SET DOC ENVIADOS (PIERDOC)",
   "Concluído",
   "Cancelado",
 ];
@@ -136,7 +151,7 @@ const initialFormData = {
   terminalDespachoNome: '',
   terminalEmbarqueNome: '',
   destino: '',
-  status: 'Iniciado / Aguardando Booking',
+  status: 'NOMEAÇÃO RECEBIDA',
   booking_number: '',
   armadorId: '',
   armadorNome: '',
@@ -172,25 +187,25 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
   if (!status) return 'outline';
   const lowerStatus = status.toLowerCase();
   if (
-    lowerStatus.includes('trânsito') ||
-    lowerStatus.includes('confirmado') ||
+    lowerStatus.includes('embarcado') ||
     lowerStatus.includes('aprovados') ||
     lowerStatus.includes('desembaraçada') ||
-    lowerStatus.includes('deferido') ||
-    lowerStatus.includes('realizada') ||
-    lowerStatus.includes('concluído')
+    lowerStatus.includes('deferida') ||
+    lowerStatus.includes('liberado') ||
+    lowerStatus.includes('averbada') ||
+    lowerStatus.includes('concluído') ||
+    lowerStatus.includes('set doc enviado')
   ) return 'default';
-  if (lowerStatus.includes('pronto')) return 'outline';
+  if (lowerStatus.includes('recebida') || lowerStatus.includes('registrada')) return 'outline';
   if (
     lowerStatus.includes('aguardando') ||
-    lowerStatus.includes('iniciado') ||
-    lowerStatus.includes('em aprovação') ||
-    lowerStatus.includes('submetido')
+    lowerStatus.includes('em analise') ||
+    lowerStatus.includes('em aprovação')
   ) return 'secondary';
   if (
-    lowerStatus.includes('atrasado') ||
+    lowerStatus.includes('exigencia') ||
     lowerStatus.includes('cancelado') ||
-    lowerStatus.includes('correcao') ||
+    lowerStatus.includes('indeferida') ||
     lowerStatus.includes('rejeitado')
   ) return 'destructive';
   return 'outline';
@@ -213,7 +228,6 @@ export default function NovoProcessoPage() {
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   
-  // ESTADO ISOLADO PARA PROGRESSO DE UPLOAD (Evita re-renders pesados do formulário inteiro)
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
 
   const isEditing = searchParams.has('edit');
@@ -276,7 +290,7 @@ export default function NovoProcessoPage() {
       setFormData({
         ...initialFormData,
         ...processoData,
-        status: processoData.status || 'Iniciado / Aguardando Booking',
+        status: processoData.status || 'NOMEAÇÃO RECEBIDA',
         data_nomeacao: processoData.data_nomeacao || null,
         deadline_draft: processoData.deadline_draft,
         deadline_vgm: processoData.deadline_vgm,
@@ -440,7 +454,6 @@ export default function NovoProcessoPage() {
       
       const uploadTask = uploadBytesResumable(storageRef, file);
 
-      // 1. Inicializa o estado visual IMEDIATAMENTE (sem esperar progresso)
       const placeholder: FileData = {
           name: file.name,
           storagePath: filePath,
@@ -470,11 +483,8 @@ export default function NovoProcessoPage() {
       uploadTask.on('state_changed',
           (snapshot) => {
               const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              // THROTTLING: Só atualiza o estado se mudar mais de 5% (melhora MUITO a performance)
               if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
               lastProgress = progress;
-
-              // ATUALIZA ESTADO ISOLADO (LEVE)
               setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
           (error) => {
@@ -504,13 +514,11 @@ export default function NovoProcessoPage() {
               });
           },
           () => {
-              // ESTADO DE FINALIZAÇÃO (Geração de URL)
               setUploadProgresses(prev => ({ ...prev, [filePath]: 100 }));
               
               getDownloadURL(uploadTask.snapshot.ref).then((downloadURL) => {
                   const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
                   
-                  // AUTO-SAVE: Persiste o metadado diretamente no Firestore para maior performance e segurança
                   if (pageProcessId && firestore) {
                       const processoRef = doc(firestore, 'processos', pageProcessId);
                       
@@ -521,7 +529,6 @@ export default function NovoProcessoPage() {
                       }
                   }
 
-                  // Usa requestAnimationFrame para garantir que a interface respire antes da grande re-renderização
                   requestAnimationFrame(() => {
                       setUploadProgresses(prev => {
                           const newState = { ...prev };
@@ -753,7 +760,7 @@ export default function NovoProcessoPage() {
   };
 
   const getStepStatusIcon = (step: number) => {
-    const { status, due_status, mapa_status, documentos_pos_embarque, awb_courier, navio_final } = formData;
+    const { status, due_status, mapa_status, documentos_pos_embarque, awb_courier } = formData;
 
     if (!status) return <XCircle className="h-5 w-5 text-gray-400" />;
 
@@ -763,48 +770,36 @@ export default function NovoProcessoPage() {
 
     switch (step) {
       case 1:
-        if (statusNumber >= processStatusOptions.indexOf("Booking Confirmado / Aguardando Draft")) return <CheckCircle className="h-5 w-5 text-green-500" />;
-        if (statusNumber >= 0) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+        if (statusNumber >= processStatusOptions.indexOf("NOMEAÇÃO RECEBIDA")) return <CheckCircle className="h-5 w-5 text-green-500" />;
         return <XCircle className="h-5 w-5 text-gray-400" />;
       case 2:
         {
-          const draftsApprovedOrLater = statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS");
-          if (draftsApprovedOrLater) return <CheckCircle className="h-5 w-5 text-green-500" />;
-          if (status === 'CORRECAO_DE_DRAFT_SOLICITADA') return <XCircle className="h-5 w-5 text-red-500" />;
-          if (statusNumber >= processStatusOptions.indexOf("Booking Confirmado / Aguardando Draft")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+          if (statusNumber >= processStatusOptions.indexOf("DRAFT APROVADOS")) return <CheckCircle className="h-5 w-5 text-green-500" />;
+          if (statusNumber >= processStatusOptions.indexOf("AGUARDANDO APROVAÇÃO DO DRAFT")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
       case 3:
         {
           const isDueOk = due_status === 'DESEMABRAÇADA' || due_status === 'AVERBADA';
-          const isMapaOk = mapa_status === 'DEFERIDA' || mapa_status === 'DEFERIDA/CERTIFICADO EMITIDO';
-          if (isDueOk && isMapaOk) return <CheckCircle className="h-5 w-5 text-green-500" />;
-          if (mapa_status === 'INDEFERIDA') return <XCircle className="h-5 w-5 text-red-500" />;
-          if (statusNumber >= processStatusOptions.indexOf("DRAFTS_APROVADOS")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+          if (isDueOk && statusNumber >= processStatusOptions.indexOf("DUE AVERBADA")) return <CheckCircle className="h-5 w-5 text-green-500" />;
+          if (statusNumber >= processStatusOptions.indexOf("DUE REGISTRADA")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
       case 4:
-        if (navio_final || status.toLowerCase().includes('trânsito') || status.toLowerCase().includes('concluído')) {
+        if (statusNumber >= processStatusOptions.indexOf("PROCESSO EMBARCADO")) {
           return <CheckCircle className="h-5 w-5 text-green-500" />;
         }
-        {
-          const isReadyForShipment = statusNumber >= processStatusOptions.indexOf("PRONTO_PARA_EMBARQUE");
-          if (isReadyForShipment) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-          return <XCircle className="h-5 w-5 text-gray-400" />;
-        }
+        if (statusNumber >= processStatusOptions.indexOf("LIBERADO PARA EMBARQUE")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+        return <XCircle className="h-5 w-5 text-gray-400" />;
       case 5:
         {
-          const hasBl = documentos_pos_embarque && documentos_pos_embarque.some((d: any) => d.nome === 'BL');
-          if (hasBl) {
-            if (awb_courier) return <CheckCircle className="h-5 w-5 text-green-500" />;
-            return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
-          }
-          if (statusNumber >= processStatusOptions.indexOf("Em trânsito")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+          if (statusNumber >= processStatusOptions.indexOf("SET DOC ENVIADOS (DHL)")) return <CheckCircle className="h-5 w-5 text-green-500" />;
+          if (statusNumber >= processStatusOptions.indexOf("AGUARDANDO LIBERAÇÃO DO BL")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
           return <XCircle className="h-5 w-5 text-gray-400" />;
         }
       case 6:
         if (status === "Concluído") return <CheckCircle className="h-5 w-5 text-green-500" />;
-        if (awb_courier) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
+        if (statusNumber >= processStatusOptions.indexOf("SET DOC ENVIADOS (DHL)")) return <Loader2 className="h-5 w-5 text-yellow-500 animate-spin" />;
         return <XCircle className="h-5 w-5 text-gray-400" />;
       default:
         return null;
@@ -1113,7 +1108,7 @@ export default function NovoProcessoPage() {
       const dataToSave = {
         ...formData,
         id: docId,
-        status: formData.status || processoData?.status || 'Iniciado / Aguardando Booking',
+        status: formData.status || processoData?.status || 'NOMEAÇÃO RECEBIDA',
         exportadorNome: selectedExporter?.nome_fantasia || selectedExporter?.razao_social || formData.exportadorNome || 'N/A',
         analistaNome: selectedAnalista?.nome || formData.analistaNome || 'N/A',
         portoEmbarqueNome: selectedPortoEmbarque?.name || formData.portoEmbarqueNome || 'N/A',
@@ -1214,29 +1209,27 @@ export default function NovoProcessoPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
               <p className="text-muted-foreground">{pageDescription}</p>
-              {isEditing && (
-                <div className='mt-2'>
-                  <Select value={formData.status || 'Iniciado / Aguardando Booking'} onValueChange={value => handleInputChange('status', value)}>
-                    <SelectTrigger id="status" className="w-[300px] h-8 text-xs">
-                      <div className='flex items-center gap-2'>
-                        <span className={cn(
-                          "h-2 w-2 rounded-full",
-                          getStatusVariant(formData.status) === 'default' && 'bg-green-500',
-                          getStatusVariant(formData.status) === 'secondary' && 'bg-yellow-500',
-                          getStatusVariant(formData.status) === 'destructive' && 'bg-red-500',
-                          getStatusVariant(formData.status) === 'outline' && 'bg-gray-400'
-                        )}></span>
-                        <SelectValue placeholder="Selecione o status" />
-                      </div>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {processStatusOptions.map(status => (
-                        <SelectItem key={status} value={status}>{status}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
+              <div className='mt-2'>
+                <Select value={formData.status || 'NOMEAÇÃO RECEBIDA'} onValueChange={value => handleInputChange('status', value)}>
+                  <SelectTrigger id="status" className="w-[350px] h-8 text-xs">
+                    <div className='flex items-center gap-2'>
+                      <span className={cn(
+                        "h-2 w-2 rounded-full",
+                        getStatusVariant(formData.status) === 'default' && 'bg-green-500',
+                        getStatusVariant(formData.status) === 'secondary' && 'bg-yellow-500',
+                        getStatusVariant(formData.status) === 'destructive' && 'bg-red-500',
+                        getStatusVariant(formData.status) === 'outline' && 'bg-gray-400'
+                      )}></span>
+                      <SelectValue placeholder="Selecione o status" />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {processStatusOptions.map(status => (
+                      <SelectItem key={status} value={status}>{status}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           <div className="flex justify-end gap-2">
@@ -1683,14 +1676,11 @@ export default function NovoProcessoPage() {
                         <div key={nota.id} className="grid md:grid-cols-6 gap-4 items-end p-3 border rounded-md">
                           <div className="space-y-2">
                             <Label>Tipo</Label>
-                            <Select value={nota.tipo} onValueChange={(value) => handleNotaFiscalChange(nota.id, 'tipo', value)}>
-                              <SelectTrigger><SelectValue placeholder="Selecione" /></SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="Remessa">Remessa</SelectItem>
-                                <SelectItem value="Retorno">NF do Produtor</SelectItem>
-                                <SelectItem value="Exportação">Exportação</SelectItem>
-                              </SelectContent>
-                            </Select>
+                            <select value={nota.tipo} onChange={(e) => handleNotaFiscalChange(nota.id, 'tipo', e.target.value)} className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50">
+                                <option value="Remessa">Remessa</option>
+                                <option value="Retorno">NF do Produtor</option>
+                                <option value="Exportação">Exportação</option>
+                            </select>
                           </div>
                           <div className="space-y-2 col-span-2">
                             <Label>Chave de Acesso / Anexo</Label>

@@ -47,25 +47,25 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
   if (!status) return 'outline';
   const lowerStatus = status.toLowerCase();
   if (
-    lowerStatus.includes('trânsito') ||
-    lowerStatus.includes('confirmado') ||
+    lowerStatus.includes('embarcado') ||
     lowerStatus.includes('aprovados') ||
     lowerStatus.includes('desembaraçada') ||
-    lowerStatus.includes('deferido') ||
-    lowerStatus.includes('realizada') ||
-    lowerStatus.includes('concluído')
+    lowerStatus.includes('deferida') ||
+    lowerStatus.includes('liberado') ||
+    lowerStatus.includes('averbada') ||
+    lowerStatus.includes('concluído') ||
+    lowerStatus.includes('set doc enviado')
   ) return 'default';
-  if (lowerStatus.includes('pronto')) return 'outline';
+  if (lowerStatus.includes('recebida') || lowerStatus.includes('registrada')) return 'outline';
   if (
     lowerStatus.includes('aguardando') ||
-    lowerStatus.includes('iniciado') ||
-    lowerStatus.includes('em aprovação') ||
-    lowerStatus.includes('submetido')
+    lowerStatus.includes('em analise') ||
+    lowerStatus.includes('em aprovação')
   ) return 'secondary';
   if (
-    lowerStatus.includes('atrasado') ||
+    lowerStatus.includes('exigencia') ||
     lowerStatus.includes('cancelado') ||
-    lowerStatus.includes('correcao') ||
+    lowerStatus.includes('indeferida') ||
     lowerStatus.includes('rejeitado')
   ) return 'destructive';
   return 'outline';
