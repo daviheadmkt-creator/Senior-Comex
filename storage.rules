@@ -1,3 +1,4 @@
+
 rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
@@ -6,7 +7,7 @@ service firebase.storage {
      * Permite upload se:
      * - O utilizador estiver autenticado.
      * - O ficheiro tiver menos de 10MB.
-     * - O tipo de ficheiro for Imagem, PDF ou XML.
+     * - O tipo de ficheiro for Imagem, PDF, XML ou binário genérico (fallback).
      */
     match /processos/{processoId}/{fileName} {
       allow read: if request.auth != null;

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -449,19 +450,29 @@ export default function NovoProcessoPage() {
     }
   };
   
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       const currentUploadTarget = uploadTarget;
-      if (!file || !currentUploadTarget || !storage || !pageProcessId) return;
+      
+      if (!file || !currentUploadTarget || !storage || !pageProcessId) {
+          console.error("Upload aborted: Missing dependencies", { file, target: currentUploadTarget, storage: !!storage, id: pageProcessId });
+          return;
+      }
 
-      console.log('--- INÍCIO DE UPLOAD ---');
-      console.log('Arquivo:', file.name, 'Tamanho:', (file.size / 1024 / 1024).toFixed(2), 'MB');
+      console.log('--- INÍCIO DE UPLOAD (ROBUSTO) ---');
+      console.log('Arquivo:', file.name, 'Tipo original:', file.type, 'Tamanho:', (file.size / 1024 / 1024).toFixed(2), 'MB');
 
       try {
         validarArquivo(file);
       } catch (err: any) {
         toast({ title: "Arquivo Inválido", description: err.message, variant: "destructive" });
         return;
+      }
+
+      // Verifica Autenticação
+      if (!currentUser) {
+          toast({ title: "Erro de Autenticação", description: "Sessão expirada. Por favor, faça login novamente.", variant: "destructive" });
+          return;
       }
 
       const targetField = typeof currentUploadTarget === 'string' ? currentUploadTarget : null;
@@ -473,18 +484,22 @@ export default function NovoProcessoPage() {
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
       
-      const explicitContentType = file.type || (file.name.toLowerCase().endsWith('.xml') ? 'application/xml' : 'application/pdf');
+      // Força o content type se o navegador falhar em identificar
+      let explicitContentType = file.type;
+      if (!explicitContentType) {
+          if (file.name.toLowerCase().endsWith('.xml')) explicitContentType = 'application/xml';
+          else if (file.name.toLowerCase().endsWith('.pdf')) explicitContentType = 'application/pdf';
+          else explicitContentType = 'application/octet-stream';
+      }
       
       const metadata = {
         contentType: explicitContentType,
         customMetadata: {
           processoId: pageProcessId,
           originalName: file.name,
-          uploadedBy: currentUser?.uid || 'anonymous'
+          uploadedBy: currentUser.uid
         }
       };
-
-      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
       const placeholder: FileData = {
           name: file.name,
@@ -496,6 +511,7 @@ export default function NovoProcessoPage() {
           uploadProgress: 1,
       };
 
+      // Define o placeholder no estado
       setFormData((prev: any) => {
           if (targetField) {
               return { ...prev, [targetField]: placeholder };
@@ -511,80 +527,72 @@ export default function NovoProcessoPage() {
 
       setUploadProgresses(prev => ({ ...prev, [filePath]: 1 }));
 
-      let lastProgress = 0;
-      uploadTask.on('state_changed',
-          (snapshot) => {
-              const progress = Math.max(1, (snapshot.bytesTransferred / snapshot.totalBytes) * 100);
-              if (Math.abs(progress - lastProgress) < 5 && progress < 100) return;
-              lastProgress = progress;
-              setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
-          },
-          (error: any) => {
-              console.error("--- ERRO NO UPLOAD ---", error);
-              
-              let msg = `Falha ao carregar "${file.name}".`;
-              if (error.code === 'storage/unauthorized') {
-                  msg = "Sem permissão. Verifique se o tamanho/tipo é aceito e se está logado.";
-              } else if (error.code === 'storage/retry-limit-exceeded') {
-                  msg = "Tempo limite excedido. Verifique sua conexão.";
-              } else if (error.code === 'storage/canceled') {
-                  msg = "Upload cancelado.";
-              }
+      try {
+          const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
-              toast({ title: "Erro no Upload", description: msg, variant: "destructive" });
-
-              setUploadProgresses(prev => {
-                  const newState = { ...prev };
-                  delete newState[filePath];
-                  return newState;
-              });
-
-              setFormData((prev: any) => {
-                  if (targetField) return { ...prev, [targetField]: null };
-                  if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: null } : nf) };
-                  if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: null } : doc) };
-                  return prev;
-              });
-          },
-          async () => {
-              setUploadProgresses(prev => ({ ...prev, [filePath]: 100 }));
-              const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
-              
-              const finalFileData: FileData = { 
-                ...placeholder, 
-                downloadURL, 
-                uploadState: 'success', 
-                uploadProgress: 100 
-              };
-              
-              // Sincronização automática para campos de raiz
-              if (pageProcessId && firestore && targetField) {
-                  const processoRef = doc(firestore, 'processos', pageProcessId);
-                  updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
-              }
-
-              setUploadProgresses(prev => {
-                  const newState = { ...prev };
-                  delete newState[filePath];
-                  return newState;
-              });
-
-              setFormData((prev: any) => {
-                  if (targetField) {
-                      return { ...prev, [targetField]: finalFileData };
-                  } else if (targetList === 'nota_fiscal') {
-                       const newNotas = prev.notas_fiscais.map((nota: any) => (nota.id === targetId ? { ...nota, file: finalFileData } : nota));
-                      return { ...prev, notas_fiscais: newNotas };
-                  } else if (targetList === 'documento_pos_embarque') {
-                      const newDocs = prev.documentos_pos_embarque.map((doc: any) => (doc.id === targetId ? { ...doc, file: finalFileData } : doc));
-                      return { ...prev, documentos_pos_embarque: newDocs };
+          uploadTask.on('state_changed',
+              (snapshot) => {
+                  const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+                  setUploadProgresses(prev => ({ ...prev, [filePath]: Math.max(1, progress) }));
+              },
+              (error: any) => {
+                  console.error("--- ERRO FIREBASE STORAGE ---", error);
+                  
+                  let errorMsg = `Erro: ${error.code}. `;
+                  if (error.code === 'storage/unauthorized') {
+                      errorMsg += "Acesso negado. Verifique se o CORS foi aplicado no bucket.";
+                  } else {
+                      errorMsg += "Falha na ligação com o servidor de ficheiros.";
                   }
-                  return prev;
-              });
-              
-              console.log('--- UPLOAD CONCLUÍDO COM SUCESSO ---');
-          }
-      );
+
+                  toast({ 
+                      title: "Falha no Upload", 
+                      description: errorMsg, 
+                      variant: "destructive" 
+                  });
+                  
+                  // Limpeza em caso de erro
+                  setUploadProgresses(prev => {
+                      const newState = { ...prev };
+                      delete newState[filePath];
+                      return newState;
+                  });
+                  setFormData((prev: any) => {
+                      if (targetField) return { ...prev, [targetField]: null };
+                      if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: null } : nf) };
+                      if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: null } : doc) };
+                      return prev;
+                  });
+              },
+              async () => {
+                  const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+                  const finalFileData: FileData = { ...placeholder, downloadURL, uploadState: 'success', uploadProgress: 100 };
+                  
+                  // Auto-save para campos de raiz
+                  if (pageProcessId && firestore && targetField) {
+                      const processoRef = doc(firestore, 'processos', pageProcessId);
+                      updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
+                  }
+
+                  setUploadProgresses(prev => {
+                      const newState = { ...prev };
+                      delete newState[filePath];
+                      return newState;
+                  });
+
+                  setFormData((prev: any) => {
+                      if (targetField) return { ...prev, [targetField]: finalFileData };
+                      if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nota: any) => nota.id === targetId ? { ...nota, file: finalFileData } : nota) };
+                      if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((doc: any) => doc.id === targetId ? { ...doc, file: finalFileData } : doc) };
+                      return prev;
+                  });
+                  console.log('--- UPLOAD CONCLUÍDO COM SUCESSO ---');
+              }
+          );
+      } catch (err: any) {
+          console.error("--- ERRO AO INICIAR UPLOAD ---", err);
+          toast({ title: "Erro de Sistema", description: "Não foi possível iniciar o envio do ficheiro.", variant: "destructive" });
+      }
 
       if (fileInputRef.current) fileInputRef.current.value = '';
       setUploadTarget(null);
