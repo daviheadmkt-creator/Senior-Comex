@@ -1,32 +1,9 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
-import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarInset,
-  SidebarTrigger,
-  SidebarMenuSub,
-  SidebarMenuSubItem,
-  SidebarMenuSubButton
-} from '@/components/ui/sidebar';
-import {
-  LayoutDashboard,
-  Settings,
-  ClipboardList,
-  PackageCheck,
-  Search,
-  Loader2
-} from 'lucide-react';
 import { UserNav } from '@/components/user-nav';
 import { useUser, useDoc, useFirestore, useMemoFirebase } from '@/firebase';
 import { useRouter } from 'next/navigation';
 import { doc } from 'firebase/firestore';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import Image from 'next/image';
 import { SearchProvider } from '@/components/search-provider';
 import Link from 'next/link';
@@ -38,6 +15,7 @@ import {
   MenubarSeparator,
   MenubarTrigger,
 } from "@/components/ui/menubar";
+import { Loader2 } from 'lucide-react';
 
 export default function DashboardLayout({
   children,
@@ -83,10 +61,10 @@ export default function DashboardLayout({
 
   return (
     <SearchProvider>
-      <SidebarProvider>
-        <Sidebar collapsible="icon">
-          <SidebarHeader>
-            <div className="flex items-center gap-3 p-2 pr-4">
+      <div className="min-h-screen flex flex-col bg-background">
+        <header className="sticky top-0 z-50 w-full border-b bg-card/80 backdrop-blur-sm px-4 md:px-6 h-16 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-8 flex-1">
+            <Link href="/dashboard" className="flex items-center shrink-0">
                {logo ? (
                    <Image src={logo} alt="System Logo" width={140} height={28} className="object-contain h-7" />
                ) : (
@@ -98,92 +76,9 @@ export default function DashboardLayout({
                       </svg>
                   </div>
                )}
-            </div>
-          </SidebarHeader>
-          <SidebarContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                  <SidebarMenuButton href="/dashboard">
-                      <LayoutDashboard />
-                      <span>Visão Geral</span>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-               <SidebarMenuItem>
-                  <SidebarMenuButton href="/dashboard/processos">
-                      <PackageCheck />
-                      <span>Gestão de Processos</span>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-              <Collapsible asChild>
-                <SidebarMenuItem>
-                  <CollapsibleTrigger asChild>
-                      <SidebarMenuButton>
-                          <ClipboardList />
-                          <span>Cadastros</span>
-                      </SidebarMenuButton>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent asChild>
-                      <SidebarMenuSub>
-                          <SidebarMenuSubItem>
-                              <SidebarMenuSubButton href="/dashboard/cadastros/parceiros">
-                                  Parceiros
-                              </SidebarMenuSubButton>
-                          </SidebarMenuSubItem>
-                          {isUserAdmin && (
-                              <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton href="/dashboard/cadastros/usuarios">
-                                      Usuários
-                                  </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                          )}
-                      </SidebarMenuSub>
-                  </CollapsibleContent>
-                </SidebarMenuItem>
-              </Collapsible>
-              <Collapsible asChild>
-                  <SidebarMenuItem>
-                      <CollapsibleTrigger asChild>
-                          <SidebarMenuButton>
-                              <ClipboardList />
-                              <span>Dados de Referência</span>
-                          </SidebarMenuButton>
-                      </CollapsibleTrigger>
-                      <CollapsibleContent asChild>
-                          <SidebarMenuSub>
-                              <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton href="/dashboard/dados-referencia/produtos">
-                                      Produtos
-                                  </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                              <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton href="/dashboard/dados-referencia/portos">
-                                      Portos
-                                  </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                              <SidebarMenuSubItem>
-                                  <SidebarMenuSubButton href="/dashboard/dados-referencia/terminais">
-                                      Terminais
-                                  </SidebarMenuSubButton>
-                              </SidebarMenuSubItem>
-                          </SidebarMenuSub>
-                      </CollapsibleContent>
-                  </SidebarMenuItem>
-              </Collapsible>
-              <SidebarMenuItem>
-                  <SidebarMenuButton href="/dashboard/configuracoes">
-                      <Settings />
-                      <span>Configurações</span>
-                  </SidebarMenuButton>
-              </SidebarMenuItem>
-            </SidebarMenu>
-          </SidebarContent>
-        </Sidebar>
-        <SidebarInset>
-          <header className="sticky top-0 z-10 flex h-16 items-center gap-4 border-b bg-card/80 backdrop-blur-sm px-6">
-             <SidebarTrigger />
-            
-            {/* Menu Horizontal Superior para Desktop */}
-            <div className="hidden lg:flex flex-1 items-center px-4">
+            </Link>
+
+            <div className="hidden lg:flex items-center">
                 <Menubar className="border-none bg-transparent shadow-none">
                     <MenubarMenu>
                         <Link href="/dashboard" passHref legacyBehavior>
@@ -225,18 +120,23 @@ export default function DashboardLayout({
                             </Link>
                         </MenubarContent>
                     </MenubarMenu>
+                    <MenubarMenu>
+                        <Link href="/dashboard/configuracoes" passHref legacyBehavior>
+                            <MenubarTrigger className="cursor-pointer font-semibold hover:bg-accent/50">Configurações</MenubarTrigger>
+                        </Link>
+                    </MenubarMenu>
                 </Menubar>
             </div>
+          </div>
 
-            <div className="flex-1 flex justify-end items-center gap-4">
-              <UserNav />
-            </div>
-          </header>
-          <main className="flex-1 overflow-auto p-4 md:p-6 bg-background">
-            {children}
-          </main>
-        </SidebarInset>
-      </SidebarProvider>
+          <div className="flex items-center gap-4">
+            <UserNav />
+          </div>
+        </header>
+        <main className="flex-1 overflow-auto p-4 md:p-6 bg-background/50">
+          {children}
+        </main>
+      </div>
     </SearchProvider>
   );
 }
