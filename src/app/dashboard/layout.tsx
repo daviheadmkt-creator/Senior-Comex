@@ -7,25 +7,17 @@ import { doc } from 'firebase/firestore';
 import Image from 'next/image';
 import { SearchProvider } from '@/components/search-provider';
 import Link from 'next/link';
-import {
-  Menubar,
-  MenubarContent,
-  MenubarItem,
-  MenubarMenu,
-  MenubarSeparator,
-  MenubarTrigger,
-} from "@/components/ui/menubar";
 import { 
   Loader2, 
   Menu as MenuIcon, 
   LayoutDashboard, 
   FileText, 
-  Database, 
   Settings, 
   Users, 
   Package, 
   Anchor, 
-  Container 
+  Container,
+  ChevronRight
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -36,6 +28,7 @@ import {
 } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { Separator } from '@/components/ui/separator';
 
 export default function DashboardLayout({
   children,
@@ -47,7 +40,7 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const firestore = useFirestore();
   const [logo, setLogo] = useState<string | null>(null);
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     const savedLogo = localStorage.getItem('system_logo');
@@ -81,16 +74,94 @@ export default function DashboardLayout({
     );
   }
 
-  const navItems = [
-    { label: 'Dashboard', href: '/dashboard', icon: LayoutDashboard },
-    { label: 'Processos', href: '/dashboard/processos', icon: FileText },
-  ];
+  const NavLink = ({ href, icon: Icon, children, exact = false }: { href: string, icon: any, children: React.ReactNode, exact?: boolean }) => {
+    const active = exact ? pathname === href : pathname.startsWith(href);
+    return (
+      <Link 
+        href={href} 
+        onClick={() => setIsMenuOpen(false)}
+        className={cn(
+          "flex items-center justify-between px-4 py-3 rounded-lg transition-all group",
+          active 
+            ? "bg-primary text-primary-foreground shadow-md" 
+            : "hover:bg-accent text-muted-foreground hover:text-accent-foreground"
+        )}
+      >
+        <div className="flex items-center gap-3">
+          <Icon className={cn("h-5 w-5", active ? "text-primary-foreground" : "group-hover:text-primary")} />
+          <span className="font-medium">{children}</span>
+        </div>
+        <ChevronRight className={cn("h-4 w-4 opacity-0 transition-all", active ? "opacity-100" : "group-hover:opacity-50")} />
+      </Link>
+    );
+  };
 
   return (
     <SearchProvider>
       <div className="min-h-screen flex flex-col bg-background">
         <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-4 md:px-6 h-16 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 md:gap-8 flex-1">
+          <div className="flex items-center gap-4">
+            {/* Hamburger Menu Trigger - Visible on all screens */}
+            <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
+                <SheetTrigger asChild>
+                    <Button variant="outline" size="icon" className="shrink-0 border-primary/20 hover:bg-primary/5">
+                        <MenuIcon className="h-5 w-5 text-primary" />
+                    </Button>
+                </SheetTrigger>
+                <SheetContent side="left" className="w-[300px] sm:w-[350px] p-0 flex flex-col">
+                    <SheetHeader className="p-6 text-left border-b bg-primary/5">
+                        <SheetTitle className="flex items-center gap-2 text-primary font-bold">
+                           <LayoutDashboard className="h-5 w-5" />
+                           Menu SeniorComex
+                        </SheetTitle>
+                    </SheetHeader>
+                    
+                    <div className="flex-1 overflow-y-auto py-4 px-3 space-y-6">
+                        {/* Principal */}
+                        <div className="space-y-1">
+                            <div className="px-4 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Geral</div>
+                            <NavLink href="/dashboard" icon={LayoutDashboard} exact>Dashboard</NavLink>
+                            <NavLink href="/dashboard/processos" icon={FileText}>Processos</NavLink>
+                        </div>
+
+                        <Separator className="mx-4 opacity-50" />
+
+                        {/* Cadastros */}
+                        <div className="space-y-1">
+                            <div className="px-4 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gestão</div>
+                            <NavLink href="/dashboard/cadastros/parceiros" icon={Users}>Parceiros</NavLink>
+                            {isUserAdmin && (
+                                <NavLink href="/dashboard/cadastros/usuarios" icon={Users}>
+                                    <span className="text-blue-600 font-bold">Usuários</span>
+                                </NavLink>
+                            )}
+                        </div>
+
+                        <Separator className="mx-4 opacity-50" />
+
+                        {/* Referência */}
+                        <div className="space-y-1">
+                            <div className="px-4 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Dados Técnicos</div>
+                            <NavLink href="/dashboard/dados-referencia/produtos" icon={Package}>Produtos</NavLink>
+                            <NavLink href="/dashboard/dados-referencia/portos" icon={Anchor}>Portos</NavLink>
+                            <NavLink href="/dashboard/dados-referencia/terminais" icon={Container}>Terminais</NavLink>
+                        </div>
+
+                        <Separator className="mx-4 opacity-50" />
+
+                        {/* Configs */}
+                        <div className="space-y-1 pb-10">
+                            <div className="px-4 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Sistema</div>
+                            <NavLink href="/dashboard/configuracoes" icon={Settings}>Configurações</NavLink>
+                        </div>
+                    </div>
+
+                    <div className="p-4 border-t bg-muted/20">
+                        <p className="text-[10px] text-center text-muted-foreground font-medium">SeniorComex v1.0.0</p>
+                    </div>
+                </SheetContent>
+            </Sheet>
+
             {/* Logo */}
             <Link href="/dashboard" className="flex items-center shrink-0">
                {logo ? (
@@ -105,174 +176,9 @@ export default function DashboardLayout({
                   </div>
                )}
             </Link>
-
-            {/* Desktop Navigation */}
-            <nav className="hidden md:flex items-center">
-                <Menubar className="border-none bg-transparent shadow-none gap-1">
-                    <MenubarMenu>
-                        <Link href="/dashboard" passHref legacyBehavior>
-                            <MenubarTrigger className={cn(
-                                "cursor-pointer font-semibold transition-colors",
-                                pathname === '/dashboard' ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-                            )}>Dashboard</MenubarTrigger>
-                        </Link>
-                    </MenubarMenu>
-                    
-                    <MenubarMenu>
-                        <Link href="/dashboard/processos" passHref legacyBehavior>
-                            <MenubarTrigger className={cn(
-                                "cursor-pointer font-semibold transition-colors",
-                                pathname.startsWith('/dashboard/processos') ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-                            )}>Processos</MenubarTrigger>
-                        </Link>
-                    </MenubarMenu>
-
-                    <MenubarMenu>
-                        <MenubarTrigger className={cn(
-                            "font-semibold transition-colors cursor-pointer",
-                            pathname.includes('/cadastros/') ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-                        )}>Cadastros</MenubarTrigger>
-                        <MenubarContent>
-                            <Link href="/dashboard/cadastros/parceiros" passHref legacyBehavior>
-                                <MenubarItem className="cursor-pointer">Parceiros</MenubarItem>
-                            </Link>
-                            {isUserAdmin && (
-                                <>
-                                    <MenubarSeparator />
-                                    <Link href="/dashboard/cadastros/usuarios" passHref legacyBehavior>
-                                        <MenubarItem className="cursor-pointer text-blue-600 font-medium">Usuários do Sistema</MenubarItem>
-                                    </Link>
-                                </>
-                            )}
-                        </MenubarContent>
-                    </MenubarMenu>
-
-                    <MenubarMenu>
-                        <MenubarTrigger className={cn(
-                            "font-semibold transition-colors cursor-pointer",
-                            pathname.includes('/dados-referencia/') ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-                        )}>Referência</MenubarTrigger>
-                        <MenubarContent>
-                            <Link href="/dashboard/dados-referencia/produtos" passHref legacyBehavior>
-                                <MenubarItem className="cursor-pointer">Catálogo de Produtos</MenubarItem>
-                            </Link>
-                            <Link href="/dashboard/dados-referencia/portos" passHref legacyBehavior>
-                                <MenubarItem className="cursor-pointer">Portos (Origem/Destino)</MenubarItem>
-                            </Link>
-                            <Link href="/dashboard/dados-referencia/terminais" passHref legacyBehavior>
-                                <MenubarItem className="cursor-pointer">Terminais Portuários</MenubarItem>
-                            </Link>
-                        </MenubarContent>
-                    </MenubarMenu>
-
-                    <MenubarMenu>
-                        <Link href="/dashboard/configuracoes" passHref legacyBehavior>
-                            <MenubarTrigger className={cn(
-                                "cursor-pointer font-semibold transition-colors",
-                                pathname.startsWith('/dashboard/configuracoes') ? "bg-accent text-accent-foreground" : "hover:bg-accent/50"
-                            )}>Configurações</MenubarTrigger>
-                        </Link>
-                    </MenubarMenu>
-                </Menubar>
-            </nav>
           </div>
 
           <div className="flex items-center gap-2 md:gap-4">
-            {/* Mobile Menu Trigger */}
-            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
-                <SheetTrigger asChild>
-                    <Button variant="ghost" size="icon" className="md:hidden">
-                        <MenuIcon className="h-6 w-6" />
-                    </Button>
-                </SheetTrigger>
-                <SheetContent side="left" className="w-[300px] sm:w-[400px]">
-                    <SheetHeader className="mb-6">
-                        <SheetTitle className="text-left">Menu de Navegação</SheetTitle>
-                    </SheetHeader>
-                    <div className="flex flex-col gap-2">
-                        <Link 
-                            href="/dashboard" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-md transition-colors",
-                                pathname === '/dashboard' ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                            )}
-                        >
-                            <LayoutDashboard className="h-5 w-5" />
-                            <span className="font-medium">Dashboard</span>
-                        </Link>
-                        <Link 
-                            href="/dashboard/processos" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className={cn(
-                                "flex items-center gap-3 px-4 py-3 rounded-md transition-colors",
-                                pathname.startsWith('/dashboard/processos') ? "bg-primary text-primary-foreground" : "hover:bg-accent"
-                            )}
-                        >
-                            <FileText className="h-5 w-5" />
-                            <span className="font-medium">Gestão de Processos</span>
-                        </Link>
-                        
-                        <div className="py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Cadastros</div>
-                        <Link 
-                            href="/dashboard/cadastros/parceiros" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors"
-                        >
-                            <Users className="h-5 w-5" />
-                            <span>Parceiros</span>
-                        </Link>
-                        {isUserAdmin && (
-                            <Link 
-                                href="/dashboard/cadastros/usuarios" 
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors"
-                            >
-                                <Users className="h-5 w-5 text-blue-600" />
-                                <span>Usuários do Sistema</span>
-                            </Link>
-                        )}
-
-                        <div className="py-2 px-4 text-xs font-semibold text-muted-foreground uppercase tracking-wider">Dados de Referência</div>
-                        <Link 
-                            href="/dashboard/dados-referencia/produtos" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors"
-                        >
-                            <Package className="h-5 w-5" />
-                            <span>Produtos</span>
-                        </Link>
-                        <Link 
-                            href="/dashboard/dados-referencia/portos" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors"
-                        >
-                            <Anchor className="h-5 w-5" />
-                            <span>Portos</span>
-                        </Link>
-                        <Link 
-                            href="/dashboard/dados-referencia/terminais" 
-                            onClick={() => setIsMobileMenuOpen(false)}
-                            className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors"
-                        >
-                            <Container className="h-5 w-5" />
-                            <span>Terminais</span>
-                        </Link>
-
-                        <div className="mt-4 pt-4 border-t">
-                            <Link 
-                                href="/dashboard/configuracoes" 
-                                onClick={() => setIsMobileMenuOpen(false)}
-                                className="flex items-center gap-3 px-4 py-3 rounded-md hover:bg-accent transition-colors"
-                            >
-                                <Settings className="h-5 w-5" />
-                                <span className="font-medium">Configurações</span>
-                            </Link>
-                        </div>
-                    </div>
-                </SheetContent>
-            </Sheet>
-
             <UserNav />
           </div>
         </header>
