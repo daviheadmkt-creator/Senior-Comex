@@ -121,7 +121,7 @@ export default function GestaoProcessosPage() {
         </div>
       </div>
 
-      <Card>
+      <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-4">
             <div className="relative w-full max-w-sm">
@@ -137,13 +137,13 @@ export default function GestaoProcessosPage() {
           </div>
         </CardHeader>
         <CardContent className="p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full border-collapse border border-primary/20 text-[9px]">
-              <thead>
+          <div className="overflow-auto max-h-[calc(100vh-280px)]">
+            <table className="w-full border-collapse border border-primary/20 text-[9px] relative">
+              <thead className="sticky top-0 z-30">
                 <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
-                  <th className="px-2 min-w-[80px]">AÇÕES</th>
-                  <th className="px-2 min-w-[90px]">ANALISTA</th>
-                  <th className="px-2 min-w-[120px]">PO / CLIENTE</th>
+                  <th className="px-2 min-w-[80px] w-[80px] sticky left-0 z-40 bg-primary">AÇÕES</th>
+                  <th className="px-2 min-w-[90px] w-[90px] sticky left-[80px] z-40 bg-primary">ANALISTA</th>
+                  <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
                   <th className="px-2 min-w-[120px]">NAVIO</th>
@@ -167,7 +167,7 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[100px]">REF. SENIOR</th>
                 </tr>
               </thead>
-              <tbody>
+              <tbody className="bg-background">
                 {isLoading && (
                   <tr>
                     <td colSpan={24} className="px-4 py-8 text-center bg-background">
@@ -205,9 +205,9 @@ export default function GestaoProcessosPage() {
                   };
 
                   return (
-                    <tr key={processo.id} className="bg-background text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
-                      {/* 1. AÇÕES */}
-                      <td className="px-2 py-1 text-center">
+                    <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
+                      {/* 1. AÇÕES (FIXA) */}
+                      <td className="px-2 py-1 text-center sticky left-0 z-10 bg-card">
                         <div className="flex gap-1 justify-center">
                           <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
                             <Button variant="ghost" size="icon" className="h-6 w-6 text-primary">
@@ -243,11 +243,11 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 2. ANALISTA */}
-                      <td className="px-2 py-1 text-center text-blue-600 uppercase">{processo.analistaNome || '---'}</td>
+                      {/* 2. ANALISTA (FIXA) */}
+                      <td className="px-2 py-1 text-center text-blue-600 uppercase sticky left-[80px] z-10 bg-card">{processo.analistaNome || '---'}</td>
                       
-                      {/* 3. PO / CLIENTE */}
-                      <td className="px-2 py-1">
+                      {/* 3. PO / CLIENTE (FIXA) */}
+                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5px_rgba(0,0,0,0.05)] border-r">
                         <div className="flex flex-col">
                           <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
                           <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
