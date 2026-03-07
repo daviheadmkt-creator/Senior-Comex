@@ -47,7 +47,7 @@ const ALLOWED_TYPES = [
   "image/jpg",
   "image/jpeg",
   "image/webp",
-  "application/octet-stream" // fallback para ficheiros sem mime-type definido pelo browser
+  "application/octet-stream"
 ];
 
 type FileData = {
@@ -425,7 +425,6 @@ export default function NovoProcessoPage() {
   };
 
   const validarArquivo = (file: File) => {
-    // Se o browser não identificar o tipo (ex: alguns XMLs), aceitamos se a extensão for compatível
     const isExtensionOk = file.name.endsWith('.pdf') || file.name.endsWith('.xml');
     
     if (!ALLOWED_TYPES.includes(file.type) && !isExtensionOk) {
@@ -440,6 +439,11 @@ export default function NovoProcessoPage() {
       const file = e.target.files?.[0];
       const currentUploadTarget = uploadTarget;
       if (!file || !currentUploadTarget || !storage || !pageProcessId) return;
+
+      console.log('--- DIAGNÓSTICO DE UPLOAD ---');
+      console.log('Arquivo:', file.name, 'Tipo:', file.type, 'Tamanho:', file.size);
+      console.log('Usuário Logado:', currentUser?.uid);
+      console.log('Bucket:', (storage as any)._service?.bucket);
 
       try {
         validarArquivo(file);
@@ -456,13 +460,18 @@ export default function NovoProcessoPage() {
       const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
       const storageRef = ref(storage, filePath);
       
-      const uploadTask = uploadBytesResumable(storageRef, file);
+      // Metadados explícitos para contornar problemas de detecção de tipo pelo navegador
+      const metadata = {
+        contentType: file.type || (file.name.endsWith('.xml') ? 'application/xml' : 'application/pdf'),
+      };
+
+      const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
       const placeholder: FileData = {
           name: file.name,
           storagePath: filePath,
           downloadURL: '',
-          type: file.type || 'application/octet-stream',
+          type: metadata.contentType,
           size: file.size,
           uploadState: 'running',
           uploadProgress: 1,
@@ -491,11 +500,22 @@ export default function NovoProcessoPage() {
               lastProgress = progress;
               setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
-          (error) => {
-              console.error("Upload error:", error);
+          (error: any) => {
+              console.error("--- ERRO FIREBASE STORAGE ---");
+              console.error("Código:", error.code);
+              console.error("Mensagem:", error.message);
+              console.error("Objeto completo:", error);
+              
+              let msg = `Falha ao carregar "${file.name}".`;
+              if (error.code === 'storage/unauthorized') {
+                  msg = "Sem permissão para gravar no Storage. Verifique se está logado.";
+              } else if (error.code === 'storage/retry-limit-exceeded') {
+                  msg = "Tempo limite excedido. Verifique sua conexão ou o CORS do bucket.";
+              }
+
               toast({ 
                   title: "Erro no Upload", 
-                  description: `Falha ao carregar "${file.name}". Verifique o CORS ou a ligação.`, 
+                  description: msg, 
                   variant: "destructive" 
               });
 
@@ -526,11 +546,8 @@ export default function NovoProcessoPage() {
                   
                   if (pageProcessId && firestore) {
                       const processoRef = doc(firestore, 'processos', pageProcessId);
-                      
                       if (targetField) {
                           updateDocumentNonBlocking(processoRef, { [targetField]: finalFileData });
-                      } else if (targetList === 'nota_fiscal') {
-                          // Notas Fiscais são listas, a sincronização total ocorre no Submit principal para este campo
                       }
                   }
 
@@ -651,6 +668,8 @@ export default function NovoProcessoPage() {
           validarArquivo(file);
           const fileNameInStorage = `${Date.now()}-${i}-${file.name}`;
           const filePath = `processos/${pageProcessId}/${fileNameInStorage}`;
+          const contentType = file.type || (file.name.endsWith('.xml') ? 'application/xml' : 'application/pdf');
+          
           return {
             id: `${Date.now()}-${i}-${Math.random()}`,
             tipo: 'Remessa',
@@ -661,7 +680,7 @@ export default function NovoProcessoPage() {
               name: file.name,
               storagePath: filePath,
               downloadURL: '',
-              type: file.type || 'application/octet-stream',
+              type: contentType,
               size: file.size,
               uploadState: 'running' as const,
               uploadProgress: 1,
@@ -685,7 +704,9 @@ export default function NovoProcessoPage() {
         const file = entry.fileObj;
         const filePath = entry.file.storagePath;
         const storageRef = ref(storage!, filePath);
-        const uploadTask = uploadBytesResumable(storageRef, file);
+        
+        const metadata = { contentType: entry.file.type };
+        const uploadTask = uploadBytesResumable(storageRef, file, metadata);
 
         setUploadProgresses(prev => ({ ...prev, [filePath]: 1 }));
 
@@ -698,9 +719,9 @@ export default function NovoProcessoPage() {
 
             setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
           },
-          (error) => {
+          (error: any) => {
             console.error("Multiple upload error:", error);
-            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}.`, variant: "destructive" });
+            toast({ title: "Erro no Upload", description: `Falha ao carregar ${file.name}. Código: ${error.code}`, variant: "destructive" });
             setUploadProgresses(prev => {
                 const newState = { ...prev };
                 delete newState[filePath];
@@ -767,7 +788,7 @@ export default function NovoProcessoPage() {
   };
 
   const getStepStatusIcon = (step: number) => {
-    const { status, due_status, mapa_status, documentos_pos_embarque, awb_courier } = formData;
+    const { status, due_status, mapa_status } = formData;
 
     if (!status) return <XCircle className="h-5 w-5 text-gray-400" />;
 
@@ -1171,7 +1192,7 @@ export default function NovoProcessoPage() {
       return (
         <div className="flex flex-col gap-1 w-full py-1">
           <div className="flex justify-between items-center text-[10px] text-primary font-medium uppercase tracking-wider">
-            <span>A processar no servidor...</span>
+            <span>A finalizar...</span>
             <Loader2 className="h-3 w-3 animate-spin" />
           </div>
           <Progress value={100} className="h-1.5" />
