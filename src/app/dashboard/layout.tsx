@@ -17,7 +17,8 @@ import {
   Package, 
   Anchor, 
   Container,
-  ChevronRight
+  ChevronRight,
+  BarChart3
 } from 'lucide-react';
 import { 
   Sheet, 
@@ -101,7 +102,6 @@ export default function DashboardLayout({
       <div className="min-h-screen flex flex-col bg-background">
         <header className="sticky top-0 z-50 w-full border-b bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60 px-4 md:px-6 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
-            {/* Hamburger Menu Trigger - Visible on all screens */}
             <Sheet open={isMenuOpen} onOpenChange={setIsMenuOpen}>
                 <SheetTrigger asChild>
                     <Button variant="outline" size="icon" className="shrink-0 border-primary/20 hover:bg-primary/5">
@@ -122,11 +122,12 @@ export default function DashboardLayout({
                             <div className="px-4 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Geral</div>
                             <NavLink href="/dashboard" icon={LayoutDashboard} exact>Dashboard</NavLink>
                             <NavLink href="/dashboard/processos" icon={FileText}>Processos</NavLink>
+                            <NavLink href="/dashboard/relatorios" icon={BarChart3}>Relatórios</NavLink>
                         </div>
 
                         <Separator className="mx-4 opacity-50" />
 
-                        {/* Cadastros */}
+                        {/* Gestão */}
                         <div className="space-y-1">
                             <div className="px-4 mb-2 text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Gestão</div>
                             <NavLink href="/dashboard/cadastros/parceiros" icon={Users}>Parceiros</NavLink>
@@ -162,7 +163,6 @@ export default function DashboardLayout({
                 </SheetContent>
             </Sheet>
 
-            {/* Logo */}
             <Link href="/dashboard" className="flex items-center shrink-0">
                {logo ? (
                    <Image src={logo} alt="System Logo" width={140} height={28} className="object-contain h-7" />
