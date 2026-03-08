@@ -32,9 +32,6 @@ import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
 import { Progress } from '@/components/ui/progress';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 
 const MAX_FILE_SIZE_MB = 10;
 
@@ -304,14 +301,6 @@ export default function NovoProcessoPage() {
     }
   }, [isEditing, processoData, terminais, parceiros]);
 
-  useEffect(() => {
-    if (formData.exportadorId && parceiros) {
-      const selectedExporter = parceiros.find(p => p.id === formData.exportadorId);
-      const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c: any, index: number) => ({ ...c, id: String(index) })) || [];
-      setExporterContacts(newContacts);
-    }
-  }, [formData.exportadorId, parceiros]);
-
   const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingPorts || isLoadingTerminais;
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo (Nomeação)';
@@ -340,7 +329,7 @@ export default function NovoProcessoPage() {
   const validarArquivo = (file: File) => {
     if (file.size > MAX_FILE_SIZE_MB * 1024 * 1024) throw new Error(`Limite de ${MAX_FILE_SIZE_MB}MB excedido.`);
   };
-  
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (!file || !uploadTarget || !storage || !pageProcessId) return;
@@ -524,6 +513,13 @@ export default function NovoProcessoPage() {
     }));
   };
 
+  const handlePostShipmentDocChange = (id: string | number, field: string, value: any) => {
+    setFormData((prev: any) => ({
+      ...prev,
+      documentos_pos_embarque: prev.documentos_pos_embarque.map((d: any) => d.id === id ? { ...d, [field]: value } : d)
+    }));
+  };
+
   const handleMultipleNFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
       const selectedFiles = e.target.files;
       if (!selectedFiles || selectedFiles.length === 0 || !storage || !pageProcessId) return;
@@ -547,7 +543,10 @@ export default function NovoProcessoPage() {
       newEntries.forEach((entry: any) => {
         const uploadTask = uploadBytesResumable(ref(storage!, entry.file.storagePath), entry.fileObj, { contentType: entry.file.type });
         setUploadProgresses(prev => ({ ...prev, [entry.file.storagePath]: 1 }));
-        uploadTask.on('state_changed', (snap) => setUploadProgresses(prev => ({ ...prev, [entry.file.storagePath]: (snap.bytesTransferred / snap.totalBytes) * 100 })), 
+        uploadTask.on('state_changed', (snap) => {
+            const prog = (snap.bytesTransferred / snap.totalBytes) * 100;
+            setUploadProgresses(prev => ({ ...prev, [entry.file.storagePath]: prog }));
+        }, 
         () => {}, async () => {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
             setUploadProgresses(prev => { const s = {...prev}; delete s[entry.file.storagePath]; return s; });
@@ -567,6 +566,8 @@ export default function NovoProcessoPage() {
   };
 
   const generateOriginalDocsPdf = async () => {
+    const jsPDF = (await import('jspdf')).default;
+    await import('jspdf-autotable');
     const docPdf = new jsPDF();
     docPdf.text('Documentos de Embarque', 10, 10);
     (docPdf as any).autoTable({
@@ -577,6 +578,8 @@ export default function NovoProcessoPage() {
   };
 
   const generateNFsPdf = async () => {
+    const jsPDF = (await import('jspdf')).default;
+    await import('jspdf-autotable');
     const docPdf = new jsPDF();
     docPdf.text('Pacote de Notas Fiscais', 10, 10);
     (docPdf as any).autoTable({
@@ -590,6 +593,7 @@ export default function NovoProcessoPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsImporting(true);
+    const XLSX = await import('xlsx');
     const reader = new FileReader();
     reader.onload = (evt) => {
       const data = new Uint8Array(evt.target?.result as ArrayBuffer);
@@ -601,7 +605,8 @@ export default function NovoProcessoPage() {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet([{ numero: 'MSCU1234567', lacre: 'L123', vgm: 25000 }]);
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Containers");
@@ -731,8 +736,4 @@ export default function NovoProcessoPage() {
       </form>
     </div>
   );
-}
-
-function handlePostShipmentDocChange(id: any, field: string, value: any) {
-    // This is a placeholder for the actual function defined inside the component
 }
