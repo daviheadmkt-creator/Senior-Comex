@@ -31,8 +31,8 @@ const nextConfig: NextConfig = {
     ],
   },
   experimental: {
-    // This is to allow the Next.js dev server to be accessed from the cloud workstation
-    allowedDevOrigins: ["https://*.cluster-zhw3w37rxzgkutusbbhib6qhra.cloudworkstations.dev"],
+    // Broaden the wildcard to ensure all subdomains/ports are covered in the workstation environment
+    allowedDevOrigins: ["*.cluster-zhw3w37rxzgkutusbbhib6qhra.cloudworkstations.dev"],
   }
 };
 

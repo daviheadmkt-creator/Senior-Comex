@@ -28,13 +28,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Checkbox } from '@/components/ui/checkbox';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { useCollection, useDoc, useFirestore, useMemoFirebase, useUser, useStorage, updateDocumentNonBlocking } from '@/firebase';
 import { collection, query, where, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
-import * as XLSX from 'xlsx';
 import { Progress } from '@/components/ui/progress';
 
 // Configurações de Validação de Ficheiros
@@ -1033,7 +1030,11 @@ export default function NovoProcessoPage() {
     });
   };
 
+  // Carregamento dinâmico para evitar chunks pesados
   const generateOriginalDocsPdf = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+    
     const docPdf = new jsPDF();
 
     let originalsCount = formData.documentos_pos_embarque.reduce((acc: number, doc: any) => acc + (Number(doc.originais) || 0), 0);
@@ -1108,6 +1109,9 @@ export default function NovoProcessoPage() {
   };
 
   const generateNFsPdf = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
+
     const docPdf = new jsPDF();
 
     docPdf.setFontSize(22);
@@ -1160,9 +1164,11 @@ export default function NovoProcessoPage() {
     docPdf.save(`Pacote_NFs_${formData.processo_interno || 'processo'}.pdf`);
   };
 
-  const handleContainerImport = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleContainerImport = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    const XLSX = await import('xlsx');
 
     setIsImporting(true);
     const reader = new FileReader();
@@ -1210,11 +1216,8 @@ export default function NovoProcessoPage() {
     reader.readAsArrayBuffer(file);
   };
 
-  const handleImportClick = () => {
-    containerFileInputRef.current?.click();
-  };
-
-  const handleDownloadTemplate = () => {
+  const handleDownloadTemplate = async () => {
+    const XLSX = await import('xlsx');
     const ws = XLSX.utils.json_to_sheet([
       { numero: "MSCU1234567", lacre: "SEAL123", tare: "2200", qty_especie: "540", gross_weight: "27000", net_weight: "24800", m3: "33", vgm: "27000" },
     ]);

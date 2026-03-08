@@ -14,7 +14,6 @@ const ptsans = PT_Sans({
 export const metadata: Metadata = {
   title: 'Senior Assessoria',
   description: 'Painel de Controle',
-  manifest: '/manifest.json',
 };
 
 export const viewport: Viewport = {
@@ -28,7 +27,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt" suppressHydrationWarning>
-      <body className={ptsans.className}>
+      <body className={ptsans.className} suppressHydrationWarning>
         <ThemeProvider
             attribute="class"
             defaultTheme="system"
