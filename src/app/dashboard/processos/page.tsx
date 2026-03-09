@@ -300,9 +300,30 @@ export default function GestaoProcessosPage() {
                       {/* 10. DEAD LINE / PRAZO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-0.5 italic"><span>DRAFT</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_draft, true)}</span></div>
-                          <div className="flex justify-between px-2 py-0.5 italic"><span>VGM</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_vgm, true)}</span></div>
-                          <div className="flex justify-between px-2 py-0.5 italic"><span>CARGA</span> <span className="text-destructive font-bold">{formatDate(processo.deadline_carga, true)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5 italic">
+                            <span>DRAFT</span> 
+                            {(processo.deadline_draft_file || processo.draft_bl_file) ? (
+                              <span className="text-green-600 font-extrabold uppercase">OK</span>
+                            ) : (
+                              <span className="text-destructive font-bold">{formatDate(processo.deadline_draft, true)}</span>
+                            )}
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5 italic">
+                            <span>VGM</span> 
+                            {processo.deadline_vgm_file ? (
+                              <span className="text-green-600 font-extrabold uppercase">OK</span>
+                            ) : (
+                              <span className="text-destructive font-bold">{formatDate(processo.deadline_vgm, true)}</span>
+                            )}
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5 italic">
+                            <span>CARGA</span> 
+                            {processo.deadline_carga_file ? (
+                              <span className="text-green-600 font-extrabold uppercase">OK</span>
+                            ) : (
+                              <span className="text-destructive font-bold">{formatDate(processo.deadline_carga, true)}</span>
+                            )}
+                          </div>
                         </div>
                       </td>
 
