@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -108,9 +109,8 @@ const documentTypes = ["INVOICE", "PACKING LIST", "BL", "FITO", "ORIGEM", "WEIGH
 const fiscalDocTypes = ["DUE", "LPCO", "TRATAMENTO"];
 
 const initialFormData = {
-  id: '',
   processo_interno: '',
-  data_nomeacao: null as string | null,
+  data_nomeacao: null,
   po_number: '',
   produtoNome: '',
   quantidade: '',
@@ -119,38 +119,30 @@ const initialFormData = {
   portoDescargaId: '',
   terminalDespachoId: '',
   terminalEmbarqueId: '',
-  exportadorNome: '',
-  portoEmbarqueNome: '',
-  portoDescargaNome: '',
-  terminalDescargaNome: '',
-  terminalDespachoNome: '',
-  terminalEmbarqueNome: '',
   destino: '',
   status: 'NOMEAÇÃO RECEBIDA',
   booking_number: '',
   armadorId: '',
-  armadorNome: '',
   navio: '',
   viagem: '',
-  containers: [] as any[],
-  documentos_pos_embarque: [] as any[],
-  notas_fiscais: [] as any[],
-  documentos_fiscais: [] as any[],
-  navio_final: '',
+  containers: [],
+  documentos_pos_embarque: [],
+  notas_fiscais: [],
+  documentos_fiscais: [],
   awb_courier: '',
   analistaId: '',
   analistaNome: '',
-  draft_bl_file: null as FileData | null,
-  draft_fito_file: null as FileData | null,
-  draft_co_file: null as FileData | null,
-  deadline_draft: null as string | null,
-  deadline_vgm: null as string | null,
-  deadline_carga: null as string | null,
-  etd: null as string | null,
-  eta: null as string | null,
-  deadline_draft_file: null as FileData | null,
-  deadline_vgm_file: null as FileData | null,
-  deadline_carga_file: null as FileData | null,
+  draft_bl_file: null,
+  draft_fito_file: null,
+  draft_co_file: null,
+  deadline_draft: null,
+  deadline_vgm: null,
+  deadline_carga: null,
+  etd: null,
+  eta: null,
+  deadline_draft_file: null,
+  deadline_vgm_file: null,
+  deadline_carga_file: null,
 };
 
 function sanitizeFileName(name: string) {
@@ -174,10 +166,12 @@ export default function NovoProcessoPage() {
   const containerFileInputRef = useRef<HTMLInputElement>(null);
   const hasInitialized = useRef(false);
   
+  const [formData, setFormData] = useState<any>(initialFormData);
   const [uploadTarget, setUploadTarget] = useState<string | { type: string, id: string | number } | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
+  const [exporterContacts, setExporterContacts] = useState<any[]>([]);
 
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
@@ -200,9 +194,6 @@ export default function NovoProcessoPage() {
 
   const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
   const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
-
-  const [formData, setFormData] = useState<any>(initialFormData);
-  const [exporterContacts, setExporterContacts] = useState<any[]>([]);
 
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
@@ -374,22 +365,25 @@ export default function NovoProcessoPage() {
         }
         return df;
       });
+      if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_fiscais: updatedList });
       return { ...prev, documentos_fiscais: updatedList };
     });
   };
 
   const handlePostShipmentDocChange = (id: string | number, field: string, value: any) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      documentos_pos_embarque: prev.documentos_pos_embarque.map((d: any) => d.id === id ? { ...d, [field]: value } : d)
-    }));
+    setFormData((prev: any) => {
+      const newList = prev.documentos_pos_embarque.map((d: any) => d.id === id ? { ...d, [field]: value } : d);
+      if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_pos_embarque: newList });
+      return { ...prev, documentos_pos_embarque: newList };
+    });
   };
 
   const handleNotaFiscalChange = (id: string | number, field: string, value: any) => {
-    setFormData((prev: any) => ({
-      ...prev,
-      notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === id ? { ...nf, [field]: value } : nf)
-    }));
+    setFormData((prev: any) => {
+      const newList = prev.notas_fiscais.map((nf: any) => nf.id === id ? { ...nf, [field]: value } : nf);
+      if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { notas_fiscais: newList });
+      return { ...prev, notas_fiscais: newList };
+    });
   };
 
   const handleContainerChange = (index: number, field: string, value: any) => {
@@ -507,7 +501,10 @@ export default function NovoProcessoPage() {
     return <div className="flex items-center gap-2 overflow-hidden w-full"><CheckCircle className="h-3 w-3 text-green-500 shrink-0" /><span className="truncate text-xs flex-1">{file.name}</span></div>;
   };
 
-  if (isLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo';
+  const pageDescription = isEditing ? 'Acompanhamento detalhado do processo de exportação.' : 'Inicie um novo processo de exportação preenchendo os dados abaixo.';
+
+  if (isLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
   return (
     <div className="space-y-6">
@@ -516,7 +513,7 @@ export default function NovoProcessoPage() {
           <div className='flex items-center gap-4'>
             <Link href="/dashboard/processos" passHref><Button variant="outline" size="icon" type="button"><ArrowLeft className="h-4 w-4" /></Button></Link>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{isEditing ? `Editar Processo ${formData.processo_interno}` : 'Novo Processo'}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
               <div className='mt-2'>
                 <Select value={formData.status} onValueChange={v => handleInputChange('status', v)}>
                   <SelectTrigger className="w-[350px] h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
@@ -538,7 +535,7 @@ export default function NovoProcessoPage() {
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
           {/* ETAPA 1 */}
           <AccordionItem value="item-1">
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(1)}<h3 className="text-lg font-semibold">Etapa 1: Dados do Processo</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(1)}<h3 className="text-lg font-semibold text-left">Etapa 1: Dados do Processo e Booking</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="grid gap-6 pt-6">
                 <div className="grid md:grid-cols-3 gap-4">
@@ -547,8 +544,22 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2"><Label>Data Nomeação</Label><DatePicker date={formData.data_nomeacao} onDateChange={d => handleInputChange('data_nomeacao', d)} /></div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Exportador</Label><Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.exportadorId} onValueChange={v => handleInputChange('exportadorId', v)} /></div>
-                  <div className="space-y-2"><Label>Contato</Label><Combobox items={exporterContacts.map(c => ({ value: String(c.id), label: c.nome }))} value={String(formData.analistaId || '')} onValueChange={id => { const c = exporterContacts.find(x => String(x.id) === id); handleInputChange('analistaId', id); handleInputChange('analistaNome', c?.nome || ''); }} disabled={!formData.exportadorId} /></div>
+                  <div className="space-y-2">
+                    <Label>Exportador</Label>
+                    <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.exportadorId} onValueChange={v => {
+                      handleInputChange('exportadorId', v);
+                      const selected = parceiros?.find(p => p.id === v);
+                      setExporterContacts(selected?.contatos?.map((c: any, i: number) => ({ ...c, id: String(i) })) || []);
+                    }} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Contato</Label>
+                    <Combobox items={exporterContacts.map(c => ({ value: String(c.id), label: c.nome }))} value={String(formData.analistaId || '')} onValueChange={id => { 
+                      const c = exporterContacts.find(x => String(x.id) === id); 
+                      handleInputChange('analistaId', id); 
+                      handleInputChange('analistaNome', c?.nome || ''); 
+                    }} disabled={!formData.exportadorId} />
+                  </div>
                 </div>
                 <div className="grid md:grid-cols-2 gap-4">
                   <div className="space-y-2"><Label>Produto</Label><Input value={formData.produtoNome || ''} onChange={e => handleInputChange('produtoNome', e.target.value)} /></div>
@@ -572,12 +583,12 @@ export default function NovoProcessoPage() {
 
           {/* ETAPA 2 */}
           <AccordionItem value="item-2" disabled={!isEditing}>
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(2)}<h3 className="text-lg font-semibold">Etapa 2: Drafts</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(2)}<h3 className="text-lg font-semibold text-left">Etapa 2: Drafts</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-6 pt-6">
                 {['draft_bl_file', 'draft_fito_file', 'draft_co_file'].map(field => (
                     <div key={field} className="space-y-2">
-                        <Label className="uppercase">{field.replace('_file', '').replace('draft_', '')}</Label>
+                        <Label className="uppercase font-bold text-xs">{field.replace('_file', '').replace('draft_', '').replace('co', 'CERT. ORIGEM').replace('fito', 'CERT. FITO')}</Label>
                         <div className="flex items-center gap-2">
                             <div className="flex-1 p-2 border rounded-md bg-muted overflow-hidden">{renderFileState(formData[field])}</div>
                             {formData[field] ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile(field)}><Trash2 className="h-4 w-4 text-destructive" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload(field)}><Upload className="h-4 w-4" /></Button>}
@@ -590,10 +601,10 @@ export default function NovoProcessoPage() {
 
           {/* ETAPA 3 */}
           <AccordionItem value="item-3" disabled={!isEditing}>
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(3)}<h3 className="text-lg font-semibold">Etapa 3: Inspeção e Fiscalização</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(3)}<h3 className="text-lg font-semibold text-left">Etapa 3: Inspeção e Fiscalização</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-8 pt-6">
-                {/* SUBSEÇÃO: NOTAS FISCAIS */}
+                {/* NOTAS FISCAIS */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-md font-bold text-primary uppercase">Notas Fiscais</h3>
@@ -607,24 +618,35 @@ export default function NovoProcessoPage() {
                     </div>
                   </div>
                   <Table>
-                    <TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Chave / ID</TableHead><TableHead>Datas (Solic./Rec.)</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                    <TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Chave / ID</TableHead><TableHead>Datas Operacionais</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>{formData.notas_fiscais.map((nf: any) => (
                       <TableRow key={nf.id}>
                         <TableCell><select value={nf.tipo} onChange={e => handleNotaFiscalChange(nf.id, 'tipo', e.target.value)} className="bg-transparent text-xs border rounded p-1"><option value="Remessa">Remessa</option><option value="Retorno">NF Produtor</option><option value="Exportação">Exportação</option></select></TableCell>
                         <TableCell><Input value={nf.chave} onChange={e => handleNotaFiscalChange(nf.id, 'chave', e.target.value)} className="h-8 text-xs" placeholder="Chave de acesso" /></TableCell>
-                        <TableCell><div className="flex flex-col gap-1"><DatePicker compact date={nf.data_pedido} onDateChange={d => handleNotaFiscalChange(nf.id, 'data_pedido', d)} /><DatePicker compact date={nf.data_recebida} onDateChange={d => handleNotaFiscalChange(nf.id, 'data_recebida', d)} /></div></TableCell>
+                        <TableCell>
+                          <div className="flex flex-col gap-2 min-w-[180px]">
+                            <div className="flex flex-col">
+                              <span className="text-[9px] uppercase font-bold text-muted-foreground ml-1">Solicitado</span>
+                              <DatePicker date={nf.data_pedido} onDateChange={d => handleNotaFiscalChange(nf.id, 'data_pedido', d)} />
+                            </div>
+                            <div className="flex flex-col">
+                              <span className="text-[9px] uppercase font-bold text-muted-foreground ml-1">Recebido</span>
+                              <DatePicker date={nf.data_recebida} onDateChange={d => handleNotaFiscalChange(nf.id, 'data_recebida', d)} />
+                            </div>
+                          </div>
+                        </TableCell>
                         <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md bg-muted min-w-[120px] overflow-hidden">{renderFileState(nf.file)}</div>{nf.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'nota_fiscal', id: nf.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'nota_fiscal', id: nf.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => setFormData((prev: any) => ({ ...prev, notas_fiscais: prev.notas_fiscais.filter((x: any) => x.id !== nf.id) }))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('notas_fiscais', formData.notas_fiscais.filter((x: any) => x.id !== nf.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                       </TableRow>
                     ))}</TableBody>
                   </Table>
                 </div>
 
-                {/* SUBSEÇÃO: DUE, LPCO e TRATAMENTO */}
+                {/* DUE, LPCO e TRATAMENTO */}
                 <div className="space-y-4 pt-4 border-t">
                   <div className="flex justify-between items-center">
                     <h3 className="text-md font-bold text-primary uppercase">DUE, LPCO e Tratamento</h3>
-                    <Button variant="outline" size="sm" type="button" onClick={() => setFormData((prev: any) => ({ ...prev, documentos_fiscais: [...(prev.documentos_fiscais || []), { id: Date.now(), tipo: 'DUE', identificacao: '', status: 'RASCUNHO SALVO', data: null, file: null }] }))}>
+                    <Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_fiscais', [...(formData.documentos_fiscais || []), { id: Date.now(), tipo: 'DUE', identificacao: '', status: 'RASCUNHO SALVO', data: null, file: null }])}>
                       <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Fiscal
                     </Button>
                   </div>
@@ -635,22 +657,26 @@ export default function NovoProcessoPage() {
                       <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
                       <TableCell><Select value={df.status} onValueChange={v => handleFiscalDocChange(df.id, 'status', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{df.tipo === 'DUE' ? dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : df.tipo === 'LPCO' ? lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></TableCell>
                       <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(df.file)}</div>{df.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_fiscal', id: df.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_fiscal', id: df.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                      <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => setFormData((prev: any) => ({ ...prev, documentos_fiscais: prev.documentos_fiscais.filter((x: any) => x.id !== df.id) }))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                      <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_fiscais', formData.documentos_fiscais.filter((x: any) => x.id !== df.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                     </TableRow>
                   ))}</TableBody></Table>
                 </div>
 
-                {/* SUBSEÇÃO: CONTEINERES */}
+                {/* CONTEINERES */}
                 <div className="pt-4 border-t">
-                    <h3 className="text-md font-bold text-primary uppercase mb-4">Contêineres para Inspeção</h3>
-                    <div className="space-y-2 rounded-md border p-4">
+                    <div className='flex justify-between items-center mb-4'>
+                      <h3 className="text-md font-bold text-primary uppercase">Inspeção de Contêineres</h3>
+                      <Button variant="outline" size="sm" type="button" onClick={() => containerFileInputRef.current?.click()}><FileUp className='mr-2 h-4 w-4'/> Importar CTRs</Button>
+                    </div>
+                    <div className="space-y-2 rounded-md border p-4 bg-muted/20">
                       {formData.containers.map((c: any, i: number) => (
-                        <div key={c.id} className="flex items-center gap-4">
+                        <div key={c.id} className="flex items-center gap-4 p-2 border-b last:border-0">
                           <Checkbox checked={c.inspecionado} onCheckedChange={v => handleContainerChange(i, 'inspecionado', !!v)} />
-                          <Label className="flex-1">{c.numero || `CTR ${i + 1}`}</Label>
-                          {c.inspecionado && <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre" className="h-8 max-w-xs" />}
+                          <Label className="flex-1 font-bold text-xs">{c.numero || `CTR ${i + 1}`}</Label>
+                          {c.inspecionado && <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre" className="h-8 max-w-[200px]" />}
                         </div>
                       ))}
+                      {formData.containers.length === 0 && <p className='text-xs text-muted-foreground text-center py-4'>Nenhum contêiner importado na Etapa 3.</p>}
                     </div>
                 </div>
               </CardContent></Card>
@@ -659,7 +685,7 @@ export default function NovoProcessoPage() {
 
           {/* ETAPA 4 */}
           <AccordionItem value="item-4" disabled={!isEditing}>
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(4)}<h3 className="text-lg font-semibold">Etapa 4: Confirmação de Embarque</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(4)}<h3 className="text-lg font-semibold text-left">Etapa 4: Confirmação de Embarque</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="grid md:grid-cols-2 gap-4 pt-6">
                 <div className="space-y-2"><Label>Navio Final</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} /></div>
@@ -673,10 +699,10 @@ export default function NovoProcessoPage() {
 
           {/* ETAPA 5 */}
           <AccordionItem value="item-5" disabled={!isEditing}>
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold">Etapa 5: Pós-Embarque</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold text-left">Etapa 5: Pós-Embarque (Malote)</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-6 pt-6">
-                <div className="flex justify-between items-center"><h3 className="font-medium">Malote</h3><Button variant="outline" size="sm" type="button" onClick={() => setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, file: null }] }))}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
+                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
                 <Table><TableHeader><TableRow><TableHead>Documento</TableHead><TableHead>Originais</TableHead><TableHead>Cópias</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>{formData.documentos_pos_embarque.map((d: any) => (
                   <TableRow key={d.id}>
@@ -684,21 +710,25 @@ export default function NovoProcessoPage() {
                     <TableCell><Input type="number" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
                     <TableCell><Input type="number" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
                     <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(d.file)}</div>{d.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_pos_embarque', id: d.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: d.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => setFormData((prev: any) => ({ ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.filter((x: any) => x.id !== d.id) }))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                    <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', formData.documentos_pos_embarque.filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
-                <div className="flex items-end gap-4"><div className="space-y-2 flex-1"><Label>AWB Courier</Label><Input value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} /></div><Button type="button" variant="outline" onClick={generateOriginalDocsPdf}><FileDown className="mr-2 h-4 w-4" />PDF Malote</Button></div>
+                <div className="flex items-end gap-4 border-t pt-4"><div className="space-y-2 flex-1"><Label>AWB Courier (Rastreio DHL/etc)</Label><Input value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} /></div><Button type="button" variant="outline" onClick={generateOriginalDocsPdf}><FileDown className="mr-2 h-4 w-4" />Gerar Malote PDF</Button></div>
               </CardContent></Card>
             </AccordionContent>
           </AccordionItem>
 
           {/* ETAPA 6 */}
           <AccordionItem value="item-6" disabled={!isEditing}>
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(6)}<h3 className="text-lg font-semibold">Etapa 6: Finalização</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(6)}<h3 className="text-lg font-semibold text-left">Etapa 6: Finalização</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="pt-6 text-center space-y-4">
-                <p className="text-muted-foreground">O processo será marcado como "Concluído" e arquivado.</p>
-                <Button className="w-full" type="button" onClick={() => handleInputChange('status', 'Concluído')} variant="default"><CheckCircle className="mr-2 h-4 w-4" />Concluir Agora</Button>
+                <div className='bg-green-50 border border-green-100 p-6 rounded-lg'>
+                  <CheckCircle className='h-12 w-12 text-green-500 mx-auto mb-4'/>
+                  <h4 className='text-xl font-bold text-green-800'>Processo Pronto para Concluir</h4>
+                  <p className="text-green-700 mt-2">O processo será marcado como "Concluído" e arquivado no histórico do cliente.</p>
+                </div>
+                <Button className="w-full h-14 text-lg font-bold" type="button" onClick={() => handleInputChange('status', 'Concluído')} variant="default"><CheckCircle className="mr-2 h-6 w-6" />FINALIZAR PROCESSO AGORA</Button>
               </CardContent></Card>
             </AccordionContent>
           </AccordionItem>
