@@ -23,7 +23,6 @@ import {
   Loader2, 
   FileUp, 
   Download, 
-  Info, 
   Save 
 } from 'lucide-react';
 import Link from 'next/link';
@@ -54,9 +53,6 @@ import { collection, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
 import { Progress } from '@/components/ui/progress';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
-import * as XLSX from 'xlsx';
 
 const MAX_FILE_SIZE_MB = 10;
 
@@ -226,11 +222,6 @@ export default function NovoProcessoPage() {
   const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
   const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
 
-  const portOptions = useMemo(() => {
-    if (!portos) return [];
-    return portos.map(p => ({ value: p.id, label: `${p.name} (${p.un_locode || 'N/A'}) - ${p.country || 'N/A'}` }));
-  }, [portos]);
-
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -259,7 +250,6 @@ export default function NovoProcessoPage() {
 
   const handleInputChange = (id: string, value: any) => {
     setFormData((prev: any) => {
-        // Proteção especial para o status para garantir que ele nunca fique vazio se tivermos um valor válido
         if (id === 'status' && !value) return prev;
         return { ...prev, [id]: value ?? '' };
     });
@@ -439,16 +429,12 @@ export default function NovoProcessoPage() {
     setIsSaving(true);
     try {
       const ref = doc(firestore, 'processos', pageProcessId);
-      
-      // Garante que o status seja preservado ou definido para o padrão caso esteja vazio
       const finalStatus = formData.status || processoData?.status || 'NOMEAÇÃO RECEBIDA';
-      
       await setDoc(ref, { 
         ...formData, 
         id: pageProcessId,
         status: finalStatus 
       }, { merge: true });
-      
       toast({ title: "Sucesso!", description: "Processo salvo com sucesso." });
       router.push('/dashboard/processos');
     } catch { toast({ title: "Erro", description: "Falha ao salvar.", variant: "destructive" }); }
@@ -458,6 +444,8 @@ export default function NovoProcessoPage() {
   const handleDownload = (file: FileData) => { if (file.downloadURL) window.open(file.downloadURL, '_blank'); };
 
   const generateOriginalDocsPdf = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
     const docPdf = new jsPDF();
     docPdf.text('Documentos de Embarque', 10, 10);
     (docPdf as any).autoTable({
@@ -468,6 +456,8 @@ export default function NovoProcessoPage() {
   };
 
   const generateNFsPdf = async () => {
+    const { default: jsPDF } = await import('jspdf');
+    await import('jspdf-autotable');
     const docPdf = new jsPDF();
     docPdf.text('Pacote de Notas Fiscais', 10, 10);
     (docPdf as any).autoTable({
@@ -480,6 +470,7 @@ export default function NovoProcessoPage() {
   const handleContainerImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    const XLSX = await import('xlsx');
     setIsImporting(true);
     const reader = new FileReader();
     reader.onload = (evt) => {
@@ -545,11 +536,27 @@ export default function NovoProcessoPage() {
         </div>
     );
     if (prog === 100 && file.uploadState !== 'success') return <div className='flex items-center gap-2 text-[10px]'><Loader2 className='h-3 w-3 animate-spin'/>A finalizar...</div>;
-    return <div className="flex items-center gap-2 overflow-hidden w-full"><CheckCircle className="h-3 w-3 text-green-500 shrink-0" /><span className="truncate text-xs flex-1">{file.name}</span></div>;
+    return (
+      <div className="flex items-center gap-2 overflow-hidden w-full">
+        <CheckCircle className="h-3 w-3 text-green-500 shrink-0" />
+        <span className="truncate text-xs flex-1">{file.name}</span>
+        {file.downloadURL && (
+          <Button 
+            type="button" 
+            variant="ghost" 
+            size="icon" 
+            className="h-6 w-6" 
+            onClick={() => handleDownload(file)}
+            title="Descarregar ficheiro"
+          >
+            <Download className="h-3 w-3 text-primary" />
+          </Button>
+        )}
+      </div>
+    );
   };
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo';
-  const pageDescription = isEditing ? 'Acompanhamento detalhado do processo de exportação.' : 'Inicie um novo processo de exportação preenchendo os dados abaixo.';
 
   if (isLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
@@ -591,7 +598,6 @@ export default function NovoProcessoPage() {
         <input type="file" ref={containerFileInputRef} onChange={handleContainerImport} className="hidden" accept=".xlsx,.xls" />
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
-          {/* ETAPA 1 */}
           <AccordionItem value="item-1">
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(1)}<h3 className="text-lg font-semibold text-left">Etapa 1: Dados do Processo e Booking</h3></div></AccordionTrigger>
             <AccordionContent>
@@ -639,7 +645,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* ETAPA 2 */}
           <AccordionItem value="item-2" disabled={!isEditing}>
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(2)}<h3 className="text-lg font-semibold text-left">Etapa 2: Drafts</h3></div></AccordionTrigger>
             <AccordionContent>
@@ -657,12 +662,10 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* ETAPA 3 */}
           <AccordionItem value="item-3" disabled={!isEditing}>
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(3)}<h3 className="text-lg font-semibold text-left">Etapa 3: Inspeção e Fiscalização</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-8 pt-6">
-                {/* NOTAS FISCAIS */}
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <h3 className="text-md font-bold text-primary uppercase">Notas Fiscais</h3>
@@ -700,7 +703,6 @@ export default function NovoProcessoPage() {
                   </Table>
                 </div>
 
-                {/* DUE, LPCO e TRATAMENTO */}
                 <div className="space-y-4 pt-4 border-t">
                   <div className="flex justify-between items-center">
                     <h3 className="text-md font-bold text-primary uppercase">DUE, LPCO e Tratamento</h3>
@@ -720,7 +722,6 @@ export default function NovoProcessoPage() {
                   ))}</TableBody></Table>
                 </div>
 
-                {/* CONTEINERES */}
                 <div className="pt-4 border-t">
                     <div className='flex justify-between items-center mb-4'>
                       <h3 className="text-md font-bold text-primary uppercase">Inspeção de Contêineres</h3>
@@ -741,7 +742,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* ETAPA 4 */}
           <AccordionItem value="item-4" disabled={!isEditing}>
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(4)}<h3 className="text-lg font-semibold text-left">Etapa 4: Confirmação de Embarque</h3></div></AccordionTrigger>
             <AccordionContent>
@@ -755,7 +755,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* ETAPA 5 */}
           <AccordionItem value="item-5" disabled={!isEditing}>
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold text-left">Etapa 5: Pós-Embarque (Malote)</h3></div></AccordionTrigger>
             <AccordionContent>
@@ -776,7 +775,6 @@ export default function NovoProcessoPage() {
             </AccordionContent>
           </AccordionItem>
 
-          {/* ETAPA 6 */}
           <AccordionItem value="item-6" disabled={!isEditing}>
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(6)}<h3 className="text-lg font-semibold text-left">Etapa 6: Finalização</h3></div></AccordionTrigger>
             <AccordionContent>
