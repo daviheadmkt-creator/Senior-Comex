@@ -54,6 +54,9 @@ import { collection, doc, setDoc } from 'firebase/firestore';
 import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
 import { Progress } from '@/components/ui/progress';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
+import * as XLSX from 'xlsx';
 
 const MAX_FILE_SIZE_MB = 10;
 
@@ -153,6 +156,34 @@ function sanitizeFileName(name: string) {
     .replace(/[^a-zA-Z0-9._-]/g, '');
 }
 
+const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
+  if (!status) return 'outline';
+  const lowerStatus = status.toLowerCase();
+  if (
+    lowerStatus.includes('embarcado') ||
+    lowerStatus.includes('aprovados') ||
+    lowerStatus.includes('desembaraçada') ||
+    lowerStatus.includes('deferida') ||
+    lowerStatus.includes('liberado') ||
+    lowerStatus.includes('averbada') ||
+    lowerStatus.includes('concluído') ||
+    lowerStatus.includes('set doc enviado')
+  ) return 'default';
+  if (lowerStatus.includes('recebida') || lowerStatus.includes('registrada')) return 'outline';
+  if (
+    lowerStatus.includes('aguardando') ||
+    lowerStatus.includes('em analise') ||
+    lowerStatus.includes('em aprovação')
+  ) return 'secondary';
+  if (
+    lowerStatus.includes('exigencia') ||
+    lowerStatus.includes('cancelado') ||
+    lowerStatus.includes('indeferida') ||
+    lowerStatus.includes('rejeitado')
+  ) return 'destructive';
+  return 'outline';
+};
+
 export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -195,6 +226,11 @@ export default function NovoProcessoPage() {
   const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
   const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
 
+  const portOptions = useMemo(() => {
+    if (!portos) return [];
+    return portos.map(p => ({ value: p.id, label: `${p.name} (${p.un_locode || 'N/A'}) - ${p.country || 'N/A'}` }));
+  }, [portos]);
+
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -222,7 +258,11 @@ export default function NovoProcessoPage() {
   const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingPorts;
 
   const handleInputChange = (id: string, value: any) => {
-    setFormData((prev: any) => ({ ...prev, [id]: value ?? '' }));
+    setFormData((prev: any) => {
+        // Proteção especial para o status para garantir que ele nunca fique vazio se tivermos um valor válido
+        if (id === 'status' && !value) return prev;
+        return { ...prev, [id]: value ?? '' };
+    });
   };
 
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -399,8 +439,17 @@ export default function NovoProcessoPage() {
     setIsSaving(true);
     try {
       const ref = doc(firestore, 'processos', pageProcessId);
-      await setDoc(ref, { ...formData, id: pageProcessId }, { merge: true });
-      toast({ title: "Sucesso!", description: "Processo salvo." });
+      
+      // Garante que o status seja preservado ou definido para o padrão caso esteja vazio
+      const finalStatus = formData.status || processoData?.status || 'NOMEAÇÃO RECEBIDA';
+      
+      await setDoc(ref, { 
+        ...formData, 
+        id: pageProcessId,
+        status: finalStatus 
+      }, { merge: true });
+      
+      toast({ title: "Sucesso!", description: "Processo salvo com sucesso." });
       router.push('/dashboard/processos');
     } catch { toast({ title: "Erro", description: "Falha ao salvar.", variant: "destructive" }); }
     finally { setIsSaving(false); }
@@ -409,8 +458,6 @@ export default function NovoProcessoPage() {
   const handleDownload = (file: FileData) => { if (file.downloadURL) window.open(file.downloadURL, '_blank'); };
 
   const generateOriginalDocsPdf = async () => {
-    const jsPDF = (await import('jspdf')).default;
-    await import('jspdf-autotable');
     const docPdf = new jsPDF();
     docPdf.text('Documentos de Embarque', 10, 10);
     (docPdf as any).autoTable({
@@ -421,8 +468,6 @@ export default function NovoProcessoPage() {
   };
 
   const generateNFsPdf = async () => {
-    const jsPDF = (await import('jspdf')).default;
-    await import('jspdf-autotable');
     const docPdf = new jsPDF();
     docPdf.text('Pacote de Notas Fiscais', 10, 10);
     (docPdf as any).autoTable({
@@ -436,7 +481,6 @@ export default function NovoProcessoPage() {
     const file = e.target.files?.[0];
     if (!file) return;
     setIsImporting(true);
-    const XLSX = await import('xlsx');
     const reader = new FileReader();
     reader.onload = (evt) => {
       const data = new Uint8Array(evt.target?.result as ArrayBuffer);
@@ -471,7 +515,10 @@ export default function NovoProcessoPage() {
         setUploadProgresses(prev => ({ ...prev, [filePath]: 1 }));
 
         uploadTask.on('state_changed', 
-          snapshot => setUploadProgresses(prev => ({ ...prev, [filePath]: (snapshot.bytesTransferred / snapshot.totalBytes) * 100 })),
+          snapshot => {
+            const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgresses(prev => ({ ...prev, [filePath]: prog }));
+          },
           err => toast({ title: "Falha", description: err.message }),
           async () => {
             const url = await getDownloadURL(uploadTask.snapshot.ref);
@@ -515,8 +562,19 @@ export default function NovoProcessoPage() {
             <div>
               <h1 className="text-2xl font-bold tracking-tight">{pageTitle}</h1>
               <div className='mt-2'>
-                <Select value={formData.status} onValueChange={v => handleInputChange('status', v)}>
-                  <SelectTrigger className="w-[350px] h-8 text-xs"><SelectValue placeholder="Status" /></SelectTrigger>
+                <Select value={formData.status || 'NOMEAÇÃO RECEBIDA'} onValueChange={v => handleInputChange('status', v)}>
+                  <SelectTrigger className="w-[350px] h-10 text-xs bg-background shadow-sm border-primary/20">
+                    <div className="flex items-center gap-2">
+                      <span className={cn(
+                        "h-2.5 w-2.5 rounded-full shrink-0",
+                        getStatusVariant(formData.status) === 'default' && 'bg-green-500',
+                        getStatusVariant(formData.status) === 'secondary' && 'bg-yellow-500',
+                        getStatusVariant(formData.status) === 'destructive' && 'bg-red-500',
+                        getStatusVariant(formData.status) === 'outline' && 'bg-gray-400'
+                      )}></span>
+                      <SelectValue placeholder="Status do Processo" />
+                    </div>
+                  </SelectTrigger>
                   <SelectContent>{processStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
@@ -702,7 +760,7 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold text-left">Etapa 5: Pós-Embarque (Malote)</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-6 pt-6">
-                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...prev.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
+                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...formData.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
                 <Table><TableHeader><TableRow><TableHead>Documento</TableHead><TableHead>Originais</TableHead><TableHead>Cópias</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>{formData.documentos_pos_embarque.map((d: any) => (
                   <TableRow key={d.id}>
