@@ -211,7 +211,7 @@ export default function GestaoProcessosPage() {
                   
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
-                  // Lógica Rigorosa de Deadlines
+                  // Lógica Rigorosa de Deadlines - Agora só exibe OK se tiver arquivo, e oculta data se OK
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);

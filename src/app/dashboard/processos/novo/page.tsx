@@ -684,7 +684,7 @@ export default function NovoProcessoPage() {
                 </div>
 
                 {/* 1.4 Booking & Armador */}
-                <div className="grid md:grid-cols-4 gap-4 pt-4 border-t">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
                   <div className="space-y-2"><Label>Navio</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Nome do navio" /></div>
                   <div className="space-y-2"><Label>Viagem</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Número da viagem" /></div>
                   <div className="space-y-2"><Label>Número do Booking</Label><Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} /></div>
@@ -721,7 +721,7 @@ export default function NovoProcessoPage() {
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
                         {!isLoadingTerminals && (!terminais || terminais.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).length === 0) && (
-                          <SelectItem value="none" disabled>Nenhum terminal encontrado</SelectItem>
+                          <SelectItem value="none" disabled>Nenhum terminal encontrado para este porto</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -738,7 +738,7 @@ export default function NovoProcessoPage() {
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
                         {!isLoadingTerminals && (!terminais || terminais.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).length === 0) && (
-                          <SelectItem value="none" disabled>Nenhum terminal encontrado</SelectItem>
+                          <SelectItem value="none" disabled>Nenhum terminal encontrado para este porto</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
