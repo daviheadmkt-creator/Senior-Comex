@@ -476,8 +476,17 @@ export default function NovoProcessoPage() {
       const data = new Uint8Array(evt.target?.result as ArrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
       const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-      setFormData(prev => ({ ...prev, containers: [...prev.containers, ...json.map((r: any) => ({ id: Date.now() + Math.random(), ...r }))] }));
+      const newContainers = json.map((r: any) => ({ 
+        id: Date.now() + Math.random(), 
+        numero: String(r.numero || r.numero_container || ''),
+        tipo: String(r.tipo || r.tamanho || ''),
+        lacre_original: String(r.lacre || r.lacre_original || ''),
+        inspecionado: false,
+        novo_lacre: ''
+      }));
+      setFormData(prev => ({ ...prev, containers: [...prev.containers, ...newContainers] }));
       setIsImporting(false);
+      toast({ title: "Importação Concluída", description: `${newContainers.length} contêineres adicionados.` });
     };
     reader.readAsArrayBuffer(file);
   };
@@ -722,20 +731,74 @@ export default function NovoProcessoPage() {
                   ))}</TableBody></Table>
                 </div>
 
-                <div className="pt-4 border-t">
-                    <div className='flex justify-between items-center mb-4'>
-                      <h3 className="text-md font-bold text-primary uppercase">Inspeção de Contêineres</h3>
-                      <Button variant="outline" size="sm" type="button" onClick={() => containerFileInputRef.current?.click()}><FileUp className='mr-2 h-4 w-4'/> Importar CTRs</Button>
+                {/* GESTÃO DE CONTÊINERES (RESTAURADO) */}
+                <div className="pt-4 border-t space-y-4">
+                    <div className='flex justify-between items-center'>
+                      <h3 className="text-md font-bold text-primary uppercase">Gestão de Contêineres</h3>
+                      <div className='flex gap-2'>
+                        <Button variant="outline" size="sm" type="button" onClick={() => containerFileInputRef.current?.click()} disabled={isImporting}>
+                          {isImporting ? <Loader2 className='mr-2 h-4 w-4 animate-spin'/> : <FileUp className='mr-2 h-4 w-4'/>}
+                          Importar XLSX
+                        </Button>
+                        <Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('containers', [...formData.containers, { id: Date.now(), numero: '', tipo: '', lacre_original: '', inspecionado: false, novo_lacre: '' }])}>
+                          <PlusCircle className='mr-2 h-4 w-4'/> Add Manual
+                        </Button>
+                      </div>
                     </div>
+                    <div className='overflow-x-auto rounded-md border'>
+                      <Table>
+                        <TableHeader>
+                          <TableRow className='bg-muted/50'>
+                            <TableHead className='w-[200px]'>Número do Contêiner</TableHead>
+                            <TableHead>Tipo / Tamanho</TableHead>
+                            <TableHead>Lacre Original</TableHead>
+                            <TableHead className='w-[50px]'></TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {formData.containers.map((c: any, index: number) => (
+                            <TableRow key={c.id}>
+                              <TableCell><Input value={c.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: ABCD1234567" className='h-8 text-xs font-mono'/></TableCell>
+                              <TableCell><Input value={c.tipo} onChange={e => handleContainerChange(index, 'tipo', e.target.value)} placeholder="Ex: 40HC" className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="Lacre Agente/Armador" className='h-8 text-xs'/></TableCell>
+                              <TableCell>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('containers', formData.containers.filter((_: any, i: number) => i !== index))}>
+                                  <Trash2 className='h-4 w-4 text-destructive'/>
+                                </Button>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {formData.containers.length === 0 && (
+                            <TableRow>
+                              <TableCell colSpan={4} className='text-center py-8 text-muted-foreground italic text-xs'>
+                                Nenhum contêiner cadastrado. Importe uma planilha ou adicione manualmente.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                </div>
+
+                <div className="pt-4 border-t">
+                    <h3 className="text-md font-bold text-primary uppercase mb-4">Inspeção Física e Lacração</h3>
                     <div className="space-y-2 rounded-md border p-4 bg-muted/20">
                       {formData.containers.map((c: any, i: number) => (
                         <div key={c.id} className="flex items-center gap-4 p-2 border-b last:border-0">
                           <Checkbox checked={c.inspecionado} onCheckedChange={v => handleContainerChange(i, 'inspecionado', !!v)} />
-                          <Label className="flex-1 font-bold text-xs">{c.numero || `CTR ${i + 1}`}</Label>
-                          {c.inspecionado && <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre" className="h-8 max-w-[200px]" />}
+                          <div className='flex-1 flex flex-col'>
+                            <Label className="font-bold text-xs">{c.numero || `CONTÊINER ${i + 1}`}</Label>
+                            <span className='text-[10px] text-muted-foreground uppercase'>{c.tipo} {c.lacre_original && `| Lacre: ${c.lacre_original}`}</span>
+                          </div>
+                          {c.inspecionado && (
+                            <div className='flex items-center gap-2'>
+                              <span className='text-[10px] font-bold text-muted-foreground uppercase'>NOVO LACRE:</span>
+                              <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre MAPA/Senior" className="h-8 w-[180px] text-xs" />
+                            </div>
+                          )}
                         </div>
                       ))}
-                      {formData.containers.length === 0 && <p className='text-xs text-muted-foreground text-center py-4'>Nenhum contêiner importado na Etapa 3.</p>}
+                      {formData.containers.length === 0 && <p className='text-xs text-muted-foreground text-center py-4'>Aguardando cadastro de contêineres para inspeção.</p>}
                     </div>
                 </div>
               </CardContent></Card>
