@@ -479,8 +479,14 @@ export default function NovoProcessoPage() {
       const newContainers = json.map((r: any) => ({ 
         id: Date.now() + Math.random(), 
         numero: String(r.numero || r.numero_container || ''),
-        tipo: String(r.tipo || r.tamanho || ''),
         lacre_original: String(r.lacre || r.lacre_original || ''),
+        tare: String(r.tare || ''),
+        qty_especie: String(r.qty_especie || ''),
+        gross_weight: String(r.gross_weight || ''),
+        net_weight: String(r.net_weight || ''),
+        m3: String(r.m3 || ''),
+        vgm: String(r.vgm || ''),
+        tipo: String(r.tipo || ''),
         inspecionado: false,
         novo_lacre: ''
       }));
@@ -718,20 +724,21 @@ export default function NovoProcessoPage() {
                       <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Fiscal
                     </Button>
                   </div>
-                  <Table><TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Identificação</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                  <TableBody>{formData.documentos_fiscais?.map((df: any) => (
-                    <TableRow key={df.id}>
-                      <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></TableCell>
-                      <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
-                      <TableCell><Select value={df.status} onValueChange={v => handleFiscalDocChange(df.id, 'status', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{df.tipo === 'DUE' ? dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : df.tipo === 'LPCO' ? lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></TableCell>
-                      <TableCell><DatePicker date={df.data} onDateChange={v => handleFiscalDocChange(df.id, 'data', v)} /></TableCell>
-                      <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(df.file)}</div>{df.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_fiscal', id: df.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_fiscal', id: df.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                      <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_fiscais', formData.documentos_fiscais.filter((x: any) => x.id !== df.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
-                    </TableRow>
-                  ))}</TableBody></Table>
+                  <div className="overflow-x-auto rounded-md border">
+                    <Table><TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Identificação</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                    <TableBody>{formData.documentos_fiscais?.map((df: any) => (
+                      <TableRow key={df.id}>
+                        <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></TableCell>
+                        <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
+                        <TableCell><Select value={df.status} onValueChange={v => handleFiscalDocChange(df.id, 'status', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{df.tipo === 'DUE' ? dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : df.tipo === 'LPCO' ? lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></TableCell>
+                        <TableCell><DatePicker date={df.data} onDateChange={v => handleFiscalDocChange(df.id, 'data', v)} /></TableCell>
+                        <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(df.file)}</div>{df.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_fiscal', id: df.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_fiscal', id: df.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_fiscais', formData.documentos_fiscais.filter((x: any) => x.id !== df.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                      </TableRow>
+                    ))}</TableBody></Table>
+                  </div>
                 </div>
 
-                {/* GESTÃO DE CONTÊINERES (RESTAURADO) */}
                 <div className="pt-4 border-t space-y-4">
                     <div className='flex justify-between items-center'>
                       <h3 className="text-md font-bold text-primary uppercase">Gestão de Contêineres</h3>
@@ -740,27 +747,37 @@ export default function NovoProcessoPage() {
                           {isImporting ? <Loader2 className='mr-2 h-4 w-4 animate-spin'/> : <FileUp className='mr-2 h-4 w-4'/>}
                           Importar XLSX
                         </Button>
-                        <Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('containers', [...formData.containers, { id: Date.now(), numero: '', tipo: '', lacre_original: '', inspecionado: false, novo_lacre: '' }])}>
+                        <Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('containers', [...formData.containers, { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }])}>
                           <PlusCircle className='mr-2 h-4 w-4'/> Add Manual
                         </Button>
                       </div>
                     </div>
                     <div className='overflow-x-auto rounded-md border'>
-                      <Table>
+                      <Table className="min-w-[1200px]">
                         <TableHeader>
                           <TableRow className='bg-muted/50'>
-                            <TableHead className='w-[200px]'>Número do Contêiner</TableHead>
-                            <TableHead>Tipo / Tamanho</TableHead>
-                            <TableHead>Lacre Original</TableHead>
+                            <TableHead className='w-[150px]'>Número</TableHead>
+                            <TableHead className='w-[150px]'>Lacre Original</TableHead>
+                            <TableHead className='w-[100px]'>Tara</TableHead>
+                            <TableHead className='w-[100px]'>Qty/Espécie</TableHead>
+                            <TableHead className='w-[120px]'>Peso Bruto</TableHead>
+                            <TableHead className='w-[120px]'>Peso Líquido</TableHead>
+                            <TableHead className='w-[100px]'>M3</TableHead>
+                            <TableHead className='w-[120px]'>VGM</TableHead>
                             <TableHead className='w-[50px]'></TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {formData.containers.map((c: any, index: number) => (
                             <TableRow key={c.id}>
-                              <TableCell><Input value={c.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="Ex: ABCD1234567" className='h-8 text-xs font-mono'/></TableCell>
-                              <TableCell><Input value={c.tipo} onChange={e => handleContainerChange(index, 'tipo', e.target.value)} placeholder="Ex: 40HC" className='h-8 text-xs'/></TableCell>
-                              <TableCell><Input value={c.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="Lacre Agente/Armador" className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="CAAU..." className='h-8 text-xs font-mono'/></TableCell>
+                              <TableCell><Input value={c.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="MLBR..." className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.tare} onChange={e => handleContainerChange(index, 'tare', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.qty_especie} onChange={e => handleContainerChange(index, 'qty_especie', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.gross_weight} onChange={e => handleContainerChange(index, 'gross_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.net_weight} onChange={e => handleContainerChange(index, 'net_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.m3} onChange={e => handleContainerChange(index, 'm3', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.vgm} onChange={e => handleContainerChange(index, 'vgm', e.target.value)} className='h-8 text-xs font-bold text-primary'/></TableCell>
                               <TableCell>
                                 <Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('containers', formData.containers.filter((_: any, i: number) => i !== index))}>
                                   <Trash2 className='h-4 w-4 text-destructive'/>
@@ -770,7 +787,7 @@ export default function NovoProcessoPage() {
                           ))}
                           {formData.containers.length === 0 && (
                             <TableRow>
-                              <TableCell colSpan={4} className='text-center py-8 text-muted-foreground italic text-xs'>
+                              <TableCell colSpan={9} className='text-center py-8 text-muted-foreground italic text-xs'>
                                 Nenhum contêiner cadastrado. Importe uma planilha ou adicione manualmente.
                               </TableCell>
                             </TableRow>
@@ -788,7 +805,7 @@ export default function NovoProcessoPage() {
                           <Checkbox checked={c.inspecionado} onCheckedChange={v => handleContainerChange(i, 'inspecionado', !!v)} />
                           <div className='flex-1 flex flex-col'>
                             <Label className="font-bold text-xs">{c.numero || `CONTÊINER ${i + 1}`}</Label>
-                            <span className='text-[10px] text-muted-foreground uppercase'>{c.tipo} {c.lacre_original && `| Lacre: ${c.lacre_original}`}</span>
+                            <span className='text-[10px] text-muted-foreground uppercase'>VGM: {c.vgm} {c.lacre_original && `| Lacre: ${c.lacre_original}`}</span>
                           </div>
                           {c.inspecionado && (
                             <div className='flex items-center gap-2'>
