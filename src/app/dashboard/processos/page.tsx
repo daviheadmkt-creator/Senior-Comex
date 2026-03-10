@@ -204,7 +204,11 @@ export default function GestaoProcessosPage() {
                     packing: getDocStatus('PACKING LIST'),
                   };
 
+                  // Busca dados das tabelas fiscais da Etapa 3
+                  const fiscalLPCO = processo.documentos_fiscais?.find((df: any) => df.tipo === 'LPCO');
+                  const fiscalDUE = processo.documentos_fiscais?.find((df: any) => df.tipo === 'DUE');
                   const fiscalTreatment = processo.documentos_fiscais?.find((df: any) => df.tipo === 'TRATAMENTO');
+                  
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
                   // Lógica Rigorosa de Deadlines
@@ -372,7 +376,7 @@ export default function GestaoProcessosPage() {
                               "font-bold",
                               processo.containers?.length > 0 ? "text-primary" : "text-destructive"
                             )}>
-                              {processo.containers?.length > 0 ? formatDate(processo.data_containers || processo.data_nomeacao) : '---'}
+                              {processo.containers?.length > 0 ? formatDate(processo.data_containers) : '---'}
                             </span>
                           </div>
                           <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{getNFDate('Remessa')}</span></div>
@@ -383,8 +387,8 @@ export default function GestaoProcessosPage() {
                       {/* 14. LPCO / INSPEÇÃO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{processo.lpco_protocolo || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{processo.mapa_status?.includes('DEFERIDA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{fiscalLPCO?.identificacao || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---'}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{treatmentDate}</span></div>
                         </div>
                       </td>
@@ -392,9 +396,9 @@ export default function GestaoProcessosPage() {
                       {/* 15. DUE / DESEMBARAÇO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{processo.due_numero || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{processo.due_status?.includes('DESEMBARAÇADA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{processo.due_status === 'AVERBADA' ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.includes('DESEMBARAÇADA') || fiscalDUE?.status?.includes('AVERBADA')) ? formatDate(fiscalDUE.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{fiscalDUE?.status === 'AVERBADA' ? formatDate(fiscalDUE.data) : '---'}</span></div>
                         </div>
                       </td>
 
