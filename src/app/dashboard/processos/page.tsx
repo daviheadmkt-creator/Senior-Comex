@@ -1,4 +1,3 @@
-
 'use client';
 
 import {
@@ -154,7 +153,7 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[140px]">DEAD LINE / PRAZO</th>
                   <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
                   <th className="px-2 min-w-[150px]">ARMAZEM / TERMINAIS</th>
-                  <th className="px-2 min-w-[150px]">DADOS / NOTAS FISCAIS</th>
+                  <th className="px-2 min-w-[150px]">CONTAINERS / NOTAS FISCAIS</th>
                   <th className="px-2 min-w-[150px]">LPCO / INSPEÇÃO (MAPA)</th>
                   <th className="px-2 min-w-[150px]">DUE / DESEMBARAÇO</th>
                   <th className="px-2 min-w-[80px]">BL</th>
@@ -364,10 +363,18 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 13. DADOS / NOTAS FISCAIS */}
+                      {/* 13. CONTAINERS / NOTAS FISCAIS */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>CONTAINERS</span> <span className="text-destructive font-bold">{processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>CONTAINERS</span> 
+                            <span className={cn(
+                              "font-bold",
+                              processo.containers?.length > 0 ? "text-primary" : "text-destructive"
+                            )}>
+                              {processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}
+                            </span>
+                          </div>
                           <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{getNFDate('Remessa')}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold">{getNFDate('Exportação')}</span></div>
                         </div>
