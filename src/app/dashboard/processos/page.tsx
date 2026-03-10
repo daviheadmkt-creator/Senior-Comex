@@ -208,10 +208,11 @@ export default function GestaoProcessosPage() {
                   const fiscalTreatment = processo.documentos_fiscais?.find((df: any) => df.tipo === 'TRATAMENTO');
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
-                  // Lógica de Deadlines com verificação de URL de download para precisão total
-                  const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
-                  const isVGMOk = !!processo.deadline_vgm_file?.downloadURL;
-                  const isCargaOk = !!processo.deadline_carga_file?.downloadURL;
+                  // Lógica de Deadlines - Verificação rigorosa da URL de download para precisão visual
+                  const isDraftOk = (processo.deadline_draft_file?.downloadURL && processo.deadline_draft_file.downloadURL !== '') || 
+                                   (processo.draft_bl_file?.downloadURL && processo.draft_bl_file.downloadURL !== '');
+                  const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL && processo.deadline_vgm_file.downloadURL !== '');
+                  const isCargaOk = !!(processo.deadline_carga_file?.downloadURL && processo.deadline_carga_file.downloadURL !== '');
 
                   return (
                     <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
