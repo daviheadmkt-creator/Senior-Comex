@@ -232,6 +232,14 @@ export default function NovoProcessoPage() {
     return new Map(portos.map(p => [p.id, p.name]));
   }, [portos]);
 
+  const terminalsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
+  const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminalsCollection);
+
+  const terminalsMap = useMemo(() => {
+    if (!terminais) return new Map();
+    return new Map(terminais.map(t => [t.id, t.name]));
+  }, [terminais]);
+
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -257,7 +265,7 @@ export default function NovoProcessoPage() {
     }
   }, [isEditing, processoData, parceiros]);
 
-  const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingPorts;
+  const isLoading = isLoadingProcesso || isLoadingParceiros || isLoadingPorts || isLoadingTerminals;
 
   const handleInputChange = (id: string, value: any) => {
     setFormData((prev: any) => {
@@ -449,6 +457,9 @@ export default function NovoProcessoPage() {
         exportadorNome: partnersMap.get(formData.exportadorId) || '',
         portoEmbarqueNome: portsMap.get(formData.portoEmbarqueId) || '',
         portoDescargaNome: portsMap.get(formData.portoDescargaId) || '',
+        terminalDespachoNome: terminalsMap.get(formData.terminalDespachoId) || '',
+        terminalEmbarqueNome: terminalsMap.get(formData.terminalEmbarqueId) || '',
+        armadorNome: partnersMap.get(formData.armadorId) || '',
       };
 
       await setDoc(ref, payload, { merge: true });
@@ -636,15 +647,18 @@ export default function NovoProcessoPage() {
 
         <Accordion type="single" collapsible className="w-full" defaultValue="item-1">
           <AccordionItem value="item-1">
-            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(1)}<h3 className="text-lg font-semibold text-left">Etapa 1: Dados do Processo e Booking</h3></div></AccordionTrigger>
+            <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(1)}<h3 className="text-lg font-semibold text-left">Etapa 1: Dados do Processo e Reserva</h3></div></AccordionTrigger>
             <AccordionContent>
-              <Card><CardContent className="grid gap-6 pt-6">
+              <Card><CardContent className="grid gap-8 pt-6">
+                {/* 1.1 Básicos */}
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2"><Label>Processo Interno</Label><Input value={formData.processo_interno || ''} onChange={e => handleInputChange('processo_interno', e.target.value)} /></div>
                   <div className="space-y-2"><Label>PO</Label><Input value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Data Nomeação</Label><DatePicker date={formData.data_nomeacao} onDateChange={d => handleInputChange('data_nomeacao', d)} /></div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+
+                {/* 1.2 Comercial */}
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label>Exportador</Label>
                     <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.exportadorId} onValueChange={v => {
@@ -662,14 +676,67 @@ export default function NovoProcessoPage() {
                     }} disabled={!formData.exportadorId} />
                   </div>
                 </div>
-                <div className="grid md:grid-cols-2 gap-4">
+
+                {/* 1.3 Carga */}
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2"><Label>Produto</Label><Input value={formData.produtoNome || ''} onChange={e => handleInputChange('produtoNome', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Quantidade</Label><Input value={formData.quantidade || ''} onChange={handleQuantityChange} /></div>
                 </div>
-                <div className="grid md:grid-cols-3 gap-6">
+
+                {/* 1.4 Booking & Armador */}
+                <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="space-y-2"><Label>Número do Booking (Reserva)</Label><Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} /></div>
+                  <div className="space-y-2">
+                    <Label>Armador</Label>
+                    <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
+                  </div>
+                  <div className="space-y-2"><Label>Viagem / Armazém</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} /></div>
+                </div>
+
+                {/* 1.5 Rota */}
+                <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Porto de Embarque (Origem)</Label>
+                    <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoEmbarqueId} onValueChange={v => handleInputChange('portoEmbarqueId', v)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Porto de Descarga</Label>
+                    <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoDescargaId} onValueChange={v => handleInputChange('portoDescargaId', v)} />
+                  </div>
+                  <div className="space-y-2"><Label>Destino Final</Label><Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} /></div>
+                </div>
+
+                {/* 1.6 Terminais */}
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Terminal de Despacho (REDEX)</Label>
+                    <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o terminal" /></SelectTrigger>
+                      <SelectContent>
+                        {terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === formData.portoEmbarqueId).map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Terminal de Embarque</Label>
+                    <Select value={formData.terminalEmbarqueId} onValueChange={v => handleInputChange('terminalEmbarqueId', v)}>
+                      <SelectTrigger><SelectValue placeholder="Selecione o terminal" /></SelectTrigger>
+                      <SelectContent>
+                        {terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === formData.portoEmbarqueId).map(t => (
+                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                {/* 1.7 Deadlines */}
+                <div className="grid md:grid-cols-3 gap-6 pt-4 border-t">
                     {['deadline_draft', 'deadline_vgm', 'deadline_carga'].map(field => (
                         <div key={field} className="space-y-2">
-                            <Label className="capitalize">{field.replace('_', ' ')}</Label>
+                            <Label className="capitalize font-bold text-xs">{field.replace('_', ' ')}</Label>
                             <DatePicker date={formData[field]} onDateChange={d => handleInputChange(field, d)} showTime />
                             <div className="mt-2 flex items-center gap-2">
                                 <div className="flex-1 p-2 border rounded-md bg-muted overflow-hidden">{renderFileState(formData[`${field}_file`])}</div>
