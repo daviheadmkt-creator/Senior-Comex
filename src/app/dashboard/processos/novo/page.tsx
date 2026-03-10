@@ -124,6 +124,7 @@ const initialFormData = {
   navio: '',
   viagem: '',
   containers: [],
+  data_containers: null,
   documentos_pos_embarque: [],
   notas_fiscais: [],
   documentos_fiscais: [],
@@ -218,8 +219,18 @@ export default function NovoProcessoPage() {
   const partnersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'partners') : null, [firestore]);
   const { data: parceiros, isLoading: isLoadingParceiros } = useCollection(partnersCollection);
 
+  const partnersMap = useMemo(() => {
+    if (!parceiros) return new Map();
+    return new Map(parceiros.map(p => [p.id, p.nome_fantasia || p.razao_social]));
+  }, [parceiros]);
+
   const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
   const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
+
+  const portsMap = useMemo(() => {
+    if (!portos) return new Map();
+    return new Map(portos.map(p => [p.id, p.name]));
+  }, [portos]);
 
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
@@ -236,6 +247,7 @@ export default function NovoProcessoPage() {
         ...processoData,
         status: processoData.status || 'NOMEAÇÃO RECEBIDA',
         containers: processoData.containers || [],
+        data_containers: processoData.data_containers || null,
         documentos_pos_embarque: processoData.documentos_pos_embarque || [],
         notas_fiscais: processoData.notas_fiscais || [],
         documentos_fiscais: processoData.documentos_fiscais || [],
@@ -429,11 +441,17 @@ export default function NovoProcessoPage() {
     try {
       const ref = doc(firestore, 'processos', pageProcessId);
       const finalStatus = formData.status || processoData?.status || 'NOMEAÇÃO RECEBIDA';
-      await setDoc(ref, { 
+      
+      const payload = { 
         ...formData, 
         id: pageProcessId,
-        status: finalStatus 
-      }, { merge: true });
+        status: finalStatus,
+        exportadorNome: partnersMap.get(formData.exportadorId) || '',
+        portoEmbarqueNome: portsMap.get(formData.portoEmbarqueId) || '',
+        portoDescargaNome: portsMap.get(formData.portoDescargaId) || '',
+      };
+
+      await setDoc(ref, payload, { merge: true });
       toast({ title: "Sucesso!", description: "Processo salvo com sucesso." });
       router.push('/dashboard/processos');
     } catch { toast({ title: "Erro", description: "Falha ao salvar.", variant: "destructive" }); }
@@ -476,6 +494,7 @@ export default function NovoProcessoPage() {
       const data = new Uint8Array(evt.target?.result as ArrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
       const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
+      const now = new Date().toISOString();
       const newContainers = json.map((r: any) => ({ 
         id: Date.now() + Math.random(), 
         numero: String(r.numero || r.numero_container || ''),
@@ -490,7 +509,11 @@ export default function NovoProcessoPage() {
         inspecionado: false,
         novo_lacre: ''
       }));
-      setFormData(prev => ({ ...prev, containers: [...prev.containers, ...newContainers] }));
+      setFormData(prev => ({ 
+        ...prev, 
+        containers: [...prev.containers, ...newContainers],
+        data_containers: now
+      }));
       setIsImporting(false);
       toast({ title: "Importação Concluída", description: `${newContainers.length} contêineres adicionados.` });
     };
@@ -747,7 +770,11 @@ export default function NovoProcessoPage() {
                           {isImporting ? <Loader2 className='mr-2 h-4 w-4 animate-spin'/> : <FileUp className='mr-2 h-4 w-4'/>}
                           Importar XLSX
                         </Button>
-                        <Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('containers', [...formData.containers, { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }])}>
+                        <Button variant="outline" size="sm" type="button" onClick={() => {
+                          const now = new Date().toISOString();
+                          const newContainers = [...formData.containers, { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }];
+                          setFormData(prev => ({ ...prev, containers: newContainers, data_containers: now }));
+                        }}>
                           <PlusCircle className='mr-2 h-4 w-4'/> Add Manual
                         </Button>
                       </div>

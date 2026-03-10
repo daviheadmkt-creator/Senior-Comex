@@ -372,7 +372,7 @@ export default function GestaoProcessosPage() {
                               "font-bold",
                               processo.containers?.length > 0 ? "text-primary" : "text-destructive"
                             )}>
-                              {processo.containers?.length > 0 ? formatDate(processo.data_nomeacao) : '---'}
+                              {processo.containers?.length > 0 ? formatDate(processo.data_containers || processo.data_nomeacao) : '---'}
                             </span>
                           </div>
                           <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{getNFDate('Remessa')}</span></div>
