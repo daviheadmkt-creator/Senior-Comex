@@ -232,8 +232,8 @@ export default function NovoProcessoPage() {
     return new Map(portos.map(p => [p.id, p.name]));
   }, [portos]);
 
-  const terminalsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
-  const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminalsCollection);
+  const terminaisCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
+  const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminaisCollection);
 
   const terminalsMap = useMemo(() => {
     if (!terminais) return new Map();
@@ -684,13 +684,14 @@ export default function NovoProcessoPage() {
                 </div>
 
                 {/* 1.4 Booking & Armador */}
-                <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
-                  <div className="space-y-2"><Label>Número do Booking (Reserva)</Label><Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} /></div>
+                <div className="grid md:grid-cols-4 gap-4 pt-4 border-t">
+                  <div className="space-y-2"><Label>Navio</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Nome do navio" /></div>
+                  <div className="space-y-2"><Label>Viagem</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Número da viagem" /></div>
+                  <div className="space-y-2"><Label>Número do Booking</Label><Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} /></div>
                   <div className="space-y-2">
                     <Label>Armador</Label>
                     <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
                   </div>
-                  <div className="space-y-2"><Label>Viagem / Armazém</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} /></div>
                 </div>
 
                 {/* 1.5 Rota */}
@@ -752,7 +753,7 @@ export default function NovoProcessoPage() {
                             <DatePicker date={formData[field]} onDateChange={d => handleInputChange(field, d)} showTime />
                             <div className="mt-2 flex items-center gap-2">
                                 <div className="flex-1 p-2 border rounded-md bg-muted overflow-hidden">{renderFileState(formData[`${field}_file`])}</div>
-                                {formData[`${field}_file`] ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile(`${field}_file`)}><XCircle className="h-4 w-4 text-destructive" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload(`${field}_file`)}><Upload className="h-4 w-4" /></Button>}
+                                {formData[`${field}_file`] ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile(`${field}_file`)}><XCircle className="h-4 w-4" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload(`${field}_file`)}><Upload className="h-4 w-4" /></Button>}
                             </div>
                         </div>
                     ))}
@@ -932,7 +933,7 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(4)}<h3 className="text-lg font-semibold text-left">Etapa 4: Confirmação de Embarque</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="grid md:grid-cols-2 gap-4 pt-6">
-                <div className="space-y-2"><Label>Navio Final</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} /></div>
+                <div className="space-y-2"><Label>Navio Confirmado (Pode ser alterado aqui)</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-2"><Label>ETD</Label><DatePicker date={formData.etd} onDateChange={d => handleInputChange('etd', d)} showTime /></div>
                     <div className="space-y-2"><Label>ETA</Label><DatePicker date={formData.eta} onDateChange={d => handleInputChange('eta', d)} showTime /></div>
