@@ -209,8 +209,8 @@ export default function GestaoProcessosPage() {
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
                   // Lógica de Deadlines - Verificação rigorosa da URL de download para precisão visual
-                  const isDraftOk = (processo.deadline_draft_file?.downloadURL && processo.deadline_draft_file.downloadURL !== '') || 
-                                   (processo.draft_bl_file?.downloadURL && processo.draft_bl_file.downloadURL !== '');
+                  const isDraftOk = !!((processo.deadline_draft_file?.downloadURL && processo.deadline_draft_file.downloadURL !== '') || 
+                                   (processo.draft_bl_file?.downloadURL && processo.draft_bl_file.downloadURL !== ''));
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL && processo.deadline_vgm_file.downloadURL !== '');
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL && processo.deadline_carga_file.downloadURL !== '');
 
@@ -313,42 +313,36 @@ export default function GestaoProcessosPage() {
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>DRAFT</span> 
                             <div className="flex items-center gap-1">
-                              <span className={cn(
-                                "font-bold",
-                                isDraftOk ? "text-green-600" : "text-destructive"
-                              )}>
-                                {formatDate(processo.deadline_draft, true)}
-                              </span>
-                              {isDraftOk && (
+                              {isDraftOk ? (
                                 <span className="text-green-600 font-extrabold uppercase">OK</span>
+                              ) : (
+                                <span className="text-destructive font-bold">
+                                  {formatDate(processo.deadline_draft, true)}
+                                </span>
                               )}
                             </div>
                           </div>
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>VGM</span> 
                             <div className="flex items-center gap-1">
-                              <span className={cn(
-                                "font-bold",
-                                isVGMOk ? "text-green-600" : "text-destructive"
-                              )}>
-                                {formatDate(processo.deadline_vgm, true)}
-                              </span>
-                              {isVGMOk && (
+                              {isVGMOk ? (
                                 <span className="text-green-600 font-extrabold uppercase">OK</span>
+                              ) : (
+                                <span className="text-destructive font-bold">
+                                  {formatDate(processo.deadline_vgm, true)}
+                                </span>
                               )}
                             </div>
                           </div>
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>CARGA</span> 
                             <div className="flex items-center gap-1">
-                              <span className={cn(
-                                "font-bold",
-                                isCargaOk ? "text-green-600" : "text-destructive"
-                              )}>
-                                {formatDate(processo.deadline_carga, true)}
-                              </span>
-                              {isCargaOk && (
+                              {isCargaOk ? (
                                 <span className="text-green-600 font-extrabold uppercase">OK</span>
+                              ) : (
+                                <span className="text-destructive font-bold">
+                                  {formatDate(processo.deadline_carga, true)}
+                                </span>
                               )}
                             </div>
                           </div>
