@@ -208,6 +208,11 @@ export default function GestaoProcessosPage() {
                   const fiscalTreatment = processo.documentos_fiscais?.find((df: any) => df.tipo === 'TRATAMENTO');
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
+                  // Lógica de Deadlines com verificação de URL de download para precisão total
+                  const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
+                  const isVGMOk = !!processo.deadline_vgm_file?.downloadURL;
+                  const isCargaOk = !!processo.deadline_carga_file?.downloadURL;
+
                   return (
                     <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
                       {/* 1. AÇÕES (FIXA) */}
@@ -309,11 +314,11 @@ export default function GestaoProcessosPage() {
                             <div className="flex items-center gap-1">
                               <span className={cn(
                                 "font-bold",
-                                (processo.deadline_draft_file || processo.draft_bl_file) ? "text-green-600" : "text-destructive"
+                                isDraftOk ? "text-green-600" : "text-destructive"
                               )}>
                                 {formatDate(processo.deadline_draft, true)}
                               </span>
-                              {(processo.deadline_draft_file || processo.draft_bl_file) && (
+                              {isDraftOk && (
                                 <span className="text-green-600 font-extrabold uppercase">OK</span>
                               )}
                             </div>
@@ -323,11 +328,11 @@ export default function GestaoProcessosPage() {
                             <div className="flex items-center gap-1">
                               <span className={cn(
                                 "font-bold",
-                                processo.deadline_vgm_file ? "text-green-600" : "text-destructive"
+                                isVGMOk ? "text-green-600" : "text-destructive"
                               )}>
                                 {formatDate(processo.deadline_vgm, true)}
                               </span>
-                              {processo.deadline_vgm_file && (
+                              {isVGMOk && (
                                 <span className="text-green-600 font-extrabold uppercase">OK</span>
                               )}
                             </div>
@@ -337,11 +342,11 @@ export default function GestaoProcessosPage() {
                             <div className="flex items-center gap-1">
                               <span className={cn(
                                 "font-bold",
-                                processo.deadline_carga_file ? "text-green-600" : "text-destructive"
+                                isCargaOk ? "text-green-600" : "text-destructive"
                               )}>
                                 {formatDate(processo.deadline_carga, true)}
                               </span>
-                              {processo.deadline_carga_file && (
+                              {isCargaOk && (
                                 <span className="text-green-600 font-extrabold uppercase">OK</span>
                               )}
                             </div>
