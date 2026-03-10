@@ -204,6 +204,10 @@ export default function GestaoProcessosPage() {
                     packing: getDocStatus('PACKING LIST'),
                   };
 
+                  // Busca a data do tratamento na Etapa 3 se não houver na Etapa 5
+                  const fiscalTreatment = processo.documentos_fiscais?.find((df: any) => df.tipo === 'TRATAMENTO');
+                  const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
+
                   return (
                     <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
                       {/* 1. AÇÕES (FIXA) */}
@@ -247,7 +251,7 @@ export default function GestaoProcessosPage() {
                       <td className="px-2 py-1 text-center text-blue-600 uppercase sticky left-[80px] z-10 bg-card">{processo.analistaNome || '---'}</td>
                       
                       {/* 3. PO / CLIENTE (FIXA) */}
-                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5px_rgba(0,0,0,0.05)] border-r">
+                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5_rgba(0,0,0,0.05)] border-r">
                         <div className="flex flex-col">
                           <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
                           <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
@@ -357,7 +361,7 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{processo.lpco_protocolo || '---'}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{processo.mapa_status?.includes('DEFERIDA') ? formatDate(processo.data_nomeacao) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{docs.fumigation.date}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{treatmentDate}</span></div>
                         </div>
                       </td>
 
