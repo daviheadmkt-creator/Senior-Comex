@@ -711,22 +711,34 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2">
                     <Label>Terminal de Despacho (REDEX)</Label>
                     <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o terminal" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingTerminals ? "Carregando..." : "Selecione o terminal"} />
+                      </SelectTrigger>
                       <SelectContent>
-                        {terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === formData.portoEmbarqueId).map(t => (
+                        {isLoadingTerminals && <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>}
+                        {!isLoadingTerminals && terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).map(t => (
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
+                        {!isLoadingTerminals && (!terminais || terminais.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).length === 0) && (
+                          <SelectItem value="none" disabled>Nenhum terminal encontrado</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
                     <Label>Terminal de Embarque</Label>
                     <Select value={formData.terminalEmbarqueId} onValueChange={v => handleInputChange('terminalEmbarqueId', v)}>
-                      <SelectTrigger><SelectValue placeholder="Selecione o terminal" /></SelectTrigger>
+                      <SelectTrigger>
+                        <SelectValue placeholder={isLoadingTerminals ? "Carregando..." : "Selecione o terminal"} />
+                      </SelectTrigger>
                       <SelectContent>
-                        {terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === formData.portoEmbarqueId).map(t => (
+                        {isLoadingTerminals && <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>}
+                        {!isLoadingTerminals && terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).map(t => (
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
+                        {!isLoadingTerminals && (!terminais || terminais.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).length === 0) && (
+                          <SelectItem value="none" disabled>Nenhum terminal encontrado</SelectItem>
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
