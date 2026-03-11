@@ -24,8 +24,8 @@ import {
   Download, 
   Save 
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Select,
   SelectContent,
@@ -264,9 +264,9 @@ export default function NovoProcessoPage() {
         status: processoData.status || 'NOMEAÇÃO RECEBIDA',
         containers: processoData.containers || [],
         data_containers: processoData.data_containers || null,
+        documentos_fiscais: processoData.documentos_fiscais || [],
         documentos_pos_embarque: processoData.documentos_pos_embarque || [],
         notas_fiscais: processoData.notas_fiscais || [],
-        documentos_fiscais: processoData.documentos_fiscais || [],
       });
       
       hasInitialized.current = true;
@@ -693,8 +693,8 @@ export default function NovoProcessoPage() {
 
                 {/* 1.4 Booking & Armador */}
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-                  <div className="space-y-2"><Label>Navio</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Nome do navio" /></div>
-                  <div className="space-y-2"><Label>Viagem</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Número da viagem" /></div>
+                  <div className="space-y-2"><Label className="text-primary font-bold">NAVIO</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Nome do navio" className="border-primary/30" /></div>
+                  <div className="space-y-2"><Label className="text-primary font-bold">VIAGEM</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Número da viagem" className="border-primary/30" /></div>
                   <div className="space-y-2"><Label>Número do Booking</Label><Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} /></div>
                   <div className="space-y-2">
                     <Label>Armador</Label>
@@ -721,15 +721,18 @@ export default function NovoProcessoPage() {
                     <Label>Terminal de Despacho (REDEX)</Label>
                     <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
                       <SelectTrigger>
-                        <SelectValue placeholder={isLoadingTerminals ? "Carregando..." : "Selecione o terminal"} />
+                        <SelectValue placeholder="Selecione o terminal" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isLoadingTerminals && <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>}
-                        {!isLoadingTerminals && filteredTerminals.map(t => (
-                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                        ))}
-                        {!isLoadingTerminals && filteredTerminals.length === 0 && (
-                          <SelectItem value="none" disabled>Nenhum terminal disponível</SelectItem>
+                        {isLoadingTerminals ? (
+                          <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>
+                        ) : (
+                          <>
+                            {filteredTerminals.map(t => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))}
+                            {filteredTerminals.length === 0 && <SelectItem value="none" disabled>Nenhum terminal cadastrado</SelectItem>}
+                          </>
                         )}
                       </SelectContent>
                     </Select>
@@ -738,15 +741,18 @@ export default function NovoProcessoPage() {
                     <Label>Terminal de Embarque</Label>
                     <Select value={formData.terminalEmbarqueId} onValueChange={v => handleInputChange('terminalEmbarqueId', v)}>
                       <SelectTrigger>
-                        <SelectValue placeholder={isLoadingTerminals ? "Carregando..." : "Selecione o terminal"} />
+                        <SelectValue placeholder="Selecione o terminal" />
                       </SelectTrigger>
                       <SelectContent>
-                        {isLoadingTerminals && <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>}
-                        {!isLoadingTerminals && filteredTerminals.map(t => (
-                          <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                        ))}
-                        {!isLoadingTerminals && filteredTerminals.length === 0 && (
-                          <SelectItem value="none" disabled>Nenhum terminal disponível</SelectItem>
+                        {isLoadingTerminals ? (
+                          <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>
+                        ) : (
+                          <>
+                            {filteredTerminals.map(t => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))}
+                            {filteredTerminals.length === 0 && <SelectItem value="none" disabled>Nenhum terminal cadastrado</SelectItem>}
+                          </>
                         )}
                       </SelectContent>
                     </Select>
@@ -844,7 +850,7 @@ export default function NovoProcessoPage() {
                         <TableCell><Select value={df.status} onValueChange={v => handleFiscalDocChange(df.id, 'status', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{df.tipo === 'DUE' ? dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : df.tipo === 'LPCO' ? lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></TableCell>
                         <TableCell><DatePicker date={df.data} onDateChange={v => handleFiscalDocChange(df.id, 'data', v)} /></TableCell>
                         <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(df.file)}</div>{df.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_fiscal', id: df.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_fiscal', id: df.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_fiscais', formData.documentos_fiscais.filter((x: any) => x.id !== df.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_fiscais', (formData.documentos_fiscais || []).filter((x: any) => x.id !== df.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                       </TableRow>
                     ))}</TableBody></Table>
                   </div>

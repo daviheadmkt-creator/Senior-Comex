@@ -205,9 +205,9 @@ export default function GestaoProcessosPage() {
                   };
 
                   // Busca dados das tabelas fiscais da Etapa 3
-                  const fiscalLPCO = processo.documentos_fiscais?.find((df: any) => df.tipo === 'LPCO');
-                  const fiscalDUE = processo.documentos_fiscais?.find((df: any) => df.tipo === 'DUE');
-                  const fiscalTreatment = processo.documentos_fiscais?.find((df: any) => df.tipo === 'TRATAMENTO');
+                  const fiscalLPCO = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'LPCO');
+                  const fiscalDUE = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'DUE');
+                  const fiscalTreatment = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'TRATAMENTO');
                   
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
@@ -398,7 +398,7 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.toUpperCase().includes('DESEMBARAÇADA') || fiscalDUE?.status?.toUpperCase().includes('AVERBADA')) ? formatDate(fiscalDUE.data) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{fiscalDUE?.status?.toUpperCase() === 'AVERBADA' ? formatDate(fiscalDUE.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.toUpperCase() === 'AVERBADA') ? formatDate(fiscalDUE.data) : '---'}</span></div>
                         </div>
                       </td>
 
