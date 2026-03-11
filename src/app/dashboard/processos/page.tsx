@@ -146,13 +146,13 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
-                  <th className="px-2 min-w-[120px]">NAVIO</th>
+                  <th className="px-2 min-w-[120px]">NAVIO / VIAGEM</th>
                   <th className="px-2 min-w-[100px]">ORIGEM / ETD</th>
                   <th className="px-2 min-w-[100px]">DESTINO / ETA</th>
                   <th className="px-2 min-w-[90px]">CONTAINERS / KGS</th>
                   <th className="px-2 min-w-[140px]">DEAD LINE / PRAZO</th>
                   <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
-                  <th className="px-2 min-w-[150px]">ARMAZEM / TERMINAIS</th>
+                  <th className="px-2 min-w-[150px]">ARMAZÉM / TERMINAIS</th>
                   <th className="px-2 min-w-[150px]">CONTAINERS / NOTAS FISCAIS</th>
                   <th className="px-2 min-w-[150px]">LPCO / INSPEÇÃO (MAPA)</th>
                   <th className="px-2 min-w-[150px]">DUE / DESEMBARAÇO</th>
