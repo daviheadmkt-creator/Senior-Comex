@@ -240,6 +240,14 @@ export default function NovoProcessoPage() {
     return new Map(terminais.map(t => [t.id, t.name]));
   }, [terminais]);
 
+  const filteredTerminals = useMemo(() => {
+    if (!terminais) return [];
+    if (!formData.portoEmbarqueId) return terminais;
+    const filtered = terminais.filter(t => String(t.portoId) === String(formData.portoEmbarqueId));
+    // Se não encontrar nenhum terminal para o porto, mostra todos para não travar o sistema
+    return filtered.length > 0 ? filtered : terminais;
+  }, [terminais, formData.portoEmbarqueId]);
+
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -717,11 +725,11 @@ export default function NovoProcessoPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {isLoadingTerminals && <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>}
-                        {!isLoadingTerminals && terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).map(t => (
+                        {!isLoadingTerminals && filteredTerminals.map(t => (
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
-                        {!isLoadingTerminals && (!terminais || terminais.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).length === 0) && (
-                          <SelectItem value="none" disabled>Nenhum terminal encontrado para este porto</SelectItem>
+                        {!isLoadingTerminals && filteredTerminals.length === 0 && (
+                          <SelectItem value="none" disabled>Nenhum terminal disponível</SelectItem>
                         )}
                       </SelectContent>
                     </Select>
@@ -734,11 +742,11 @@ export default function NovoProcessoPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {isLoadingTerminals && <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>}
-                        {!isLoadingTerminals && terminais?.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).map(t => (
+                        {!isLoadingTerminals && filteredTerminals.map(t => (
                           <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
                         ))}
-                        {!isLoadingTerminals && (!terminais || terminais.filter(t => !formData.portoEmbarqueId || String(t.portoId) === String(formData.portoEmbarqueId)).length === 0) && (
-                          <SelectItem value="none" disabled>Nenhum terminal encontrado para este porto</SelectItem>
+                        {!isLoadingTerminals && filteredTerminals.length === 0 && (
+                          <SelectItem value="none" disabled>Nenhum terminal disponível</SelectItem>
                         )}
                       </SelectContent>
                     </Select>

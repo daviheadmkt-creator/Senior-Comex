@@ -397,8 +397,8 @@ export default function GestaoProcessosPage() {
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.includes('DESEMBARAÇADA') || fiscalDUE?.status?.includes('AVERBADA')) ? formatDate(fiscalDUE.data) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{fiscalDUE?.status === 'AVERBADA' ? formatDate(fiscalDUE.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.toUpperCase().includes('DESEMBARAÇADA') || fiscalDUE?.status?.toUpperCase().includes('AVERBADA')) ? formatDate(fiscalDUE.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{fiscalDUE?.status?.toUpperCase() === 'AVERBADA' ? formatDate(fiscalDUE.data) : '---'}</span></div>
                         </div>
                       </td>
 
