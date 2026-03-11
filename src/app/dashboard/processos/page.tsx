@@ -143,7 +143,7 @@ export default function GestaoProcessosPage() {
                 <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
                   <th className="px-2 min-w-[80px] w-[80px] sticky left-0 z-40 bg-primary">AÇÕES</th>
                   <th className="px-2 min-w-[90px] w-[90px] sticky left-[80px] z-40 bg-primary">ANALISTA</th>
-                  <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
+                  <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
                   <th className="px-2 min-w-[120px]">NAVIO</th>
