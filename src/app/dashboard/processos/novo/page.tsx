@@ -611,6 +611,8 @@ export default function NovoProcessoPage() {
 
   if (isLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
 
+  const terminalItems = terminais?.map(t => ({ value: String(t.id), label: t.name })) || [];
+
   return (
     <div className="space-y-6">
       <form onSubmit={handleSubmit} className="space-y-6">
@@ -743,33 +745,23 @@ export default function NovoProcessoPage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Terminal de Despacho</Label>
-                      <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          {isLoadingTerminals ? (
-                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
-                          ) : (
-                            terminais?.map(t => (
-                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <Combobox 
+                        items={terminalItems} 
+                        value={formData.terminalDespachoId} 
+                        onValueChange={v => handleInputChange('terminalDespachoId', v)} 
+                        placeholder="Selecione o terminal..."
+                        searchPlaceholder="Buscar terminal..."
+                      />
                     </div>
                     <div className="space-y-2">
                       <Label>Terminal de Embarque</Label>
-                      <Select value={formData.terminalEmbarqueId} onValueChange={v => handleInputChange('terminalEmbarqueId', v)}>
-                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
-                        <SelectContent>
-                          {isLoadingTerminals ? (
-                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
-                          ) : (
-                            terminais?.map(t => (
-                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                            ))
-                          )}
-                        </SelectContent>
-                      </Select>
+                      <Combobox 
+                        items={terminalItems} 
+                        value={formData.terminalEmbarqueId} 
+                        onValueChange={v => handleInputChange('terminalEmbarqueId', v)} 
+                        placeholder="Selecione o terminal..."
+                        searchPlaceholder="Buscar terminal..."
+                      />
                     </div>
                   </div>
                 </div>
