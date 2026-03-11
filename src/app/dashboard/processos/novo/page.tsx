@@ -666,7 +666,7 @@ export default function NovoProcessoPage() {
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label>Exportador</Label>
-                    <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.exportadorId} onValueChange={v => {
+                    <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Exportador').map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social}${p.cnpj ? ` - ${p.cnpj}` : ''}` })) || []} value={formData.exportadorId} onValueChange={v => {
                       handleInputChange('exportadorId', v);
                       const selected = parceiros?.find(p => p.id === v);
                       setExporterContacts(selected?.contatos?.map((c: any, i: number) => ({ ...c, id: String(i) })) || []);
@@ -698,7 +698,7 @@ export default function NovoProcessoPage() {
                   </div>
                   <div className="space-y-2">
                     <Label>Armador</Label>
-                    <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
+                    <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social}${p.cnpj ? ` - ${p.cnpj}` : ''}` })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
                   </div>
                   <div className="space-y-2">
                     <Label>Armazém / Ref. Logística</Label>
@@ -733,7 +733,11 @@ export default function NovoProcessoPage() {
                             {filteredTerminals.map(t => (
                               <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
                             ))}
-                            {filteredTerminals.length === 0 && <SelectItem value="none" disabled>Nenhum terminal cadastrado</SelectItem>}
+                            {filteredTerminals.length === 0 && (
+                                <>
+                                    {terminais?.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+                                </>
+                            )}
                           </>
                         )}
                       </SelectContent>
@@ -753,7 +757,11 @@ export default function NovoProcessoPage() {
                             {filteredTerminals.map(t => (
                               <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
                             ))}
-                            {filteredTerminals.length === 0 && <SelectItem value="none" disabled>Nenhum terminal cadastrado</SelectItem>}
+                            {filteredTerminals.length === 0 && (
+                                <>
+                                    {terminais?.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
+                                </>
+                            )}
                           </>
                         )}
                       </SelectContent>
