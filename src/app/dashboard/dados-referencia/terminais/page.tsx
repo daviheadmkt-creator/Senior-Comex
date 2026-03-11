@@ -19,9 +19,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { Edit, PlusCircle, Trash2, Loader2, FileUp, Download } from 'lucide-react';
-import { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useCollection, useFirestore, useMemoFirebase, setDocumentNonBlocking, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
 import * as XLSX from 'xlsx';
@@ -33,25 +32,11 @@ export default function TerminaisPage() {
     
     const terminalsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
     const { data: terminals, isLoading: isLoadingTerminals } = useCollection(terminalsCollection);
-    
-    const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
-    const { data: ports, isLoading: isLoadingPorts } = useCollection(portsCollection);
 
-    const [formData, setFormData] = useState({ name: '', portoId: '' });
+    const [formData, setFormData] = useState({ name: '' });
     const [editingId, setEditingId] = useState<string | null>(null);
     const [isImporting, setIsImporting] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
-
-    const terminalsWithPortNames = useMemo(() => {
-        if (!terminals || !ports) return [];
-        return terminals.map(terminal => {
-            const port = ports.find(p => p.id === terminal.portoId);
-            return {
-                ...terminal,
-                portName: port ? port.name : 'N/A'
-            };
-        });
-    }, [terminals, ports]);
 
     const handleInputChange = (field: string, value: string) => {
         setFormData(prev => ({...prev, [field]: value}));
@@ -59,10 +44,10 @@ export default function TerminaisPage() {
 
     const handleSave = () => {
         if(!firestore) return;
-        if (!formData.name || !formData.portoId) {
+        if (!formData.name) {
             toast({
                 title: "Erro",
-                description: "Preencha todos os campos.",
+                description: "Preencha o nome do terminal.",
                 variant: "destructive",
             });
             return;
@@ -78,13 +63,13 @@ export default function TerminaisPage() {
             description: `Terminal ${editingId ? 'atualizado' : 'adicionado'}.`,
         });
 
-        setFormData({ name: '', portoId: '' });
+        setFormData({ name: '' });
         setEditingId(null);
     };
 
     const handleEdit = (terminal: any) => {
         setEditingId(terminal.id);
-        setFormData({ name: terminal.name, portoId: String(terminal.portoId) });
+        setFormData({ name: terminal.name });
     };
 
     const handleDelete = (id: string) => {
@@ -98,13 +83,13 @@ export default function TerminaisPage() {
     };
 
     const handleCancel = () => {
-        setFormData({ name: '', portoId: '' });
+        setFormData({ name: '' });
         setEditingId(null);
     }
 
     const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
-        if (!file || !firestore || !ports) return;
+        if (!file || !firestore) return;
 
         setIsImporting(true);
         const reader = new FileReader();
@@ -118,21 +103,16 @@ export default function TerminaisPage() {
 
                 let importedCount = 0;
                 json.forEach(row => {
-                    const portName = String(row.porto_nome || '').trim();
-                    const terminalName = String(row.name || '').trim();
+                    const terminalName = String(row.name || row.nome || row.terminal || '').trim();
                     
-                    if (terminalName && portName) {
-                        const port = ports.find(p => p.name.toLowerCase() === portName.toLowerCase());
-                        if (port) {
-                            const docId = doc(collection(firestore, 'terminals')).id;
-                            const terminalRef = doc(firestore, 'terminals', docId);
-                            setDocumentNonBlocking(terminalRef, { 
-                                id: docId,
-                                name: terminalName, 
-                                portoId: port.id 
-                            }, { merge: true });
-                            importedCount++;
-                        }
+                    if (terminalName) {
+                        const docId = doc(collection(firestore, 'terminals')).id;
+                        const terminalRef = doc(firestore, 'terminals', docId);
+                        setDocumentNonBlocking(terminalRef, { 
+                            id: docId,
+                            name: terminalName,
+                        }, { merge: true });
+                        importedCount++;
                     }
                 });
 
@@ -163,8 +143,8 @@ export default function TerminaisPage() {
 
     const handleDownloadTemplate = () => {
         const ws = XLSX.utils.json_to_sheet([
-            { name: "Terminal Exemplo A", porto_nome: "Paranaguá" },
-            { name: "Terminal Exemplo B", porto_nome: "Shanghai" },
+            { name: "Terminal Exemplo A" },
+            { name: "Terminal Exemplo B" },
         ]);
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, "Terminais");
@@ -178,23 +158,21 @@ export default function TerminaisPage() {
             <Card>
                 <CardHeader>
                     <CardTitle>Terminais Cadastrados</CardTitle>
-                    <CardDescription>Gerencie os terminais de embarque e descarga vinculados aos portos.</CardDescription>
+                    <CardDescription>Gerencie a lista de terminais de embarque e descarga.</CardDescription>
                 </CardHeader>
                 <CardContent>
                      <Table>
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Nome do Terminal</TableHead>
-                                <TableHead>Porto Vinculado</TableHead>
                                 <TableHead>Ações</TableHead>
                             </TableRow>
                         </TableHeader>
                         <TableBody>
-                            {(isLoadingTerminals || isLoadingPorts) && <TableRow><TableCell colSpan={3} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
-                            {!(isLoadingTerminals || isLoadingPorts) && terminalsWithPortNames.map((terminal) => (
+                            {isLoadingTerminals && <TableRow><TableCell colSpan={2} className="text-center"><Loader2 className="mx-auto h-6 w-6 animate-spin" /></TableCell></TableRow>}
+                            {!isLoadingTerminals && terminals?.map((terminal) => (
                                 <TableRow key={terminal.id}>
-                                    <TableCell className="font-medium">{terminal.name}</TableCell>
-                                    <TableCell>{terminal.portName}</TableCell>
+                                    <TableCell className="font-medium text-primary uppercase">{terminal.name}</TableCell>
                                     <TableCell>
                                         <div className='flex gap-2'>
                                             <Button variant="outline" size="icon" onClick={() => handleEdit(terminal)}><Edit className="h-4 w-4" /></Button>
@@ -203,9 +181,9 @@ export default function TerminaisPage() {
                                     </TableCell>
                                 </TableRow>
                             ))}
-                             {!(isLoadingTerminals || isLoadingPorts) && terminalsWithPortNames.length === 0 && (
+                             {!isLoadingTerminals && (!terminals || terminals.length === 0) && (
                                 <TableRow>
-                                    <TableCell colSpan={3} className="text-center text-muted-foreground">Nenhum terminal cadastrado.</TableCell>
+                                    <TableCell colSpan={2} className="text-center text-muted-foreground py-8">Nenhum terminal cadastrado.</TableCell>
                                 </TableRow>
                             )}
                         </TableBody>
@@ -223,23 +201,7 @@ export default function TerminaisPage() {
                     <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
                         <div className="space-y-2">
                             <Label htmlFor="name">Nome do Terminal</Label>
-                            <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} placeholder="Ex: TCP" />
-                        </div>
-                        <div className="space-y-2">
-                            <Label htmlFor="portoId">Porto</Label>
-                            <Select value={formData.portoId} onValueChange={(value) => handleInputChange('portoId', value)}>
-                                <SelectTrigger id="portoId">
-                                    <SelectValue placeholder={isLoadingPorts ? 'Carregando...' : 'Selecione o porto'} />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    {ports?.map((port) => (
-                                        <SelectItem key={port.id} value={String(port.id)}>
-                                            {port.name}
-                                        </SelectItem>
-                                    ))}
-                                    {ports?.length === 0 && <p className="p-2 text-sm text-muted-foreground">Nenhum porto cadastrado</p>}
-                                </SelectContent>
-                            </Select>
+                            <Input id="name" value={formData.name} onChange={(e) => handleInputChange('name', e.target.value)} placeholder="Ex: TCP" className="uppercase" />
                         </div>
                         
                         <div className='flex flex-col gap-2'>

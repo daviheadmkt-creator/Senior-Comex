@@ -243,13 +243,6 @@ export default function NovoProcessoPage() {
     return new Map(terminais.map(t => [t.id, t.name]));
   }, [terminais]);
 
-  const filteredTerminals = useMemo(() => {
-    if (!terminais) return [];
-    if (!formData.portoEmbarqueId) return terminais;
-    const filtered = terminais.filter(t => String(t.portoId) === String(formData.portoEmbarqueId));
-    return filtered.length > 0 ? filtered : terminais;
-  }, [terminais, formData.portoEmbarqueId]);
-
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -693,11 +686,11 @@ export default function NovoProcessoPage() {
                 <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-primary font-bold">NAVIO / VIAGEM</Label>
-                    <Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC MAXIMA V. 123W" className="border-primary/30" />
+                    <Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC MAXIMA V. 123W" className="border-primary/30 uppercase" />
                   </div>
                   <div className="space-y-2">
                     <Label>Número do Booking</Label>
-                    <Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} />
+                    <Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} className="uppercase" />
                   </div>
                   <div className="space-y-2">
                     <Label>Armador</Label>
@@ -705,7 +698,7 @@ export default function NovoProcessoPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Armazém</Label>
-                    <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Código do armazém" />
+                    <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Código do armazém" className="uppercase" />
                   </div>
                 </div>
 
@@ -738,7 +731,7 @@ export default function NovoProcessoPage() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Destino Final</Label>
-                      <Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} />
+                      <Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} className="uppercase" />
                     </div>
                     <div className="space-y-2">
                       <Label className="text-[10px] uppercase font-bold text-muted-foreground">Chegada (Destino)</Label>
@@ -756,14 +749,9 @@ export default function NovoProcessoPage() {
                           {isLoadingTerminals ? (
                             <SelectItem value="loading" disabled>A carregar...</SelectItem>
                           ) : (
-                            <>
-                              {filteredTerminals.map(t => (
-                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                              ))}
-                              {filteredTerminals.length === 0 && terminais?.map(t => (
-                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                              ))}
-                            </>
+                            terminais?.map(t => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))
                           )}
                         </SelectContent>
                       </Select>
@@ -776,14 +764,9 @@ export default function NovoProcessoPage() {
                           {isLoadingTerminals ? (
                             <SelectItem value="loading" disabled>A carregar...</SelectItem>
                           ) : (
-                            <>
-                              {filteredTerminals.map(t => (
-                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                              ))}
-                              {filteredTerminals.length === 0 && terminais?.map(t => (
-                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                              ))}
-                            </>
+                            terminais?.map(t => (
+                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                            ))
                           )}
                         </SelectContent>
                       </Select>
@@ -929,8 +912,8 @@ export default function NovoProcessoPage() {
                         <TableBody>
                           {formData.containers.map((c: any, index: number) => (
                             <TableRow key={c.id}>
-                              <TableCell><Input value={c.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="CAAU..." className='h-8 text-xs font-mono'/></TableCell>
-                              <TableCell><Input value={c.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="MLBR..." className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={c.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="CAAU..." className='h-8 text-xs font-mono uppercase'/></TableCell>
+                              <TableCell><Input value={c.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="MLBR..." className='h-8 text-xs uppercase'/></TableCell>
                               <TableCell><Input value={c.tare} onChange={e => handleContainerChange(index, 'tare', e.target.value)} className='h-8 text-xs'/></TableCell>
                               <TableCell><Input value={c.qty_especie} onChange={e => handleContainerChange(index, 'qty_especie', e.target.value)} className='h-8 text-xs'/></TableCell>
                               <TableCell><Input value={c.gross_weight} onChange={e => handleContainerChange(index, 'gross_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
@@ -969,7 +952,7 @@ export default function NovoProcessoPage() {
                           {c.inspecionado && (
                             <div className='flex items-center gap-2'>
                               <span className='text-[10px] font-bold text-muted-foreground uppercase'>NOVO LACRE:</span>
-                              <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre MAPA/Senior" className="h-8 w-[180px] text-xs" />
+                              <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre MAPA/Senior" className="h-8 w-[180px] text-xs uppercase" />
                             </div>
                           )}
                         </div>
@@ -985,7 +968,7 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(4)}<h3 className="text-lg font-semibold text-left">Etapa 4: Confirmação de Embarque</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="grid md:grid-cols-2 gap-4 pt-6">
-                <div className="space-y-2"><Label>Navio / Viagem Confirmado</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} /></div>
+                <div className="space-y-2"><Label>Navio / Viagem Confirmado</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} className="uppercase" /></div>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-2"><Label>ETD</Label><DatePicker date={formData.etd} onDateChange={d => handleInputChange('etd', d)} showTime /></div>
                     <div className="space-y-2"><Label>ETA</Label><DatePicker date={formData.eta} onDateChange={d => handleInputChange('eta', d)} showTime /></div>
@@ -1009,7 +992,7 @@ export default function NovoProcessoPage() {
                     <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', formData.documentos_pos_embarque.filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
-                <div className="flex items-end gap-4 border-t pt-4"><div className="space-y-2 flex-1"><Label>AWB Courier (Rastreio DHL/etc)</Label><Input value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} /></div><Button type="button" variant="outline" onClick={generateOriginalDocsPdf}><FileDown className="mr-2 h-4 w-4" />Gerar Malote PDF</Button></div>
+                <div className="flex items-end gap-4 border-t pt-4"><div className="space-y-2 flex-1"><Label>AWB Courier (Rastreio DHL/etc)</Label><Input value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} className="uppercase" /></div><Button type="button" variant="outline" onClick={generateOriginalDocsPdf}><FileDown className="mr-2 h-4 w-4" />Gerar Malote PDF</Button></div>
               </CardContent></Card>
             </AccordionContent>
           </AccordionItem>
