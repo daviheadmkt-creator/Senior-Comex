@@ -142,6 +142,9 @@ const initialFormData = {
   deadline_draft_file: null,
   deadline_vgm_file: null,
   deadline_carga_file: null,
+  data_chegada_embarque: null,
+  data_chegada_descarga: null,
+  data_chegada_destino: null,
 };
 
 function sanitizeFileName(name: string) {
@@ -701,26 +704,47 @@ export default function NovoProcessoPage() {
                     <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social}${p.cnpj ? ` - ${p.cnpj}` : ''}` })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Armazém / Ref. Logística</Label>
+                    <Label>Armazém</Label>
                     <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Código do armazém" />
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label>Porto de Embarque (Origem)</Label>
                     <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoEmbarqueId} onValueChange={v => handleInputChange('portoEmbarqueId', v)} />
                   </div>
                   <div className="space-y-2">
-                    <Label>Porto de Descarga</Label>
-                    <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoDescargaId} onValueChange={v => handleInputChange('portoDescargaId', v)} />
+                    <Label>Data de Chegada (Origem)</Label>
+                    <DatePicker date={formData.data_chegada_embarque} onDateChange={d => handleInputChange('data_chegada_embarque', d)} />
                   </div>
-                  <div className="space-y-2"><Label>Destino Final</Label><Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} /></div>
                 </div>
 
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
-                    <Label>Terminal de Despacho (REDEX)</Label>
+                    <Label>Porto de Descarga</Label>
+                    <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoDescargaId} onValueChange={v => handleInputChange('portoDescargaId', v)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data de Chegada (Descarga)</Label>
+                    <DatePicker date={formData.data_chegada_descarga} onDateChange={d => handleInputChange('data_chegada_descarga', d)} />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Destino Final</Label>
+                    <Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Data de Chegada (Destino)</Label>
+                    <DatePicker date={formData.data_chegada_destino} onDateChange={d => handleInputChange('data_chegada_destino', d)} />
+                  </div>
+                </div>
+
+                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
+                  <div className="space-y-2">
+                    <Label>Terminal de Despacho</Label>
                     <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
                       <SelectTrigger>
                         <SelectValue placeholder="Selecione o terminal" />
