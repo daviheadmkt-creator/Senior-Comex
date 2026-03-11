@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -690,7 +691,7 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2"><Label>Quantidade</Label><Input value={formData.quantidade || ''} onChange={handleQuantityChange} /></div>
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
                   <div className="space-y-2 md:col-span-2">
                     <Label className="text-primary font-bold">NAVIO / VIAGEM</Label>
                     <Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC MAXIMA V. 123W" className="border-primary/30" />
@@ -703,93 +704,91 @@ export default function NovoProcessoPage() {
                     <Label>Armador</Label>
                     <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social}${p.cnpj ? ` - ${p.cnpj}` : ''}` })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
                   </div>
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:col-span-2">
                     <Label>Armazém</Label>
                     <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Código do armazém" />
                   </div>
                 </div>
 
-                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="space-y-2">
-                    <Label>Porto de Embarque (Origem)</Label>
-                    <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoEmbarqueId} onValueChange={v => handleInputChange('portoEmbarqueId', v)} />
+                <div className="grid md:grid-cols-4 gap-4 pt-4 border-t">
+                  {/* Porto Embarque + Data */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Porto de Embarque</Label>
+                      <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoEmbarqueId} onValueChange={v => handleInputChange('portoEmbarqueId', v)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Chegada (Origem)</Label>
+                      <DatePicker date={formData.data_chegada_embarque} onDateChange={d => handleInputChange('data_chegada_embarque', d)} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Data de Chegada (Origem)</Label>
-                    <DatePicker date={formData.data_chegada_embarque} onDateChange={d => handleInputChange('data_chegada_embarque', d)} />
-                  </div>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="space-y-2">
-                    <Label>Porto de Descarga</Label>
-                    <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoDescargaId} onValueChange={v => handleInputChange('portoDescargaId', v)} />
+                  {/* Porto Descarga + Data */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Porto de Descarga</Label>
+                      <Combobox items={portos?.map(p => ({ value: p.id, label: p.name })) || []} value={formData.portoDescargaId} onValueChange={v => handleInputChange('portoDescargaId', v)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Chegada (Descarga)</Label>
+                      <DatePicker date={formData.data_chegada_descarga} onDateChange={d => handleInputChange('data_chegada_descarga', d)} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Data de Chegada (Descarga)</Label>
-                    <DatePicker date={formData.data_chegada_descarga} onDateChange={d => handleInputChange('data_chegada_descarga', d)} />
-                  </div>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="space-y-2">
-                    <Label>Destino Final</Label>
-                    <Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} />
+                  {/* Destino Final + Data */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Destino Final</Label>
+                      <Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-[10px] uppercase font-bold text-muted-foreground">Chegada (Destino)</Label>
+                      <DatePicker date={formData.data_chegada_destino} onDateChange={d => handleInputChange('data_chegada_destino', d)} />
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <Label>Data de Chegada (Destino)</Label>
-                    <DatePicker date={formData.data_chegada_destino} onDateChange={d => handleInputChange('data_chegada_destino', d)} />
-                  </div>
-                </div>
 
-                <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
-                  <div className="space-y-2">
-                    <Label>Terminal de Despacho</Label>
-                    <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o terminal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isLoadingTerminals ? (
-                          <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>
-                        ) : (
-                          <>
-                            {filteredTerminals.map(t => (
-                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                            ))}
-                            {filteredTerminals.length === 0 && (
-                                <>
-                                    {terminais?.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
-                                </>
-                            )}
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-2">
-                    <Label>Terminal de Embarque</Label>
-                    <Select value={formData.terminalEmbarqueId} onValueChange={v => handleInputChange('terminalEmbarqueId', v)}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o terminal" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {isLoadingTerminals ? (
-                          <SelectItem value="loading" disabled>A carregar terminais...</SelectItem>
-                        ) : (
-                          <>
-                            {filteredTerminals.map(t => (
-                              <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
-                            ))}
-                            {filteredTerminals.length === 0 && (
-                                <>
-                                    {terminais?.map(t => <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>)}
-                                </>
-                            )}
-                          </>
-                        )}
-                      </SelectContent>
-                    </Select>
+                  {/* Terminais */}
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>Terminal de Despacho</Label>
+                      <Select value={formData.terminalDespachoId} onValueChange={v => handleInputChange('terminalDespachoId', v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {isLoadingTerminals ? (
+                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
+                          ) : (
+                            <>
+                              {filteredTerminals.map(t => (
+                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                              ))}
+                              {filteredTerminals.length === 0 && terminais?.map(t => (
+                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                              ))}
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Terminal de Embarque</Label>
+                      <Select value={formData.terminalEmbarqueId} onValueChange={v => handleInputChange('terminalEmbarqueId', v)}>
+                        <SelectTrigger><SelectValue placeholder="Selecione..." /></SelectTrigger>
+                        <SelectContent>
+                          {isLoadingTerminals ? (
+                            <SelectItem value="loading" disabled>A carregar...</SelectItem>
+                          ) : (
+                            <>
+                              {filteredTerminals.map(t => (
+                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                              ))}
+                              {filteredTerminals.length === 0 && terminais?.map(t => (
+                                <SelectItem key={t.id} value={String(t.id)}>{t.name}</SelectItem>
+                              ))}
+                            </>
+                          )}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                 </div>
 
