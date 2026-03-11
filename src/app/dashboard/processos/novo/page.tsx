@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -298,7 +297,7 @@ export default function NovoProcessoPage() {
           
           const targetField = typeof uploadTarget === 'string' ? uploadTarget : null;
           const targetObj = typeof uploadTarget === 'object' ? uploadTarget : null;
-          const targetId = targetObj ? (targetId as any).id : null;
+          const targetId = targetObj ? (targetObj as any).id : null;
           const targetList = targetObj ? (targetObj as any).type : null;
 
           const safeName = sanitizeFileName(file.name);
@@ -701,7 +700,7 @@ export default function NovoProcessoPage() {
                   </div>
                   <div className="space-y-2 md:col-span-2">
                     <Label>Armazém</Label>
-                    <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Código do armazém" className="uppercase" />
+                    <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} className="uppercase" />
                   </div>
                 </div>
 
@@ -974,13 +973,13 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold text-left">Etapa 5: Pós-Embarque (Malote)</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-6 pt-6">
-                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...formData.documentos_pos_embarque, { id: Date.now(), nome: '', originais: 1, copias: 1, file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
+                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...formData.documentos_pos_embarque, { id: Date.now(), nome: '', originais: '1', copias: '1', file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
                 <Table><TableHeader><TableRow><TableHead>Documento</TableHead><TableHead>Originais</TableHead><TableHead>Cópias</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>{formData.documentos_pos_embarque.map((d: any) => (
                   <TableRow key={d.id}>
                     <TableCell><Select value={d.nome} onValueChange={v => handlePostShipmentDocChange(d.id, 'nome', v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{documentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></TableCell>
-                    <TableCell><Input type="number" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
-                    <TableCell><Input type="number" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
+                    <TableCell><Input type="text" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
+                    <TableCell><Input type="text" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
                     <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(d.file)}</div>{d.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_pos_embarque', id: d.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: d.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
                     <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', formData.documentos_pos_embarque.filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                   </TableRow>
