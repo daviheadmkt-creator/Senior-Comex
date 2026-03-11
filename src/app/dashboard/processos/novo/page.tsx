@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -297,7 +298,7 @@ export default function NovoProcessoPage() {
           
           const targetField = typeof uploadTarget === 'string' ? uploadTarget : null;
           const targetObj = typeof uploadTarget === 'object' ? uploadTarget : null;
-          const targetId = targetObj ? (targetObj as any).id : null;
+          const targetId = targetObj ? (targetId as any).id : null;
           const targetList = targetObj ? (targetObj as any).type : null;
 
           const safeName = sanitizeFileName(file.name);

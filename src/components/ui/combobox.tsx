@@ -56,8 +56,20 @@ export function Combobox({
     }
   }
 
+  // Filtragem manual para garantir que os itens desapareçam conforme a digitação
+  const filteredItems = React.useMemo(() => {
+    if (!search) return items;
+    const lowerSearch = search.toLowerCase();
+    return items.filter(item => 
+      item.label.toLowerCase().includes(lowerSearch)
+    );
+  }, [items, search]);
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(isOpen) => {
+        setOpen(isOpen);
+        if (!isOpen) setSearch(""); // Limpa a busca ao fechar
+    }}>
       <PopoverTrigger asChild>
         <Button
           variant="outline"
@@ -65,39 +77,45 @@ export function Combobox({
           aria-expanded={open}
           className="w-full justify-between"
           disabled={disabled}
+          type="button"
         >
-          {value
-            ? items.find((item) => item.value === value)?.label
-            : placeholder}
+          <span className="truncate">
+            {value
+                ? items.find((item) => item.value === value)?.label
+                : placeholder}
+          </span>
           <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0">
-        <Command>
+      <PopoverContent className="w-[var(--radix-popover-trigger-width)] p-0" align="start">
+        <Command shouldFilter={false}>
           <CommandInput 
             placeholder={searchPlaceholder} 
             value={search}
             onValueChange={setSearch}
           />
           <CommandList>
-            <CommandEmpty>
-              {creatable && search ? (
-                <Button variant="ghost" className="w-full justify-start" onClick={handleCreate}>
-                    <PlusCircle className="mr-2 h-4 w-4" />
-                    Criar "{search}"
-                </Button>
-              ) : (
-                noResultsContent || noResultsText
-              )}
-            </CommandEmpty>
+            {filteredItems.length === 0 && (
+                <CommandEmpty>
+                {creatable && search ? (
+                    <Button variant="ghost" className="w-full justify-start" onClick={handleCreate}>
+                        <PlusCircle className="mr-2 h-4 w-4" />
+                        Criar "{search}"
+                    </Button>
+                ) : (
+                    noResultsContent || noResultsText
+                )}
+                </CommandEmpty>
+            )}
             <CommandGroup>
-              {items.map((item) => (
+              {filteredItems.map((item) => (
                 <CommandItem
                   key={item.value}
-                  value={item.label}
+                  value={item.value}
                   onSelect={() => {
                     onValueChange(item.value)
                     setOpen(false)
+                    setSearch("")
                   }}
                 >
                   <Check
