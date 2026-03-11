@@ -844,7 +844,14 @@ export default function NovoProcessoPage() {
                     <TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Chave / ID</TableHead><TableHead>Datas Operacionais</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>{formData.notas_fiscais.map((nf: any) => (
                       <TableRow key={nf.id}>
-                        <TableCell><select value={nf.tipo} onChange={e => handleNotaFiscalChange(nf.id, 'tipo', e.target.value)} className="bg-transparent text-xs border rounded p-1"><option value="Remessa">Remessa</option><option value="Retorno">NF Produtor</option><option value="Exportação">Exportação</option></select></TableCell>
+                        <TableCell>
+                          <select value={nf.tipo} onChange={e => handleNotaFiscalChange(nf.id, 'tipo', e.target.value)} className="bg-transparent text-xs border rounded p-1">
+                            <option value="Remessa">Remessa</option>
+                            <option value="Retorno">NF Produtor</option>
+                            <option value="Exportação">Exportação</option>
+                            <option value="Devolução">Devolução</option>
+                          </select>
+                        </TableCell>
                         <TableCell><Input value={nf.chave} onChange={e => handleNotaFiscalChange(nf.id, 'chave', e.target.value)} className="h-8 text-xs" placeholder="Chave de acesso" /></TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-2 min-w-[180px]">
