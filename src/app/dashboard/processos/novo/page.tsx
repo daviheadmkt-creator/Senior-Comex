@@ -77,7 +77,7 @@ const processStatusOptions = [
   "AGUARDANDO ENTREDA DOS CONTAINERS",
   "DUE REGISTRADA",
   "AGUARDANDO DESEMBARAÇO",
-  "DUE DESEMABARAÇADA",
+  "DUE DESEMBARAÇADA",
   "DUE AVERBADA",
   "LPCO REGISTRADO",
   "LPCO EM ANALISE",
@@ -99,7 +99,7 @@ const processStatusOptions = [
   "Cancelado",
 ];
 
-const dueStatusOptions = ["RASCUNHO SALVO", "REGISTRADA", "AGUARDANDO ENTREGA DO CARGA/PARAMETRIZAÇÃO", "DESEMABRAÇADA", "SELECIONADA/CANAL LARANJA", "SELECIONADA/CANAL VERMELHO", "DESEMBARAÇADA", "RETIFICAÇÃO", "AVERBADA"];
+const dueStatusOptions = ["RASCUNHO SALVO", "REGISTRADA", "AGUARDANDO ENTREGA DO CARGA/PARAMETRIZAÇÃO", "DESEMBARAÇADA", "SELECIONADA/CANAL LARANJA", "SELECIONADA/CANAL VERMELHO", "RETIFICAÇÃO", "AVERBADA"];
 const lpcoStatusOptions = ["RASCUNHO SALVO", "REGISTRADA/EM ANALISE", "REGISTRADA/EM EXIGENCIA", "REGISTRADA/AGUARDANDO INSPEÇÃO FISICA", "EM EXIGENCIA/NFA", "EM RETIFICAÇÃO", "INDEFERIDA", "DEFERIDA", "DEFERIDA/CERTIFICADO EMITIDO"];
 const treatmentStatusOptions = ["SOLICITADO", "AGENDADO", "REALIZADO", "CERTIFICADO EMITIDO", "CANCELADO"];
 const treatmentTypeOptions = ["BROMETO OFICIAL", "FOSFINA OFICIAL", "FOSFINA NÃO OFICIAL"];
@@ -244,7 +244,6 @@ export default function NovoProcessoPage() {
     if (!terminais) return [];
     if (!formData.portoEmbarqueId) return terminais;
     const filtered = terminais.filter(t => String(t.portoId) === String(formData.portoEmbarqueId));
-    // Se não encontrar nenhum terminal para o porto, mostra todos para não travar o sistema
     return filtered.length > 0 ? filtered : terminais;
   }, [terminais, formData.portoEmbarqueId]);
 
@@ -658,14 +657,12 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(1)}<h3 className="text-lg font-semibold text-left">Etapa 1: Dados do Processo e Reserva</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="grid gap-8 pt-6">
-                {/* 1.1 Básicos */}
                 <div className="grid md:grid-cols-3 gap-4">
                   <div className="space-y-2"><Label>Processo Interno</Label><Input value={formData.processo_interno || ''} onChange={e => handleInputChange('processo_interno', e.target.value)} /></div>
                   <div className="space-y-2"><Label>PO</Label><Input value={formData.po_number || ''} onChange={e => handleInputChange('po_number', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Data Nomeação</Label><DatePicker date={formData.data_nomeacao} onDateChange={d => handleInputChange('data_nomeacao', d)} /></div>
                 </div>
 
-                {/* 1.2 Comercial */}
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label>Exportador</Label>
@@ -685,24 +682,30 @@ export default function NovoProcessoPage() {
                   </div>
                 </div>
 
-                {/* 1.3 Carga */}
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2"><Label>Produto</Label><Input value={formData.produtoNome || ''} onChange={e => handleInputChange('produtoNome', e.target.value)} /></div>
                   <div className="space-y-2"><Label>Quantidade</Label><Input value={formData.quantidade || ''} onChange={handleQuantityChange} /></div>
                 </div>
 
-                {/* 1.4 Booking & Armador */}
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 pt-4 border-t">
-                  <div className="space-y-2"><Label className="text-primary font-bold">NAVIO</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Nome do navio" className="border-primary/30" /></div>
-                  <div className="space-y-2"><Label className="text-primary font-bold">VIAGEM</Label><Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Número da viagem" className="border-primary/30" /></div>
-                  <div className="space-y-2"><Label>Número do Booking</Label><Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} /></div>
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4 pt-4 border-t">
+                  <div className="space-y-2 md:col-span-2">
+                    <Label className="text-primary font-bold">NAVIO / VIAGEM</Label>
+                    <Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} placeholder="Ex: MSC MAXIMA V. 123W" className="border-primary/30" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Número do Booking</Label>
+                    <Input value={formData.booking_number || ''} onChange={e => handleInputChange('booking_number', e.target.value)} />
+                  </div>
                   <div className="space-y-2">
                     <Label>Armador</Label>
                     <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: p.nome_fantasia || p.razao_social })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
                   </div>
+                  <div className="space-y-2">
+                    <Label>Armazém / Ref. Logística</Label>
+                    <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} placeholder="Código do armazém" />
+                  </div>
                 </div>
 
-                {/* 1.5 Rota */}
                 <div className="grid md:grid-cols-3 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label>Porto de Embarque (Origem)</Label>
@@ -715,7 +718,6 @@ export default function NovoProcessoPage() {
                   <div className="space-y-2"><Label>Destino Final</Label><Input value={formData.destino || ''} onChange={e => handleInputChange('destino', e.target.value)} /></div>
                 </div>
 
-                {/* 1.6 Terminais */}
                 <div className="grid md:grid-cols-2 gap-4 pt-4 border-t">
                   <div className="space-y-2">
                     <Label>Terminal de Despacho (REDEX)</Label>
@@ -759,7 +761,6 @@ export default function NovoProcessoPage() {
                   </div>
                 </div>
 
-                {/* 1.7 Deadlines */}
                 <div className="grid md:grid-cols-3 gap-6 pt-4 border-t">
                     {['deadline_draft', 'deadline_vgm', 'deadline_carga'].map(field => (
                         <div key={field} className="space-y-2">
@@ -947,7 +948,7 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(4)}<h3 className="text-lg font-semibold text-left">Etapa 4: Confirmação de Embarque</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="grid md:grid-cols-2 gap-4 pt-6">
-                <div className="space-y-2"><Label>Navio Confirmado (Pode ser alterado aqui)</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} /></div>
+                <div className="space-y-2"><Label>Navio / Viagem Confirmado</Label><Input value={formData.navio || ''} onChange={e => handleInputChange('navio', e.target.value)} /></div>
                 <div className="grid grid-cols-2 gap-2">
                     <div className="space-y-2"><Label>ETD</Label><DatePicker date={formData.etd} onDateChange={d => handleInputChange('etd', d)} showTime /></div>
                     <div className="space-y-2"><Label>ETA</Label><DatePicker date={formData.eta} onDateChange={d => handleInputChange('eta', d)} showTime /></div>

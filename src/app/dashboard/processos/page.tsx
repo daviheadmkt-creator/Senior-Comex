@@ -204,21 +204,18 @@ export default function GestaoProcessosPage() {
                     packing: getDocStatus('PACKING LIST'),
                   };
 
-                  // Busca dados das tabelas fiscais da Etapa 3
                   const fiscalLPCO = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'LPCO');
                   const fiscalDUE = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'DUE');
                   const fiscalTreatment = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'TRATAMENTO');
                   
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
-                  // Lógica Rigorosa de Deadlines - Agora só exibe OK se tiver arquivo, e oculta data se OK
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
 
                   return (
                     <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
-                      {/* 1. AÇÕES (FIXA) */}
                       <td className="px-2 py-1 text-center sticky left-0 z-10 bg-card">
                         <div className="flex gap-1 justify-center">
                           <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
@@ -255,10 +252,8 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 2. ANALISTA (FIXA) */}
                       <td className="px-2 py-1 text-center text-blue-600 uppercase sticky left-[80px] z-10 bg-card">{processo.analistaNome || '---'}</td>
                       
-                      {/* 3. PO / CLIENTE (FIXA) */}
                       <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5_rgba(0,0,0,0.05)] border-r">
                         <div className="flex flex-col">
                           <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
@@ -266,7 +261,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 4. PRODUTO / DATA NOMEAÇÃO */}
                       <td className="px-2 py-1">
                         <div className="flex flex-col">
                           <span className="uppercase text-foreground">{processo.produtoNome || '---'}</span>
@@ -274,7 +268,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 5. RESERVA / AGÊNCIA / ARMADOR */}
                       <td className="px-2 py-1">
                         <div className="flex flex-col">
                           <span className="text-foreground">{processo.booking_number || '---'}</span>
@@ -282,10 +275,8 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 6. NAVIO */}
                       <td className="px-2 py-1 truncate max-w-[120px] uppercase text-foreground">{processo.navio || '---'}</td>
 
-                      {/* 7. ORIGEM / ETD */}
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-destructive font-bold">{processo.portoEmbarqueNome || '---'}</span>
@@ -293,7 +284,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 8. DESTINO / ETA */}
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-foreground font-bold">{processo.portoDescargaNome || '---'}</span>
@@ -301,7 +291,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 9. CONTAINERS / KGS */}
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-foreground">{processo.containers?.length || 0} CTR</span>
@@ -309,7 +298,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 10. DEAD LINE / PRAZO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
@@ -351,14 +339,12 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 11. REMARK (STATUS) */}
                       <td className="px-2 py-1 text-center align-middle">
                         <Badge variant={getStatusVariant(processo.status)} className="text-[8px] px-1 h-5 w-full justify-center">
                           {processo.status || 'N/A'}
                         </Badge>
                       </td>
 
-                      {/* 12. ARMAZEM / TERMINAIS */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted uppercase text-[8px]">
                           <div className="px-2 py-0.5 flex justify-between"><span>ARMAZÉM</span> <span className="truncate max-w-[80px] text-foreground">{processo.viagem || '---'}</span></div>
@@ -367,7 +353,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 13. CONTAINERS / NOTAS FISCAIS */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5">
@@ -384,7 +369,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 14. LPCO / INSPEÇÃO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{fiscalLPCO?.identificacao || '---'}</span></div>
@@ -393,7 +377,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 15. DUE / DESEMBARAÇO */}
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
@@ -402,7 +385,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 16 - 23 DOCUMENTAÇÃO (COLUNAS INDIVIDUAIS) */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
                           <div className="py-0.5 text-primary">{docs.bl.status}</div>
@@ -460,7 +442,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* 24. REFERENCIA SENIOR */}
                       <td className="px-2 py-1 text-center text-[8px] text-muted-foreground uppercase">
                         {processo.processo_interno || '---'}
                       </td>
@@ -478,7 +459,6 @@ export default function GestaoProcessosPage() {
         </CardContent>
       </Card>
 
-      {/* Botão Flutuante Novo Processo */}
       <Link href="/dashboard/processos/novo" passHref>
         <Button className="fixed bottom-8 right-8 rounded-full shadow-2xl h-14 w-14 p-0 md:h-auto md:w-auto md:px-6 md:py-4 z-50 transition-transform hover:scale-105 active:scale-95">
           <PlusCircle className="h-6 w-6 md:mr-2" />
