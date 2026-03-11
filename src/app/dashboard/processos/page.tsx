@@ -204,9 +204,9 @@ export default function GestaoProcessosPage() {
                     packing: getDocStatus('PACKING LIST'),
                   };
 
-                  const fiscalLPCO = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'LPCO');
-                  const fiscalDUE = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'DUE');
-                  const fiscalTreatment = (processo.documentos_fiscais || []).find((df: any) => df.tipo === 'TRATAMENTO');
+                  const fiscalLPCO = (processo.documentos_fiscais || []).find((df: any) => df.tipo?.toUpperCase() === 'LPCO');
+                  const fiscalDUE = (processo.documentos_fiscais || []).find((df: any) => df.tipo?.toUpperCase() === 'DUE');
+                  const fiscalTreatment = (processo.documentos_fiscais || []).find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
                   
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
