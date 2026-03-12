@@ -237,11 +237,6 @@ export default function NovoProcessoPage() {
   const terminaisCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
   const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminaisCollection);
 
-  const terminalsMap = useMemo(() => {
-    if (!terminais) return new Map();
-    return new Map(terminais.map(t => [t.id, t.name]));
-  }, [terminais]);
-
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -293,7 +288,6 @@ export default function NovoProcessoPage() {
       
       if (!file || !currentTarget || !storage || !pageProcessId) return;
 
-      // Extrair informações do alvo de forma segura antes de entrar no try/catch e closures
       const isStringTarget = typeof currentTarget === 'string';
       const targetField = isStringTarget ? currentTarget as string : null;
       const targetObj: any = !isStringTarget ? currentTarget : null;
@@ -318,7 +312,6 @@ export default function NovoProcessoPage() {
               uploadProgress: 1
           };
 
-          // Atualização otimista da UI
           setFormData((prev: any) => {
               const newState = { ...prev };
               if (targetField) {
@@ -405,7 +398,6 @@ export default function NovoProcessoPage() {
 
   const triggerFileUpload = (target: string | object) => { 
       setUploadTarget(target as any); 
-      // Pequeno timeout para garantir que o estado seja processado antes do clique
       setTimeout(() => fileInputRef.current?.click(), 10);
   };
 
@@ -473,8 +465,6 @@ export default function NovoProcessoPage() {
         exportadorNome: partnersMap.get(formData.exportadorId) || '',
         portoEmbarqueNome: portsMap.get(formData.portoEmbarqueId) || '',
         portoDescargaNome: portsMap.get(formData.portoDescargaId) || '',
-        terminalDespachoNome: terminalsMap.get(formData.terminalDespachoId) || '',
-        terminalEmbarqueNome: terminalsMap.get(formData.terminalEmbarqueId) || '',
         armadorNome: partnersMap.get(formData.armadorId) || '',
       };
 
@@ -620,7 +610,6 @@ export default function NovoProcessoPage() {
     );
   };
 
-  // Memoizar itens de terminais para estabilidade
   const terminalItems = useMemo(() => {
     return terminais?.map(term => ({ value: String(term.id), label: term.name })) || [];
   }, [terminais]);
@@ -870,7 +859,7 @@ export default function NovoProcessoPage() {
                     <Table><TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Identificação</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>{formData.documentos_fiscais?.map((df: any) => (
                       <TableRow key={df.id}>
-                        <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(docT => <SelectItem key={docType} value={docType}>{docType}</SelectItem>)}</SelectContent></Select></TableCell>
+                        <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(docType => <SelectItem key={docType} value={docType}>{docType}</SelectItem>)}</SelectContent></Select></TableCell>
                         <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
                         <TableCell><Select value={df.status} onValueChange={v => handleFiscalDocChange(df.id, 'status', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{df.tipo === 'DUE' ? dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : df.tipo === 'LPCO' ? lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></TableCell>
                         <TableCell><DatePicker date={df.data} onDateChange={v => handleFiscalDocChange(df.id, 'data', v)} /></TableCell>
