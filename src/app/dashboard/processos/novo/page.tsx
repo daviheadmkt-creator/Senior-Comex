@@ -540,16 +540,19 @@ export default function NovoProcessoPage() {
           const fileRef = ref(storage, nf.file.storagePath);
           const bytes = await getBytes(fileRef);
           
-          if (nf.file.type === 'application/pdf') {
+          const isPdf = nf.file.type === 'application/pdf' || nf.file.name.toLowerCase().endsWith('.pdf');
+          const isImage = nf.file.type.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(nf.file.name);
+
+          if (isPdf) {
             const pdfToMerge = await PDFDocument.load(bytes);
             const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
             copiedPages.forEach(page => mergedPdf.addPage(page));
             processedCount++;
-          } else if (nf.file.type.startsWith('image/')) {
+          } else if (isImage) {
             let image;
-            if (nf.file.type.includes('jpeg') || nf.file.type.includes('jpg')) {
+            if (nf.file.type.includes('jpeg') || nf.file.type.includes('jpg') || nf.file.name.toLowerCase().endsWith('.jpg') || nf.file.name.toLowerCase().endsWith('.jpeg')) {
               image = await mergedPdf.embedJpg(bytes);
-            } else if (nf.file.type.includes('png')) {
+            } else if (nf.file.type.includes('png') || nf.file.name.toLowerCase().endsWith('.png')) {
               image = await mergedPdf.embedPng(bytes);
             }
             
@@ -573,12 +576,17 @@ export default function NovoProcessoPage() {
       const mergedPdfBytes = await mergedPdf.save();
       const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
+      
+      // Trigger download
       const link = document.createElement('a');
       link.href = url;
       link.download = `Pacote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
+      
+      // Cleanup
+      setTimeout(() => URL.revokeObjectURL(url), 100);
       
       toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s).` });
     } catch (error: any) {
