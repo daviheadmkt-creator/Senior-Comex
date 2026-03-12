@@ -491,15 +491,90 @@ export default function NovoProcessoPage() {
   };
 
   const generateNFsPdf = async () => {
-    const { default: jsPDF } = await import('jspdf');
-    await import('jspdf-autotable');
-    const docPdf = new jsPDF();
-    docPdf.text('Pacote de Notas Fiscais', 10, 10);
-    (docPdf as any).autoTable({
-      head: [['Tipo', 'Chave', 'Data Pedido', 'Data Recebida']],
-      body: formData.notas_fiscais.map((n: any) => [n.tipo, n.chave || '---', n.data_pedido || 'N/A', n.data_recebida || 'N/A']),
-    });
-    docPdf.save(`NFs_${formData.processo_interno}.pdf`);
+    try {
+      const { PDFDocument } = await import('pdf-lib');
+      const { default: jsPDF } = await import('jspdf');
+      await import('jspdf-autotable');
+
+      const filesToProcess = formData.notas_fiscais.filter((nf: any) => nf.file && nf.file.downloadURL);
+      
+      if (filesToProcess.length === 0) {
+        toast({ title: "Aviso", description: "Nenhuma nota fiscal com arquivo anexado para gerar o pacote." });
+        return;
+      }
+
+      toast({ title: "Processando", description: "Gerando pacote de notas unificado... Por favor aguarde." });
+
+      // 1. Gerar folha de rosto com resumo usando jsPDF
+      const cover = new jsPDF();
+      cover.setFontSize(18);
+      cover.text('Pacote de Notas Fiscais', 14, 20);
+      cover.setFontSize(10);
+      cover.text(`Processo Interno: ${formData.processo_interno || '---'}`, 14, 30);
+      cover.text(`Exportador: ${partnersMap.get(formData.exportadorId) || '---'}`, 14, 35);
+      cover.text(`Data de Geração: ${new Date().toLocaleString('pt-BR')}`, 14, 40);
+
+      (cover as any).autoTable({
+        startY: 50,
+        head: [['Tipo', 'Chave / ID', 'Data Recebida', 'Nome do Arquivo']],
+        body: formData.notas_fiscais.map((nf: any) => [
+          nf.tipo,
+          nf.chave || '---',
+          nf.data_recebida ? new Date(nf.data_recebida).toLocaleDateString('pt-BR') : '---',
+          nf.file?.name || 'Sem arquivo'
+        ]),
+      });
+
+      const coverBuffer = cover.output('arraybuffer');
+      
+      // 2. Usar pdf-lib para mesclar os documentos reais
+      const mergedPdf = await PDFDocument.load(coverBuffer);
+      
+      for (const nf of filesToProcess) {
+        try {
+          const response = await fetch(nf.file.downloadURL);
+          if (!response.ok) continue;
+          
+          const bytes = await response.arrayBuffer();
+          
+          if (nf.file.type === 'application/pdf') {
+            const pdfToMerge = await PDFDocument.load(bytes);
+            const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
+            copiedPages.forEach(page => mergedPdf.addPage(page));
+          } else if (nf.file.type.startsWith('image/')) {
+            let image;
+            if (nf.file.type.includes('jpeg') || nf.file.type.includes('jpg')) {
+              image = await mergedPdf.embedJpg(bytes);
+            } else if (nf.file.type.includes('png')) {
+              image = await mergedPdf.embedPng(bytes);
+            }
+            
+            if (image) {
+              const { width, height } = image.scale(1);
+              const page = mergedPdf.addPage([width, height]);
+              page.drawImage(image, { x: 0, y: 0, width, height });
+            }
+          }
+        } catch (e) {
+          console.error(`Erro ao processar arquivo ${nf.file?.name}:`, e);
+        }
+      }
+
+      const mergedPdfBytes = await mergedPdf.save();
+      const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `Pacote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({ title: "Sucesso", description: "PDF unificado com todos os anexos gerado com sucesso." });
+    } catch (error: any) {
+      console.error("Erro ao unificar PDFs:", error);
+      toast({ title: "Erro", description: "Falha ao processar e unificar os documentos.", variant: "destructive" });
+    }
   };
 
   const handleContainerImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
