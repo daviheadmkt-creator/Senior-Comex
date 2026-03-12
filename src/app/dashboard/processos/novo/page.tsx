@@ -189,7 +189,6 @@ export default function NovoProcessoPage() {
   const { toast } = useToast();
   const firestore = useFirestore();
   const storage = useStorage();
-  const { user: currentUser } = useUser();
   
   const fileInputRef = useRef<HTMLInputElement>(null);
   const nfFileInputRef = useRef<HTMLInputElement>(null);
@@ -290,16 +289,20 @@ export default function NovoProcessoPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      if (!file || !uploadTarget || !storage || !pageProcessId) return;
+      const currentTarget = uploadTarget;
+      
+      if (!file || !currentTarget || !storage || !pageProcessId) return;
+
+      // Extrair informações do alvo de forma segura antes de entrar no try/catch e closures
+      const isStringTarget = typeof currentTarget === 'string';
+      const targetField = isStringTarget ? currentTarget as string : null;
+      const targetObj: any = !isStringTarget ? currentTarget : null;
+      const targetId = targetObj?.id || null;
+      const targetType = targetObj?.type || null;
 
       try {
           validarArquivo(file);
           
-          const targetField = typeof uploadTarget === 'string' ? uploadTarget : null;
-          const targetObj = typeof uploadTarget === 'object' ? uploadTarget : null;
-          const targetId = targetObj ? (targetObj as any).id : null;
-          const targetList = targetObj ? (targetObj as any).type : null;
-
           const safeName = sanitizeFileName(file.name);
           const filePath = `processos/${pageProcessId}/${Date.now()}-${safeName}`;
           const storageRef = ref(storage, filePath);
@@ -315,24 +318,28 @@ export default function NovoProcessoPage() {
               uploadProgress: 1
           };
 
+          // Atualização otimista da UI
           setFormData((prev: any) => {
-              if (targetField) return { ...prev, [targetField]: placeholder };
-              if (targetList === 'nota_fiscal') return { ...prev, notas_fiscais: prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: placeholder } : nf) };
-              if (targetList === 'documento_pos_embarque') return { ...prev, documentos_pos_embarque: prev.documentos_pos_embarque.map((d: any) => d.id === targetId ? { ...d, file: placeholder } : d) };
-              if (targetList === 'documento_fiscal') return { ...prev, documentos_fiscais: (prev.documentos_fiscais || []).map((df: any) => df.id === targetId ? { ...df, file: placeholder } : df) };
-              return prev;
+              const newState = { ...prev };
+              if (targetField) {
+                  newState[targetField] = placeholder;
+              } else if (targetType === 'nota_fiscal') {
+                  newState.notas_fiscais = prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: placeholder } : nf);
+              } else if (targetType === 'documento_pos_embarque') {
+                  newState.documentos_pos_embarque = prev.documentos_pos_embarque.map((d: any) => d.id === targetId ? { ...d, file: placeholder } : d);
+              } else if (targetType === 'documento_fiscal') {
+                  newState.documentos_fiscais = (prev.documentos_fiscais || []).map((df: any) => df.id === targetId ? { ...df, file: placeholder } : df);
+              }
+              return newState;
           });
 
           setUploadProgresses(prev => ({ ...prev, [filePath]: 1 }));
 
           const uploadTask = uploadBytesResumable(storageRef, file, { contentType });
 
-          let lastProg = 0;
           uploadTask.on('state_changed',
               (snapshot) => {
                   const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-                  if (Math.abs(progress - lastProg) < 5 && progress < 100) return;
-                  lastProg = progress;
                   setUploadProgresses(prev => ({ ...prev, [filePath]: progress }));
               },
               (error: any) => {
@@ -350,21 +357,23 @@ export default function NovoProcessoPage() {
                       if (targetField) {
                           newState[targetField] = finalFileData;
                           if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { [targetField]: finalFileData });
-                      } else if (targetList === 'nota_fiscal') {
+                      } else if (targetType === 'nota_fiscal') {
                           newState.notas_fiscais = prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: finalFileData } : nf);
                           if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { notas_fiscais: newState.notas_fiscais });
-                      } else if (targetList === 'documento_pos_embarque') {
+                      } else if (targetType === 'documento_pos_embarque') {
                           newState.documentos_pos_embarque = prev.documentos_pos_embarque.map((d: any) => d.id === targetId ? { ...d, file: finalFileData } : d);
                           if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_pos_embarque: newState.documentos_pos_embarque });
-                      } else if (targetList === 'documento_fiscal') {
-                          newState.documentos_fiscais = prev.documentos_fiscais.map((df: any) => df.id === targetId ? { ...df, file: finalFileData } : df);
+                      } else if (targetType === 'documento_fiscal') {
+                          newState.documentos_fiscais = (prev.documentos_fiscais || []).map((df: any) => df.id === targetId ? { ...df, file: finalFileData } : df);
                           if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_fiscais: newState.documentos_fiscais });
                       }
                       return newState;
                   });
               }
           );
-      } catch (err: any) { toast({ title: "Erro", description: err.message, variant: "destructive" }); }
+      } catch (err: any) { 
+          toast({ title: "Erro", description: err.message, variant: "destructive" }); 
+      }
       setUploadTarget(null);
   };
 
@@ -394,7 +403,11 @@ export default function NovoProcessoPage() {
     if (fileToRemove?.storagePath) deleteObject(ref(storage, fileToRemove.storagePath)).catch(() => {});
   };
 
-  const triggerFileUpload = (target: string | object) => { setUploadTarget(target as any); fileInputRef.current?.click(); };
+  const triggerFileUpload = (target: string | object) => { 
+      setUploadTarget(target as any); 
+      // Pequeno timeout para garantir que o estado seja processado antes do clique
+      setTimeout(() => fileInputRef.current?.click(), 10);
+  };
 
   const getStepStatusIcon = (step: number) => {
     const status = formData.status;
@@ -607,11 +620,14 @@ export default function NovoProcessoPage() {
     );
   };
 
+  // Memoizar itens de terminais para estabilidade
+  const terminalItems = useMemo(() => {
+    return terminais?.map(term => ({ value: String(term.id), label: term.name })) || [];
+  }, [terminais]);
+
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo';
 
   if (isLoading) return <div className="flex items-center justify-center h-96"><Loader2 className="h-8 w-8 animate-spin text-primary" /></div>;
-
-  const terminalItems = terminais?.map(t => ({ value: String(t.id), label: t.name })) || [];
 
   return (
     <div className="space-y-6">
@@ -635,7 +651,7 @@ export default function NovoProcessoPage() {
                       <SelectValue placeholder="Status do Processo" />
                     </div>
                   </SelectTrigger>
-                  <SelectContent>{processStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+                  <SelectContent>{processStatusOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
             </div>
@@ -705,7 +721,6 @@ export default function NovoProcessoPage() {
                 </div>
 
                 <div className="grid md:grid-cols-4 gap-4 pt-4 border-t">
-                  {/* Porto Embarque + Data */}
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Porto de Embarque</Label>
@@ -717,7 +732,6 @@ export default function NovoProcessoPage() {
                     </div>
                   </div>
 
-                  {/* Porto Descarga + Data */}
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Porto de Descarga</Label>
@@ -729,7 +743,6 @@ export default function NovoProcessoPage() {
                     </div>
                   </div>
 
-                  {/* Destino Final + Data */}
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Destino Final</Label>
@@ -741,7 +754,6 @@ export default function NovoProcessoPage() {
                     </div>
                   </div>
 
-                  {/* Terminais */}
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <Label>Terminal de Despacho</Label>
@@ -858,8 +870,8 @@ export default function NovoProcessoPage() {
                     <Table><TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Identificação</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                     <TableBody>{formData.documentos_fiscais?.map((df: any) => (
                       <TableRow key={df.id}>
-                        <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></TableCell>
-                        <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(o => <SelectItem key={o} value={o}>{o}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
+                        <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(docT => <SelectItem key={docType} value={docType}>{docType}</SelectItem>)}</SelectContent></Select></TableCell>
+                        <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
                         <TableCell><Select value={df.status} onValueChange={v => handleFiscalDocChange(df.id, 'status', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{df.tipo === 'DUE' ? dueStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : df.tipo === 'LPCO' ? lpcoStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>) : treatmentStatusOptions.map(s => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent></Select></TableCell>
                         <TableCell><DatePicker date={df.data} onDateChange={v => handleFiscalDocChange(df.id, 'data', v)} /></TableCell>
                         <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(df.file)}</div>{df.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_fiscal', id: df.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_fiscal', id: df.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
@@ -902,18 +914,18 @@ export default function NovoProcessoPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {formData.containers.map((c: any, index: number) => (
-                            <TableRow key={c.id}>
-                              <TableCell><Input value={c.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="CAAU..." className='h-8 text-xs font-mono uppercase'/></TableCell>
-                              <TableCell><Input value={c.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="MLBR..." className='h-8 text-xs uppercase'/></TableCell>
-                              <TableCell><Input value={c.tare} onChange={e => handleContainerChange(index, 'tare', e.target.value)} className='h-8 text-xs'/></TableCell>
-                              <TableCell><Input value={c.qty_especie} onChange={e => handleContainerChange(index, 'qty_especie', e.target.value)} className='h-8 text-xs'/></TableCell>
-                              <TableCell><Input value={c.gross_weight} onChange={e => handleContainerChange(index, 'gross_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
-                              <TableCell><Input value={c.net_weight} onChange={e => handleContainerChange(index, 'net_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
-                              <TableCell><Input value={c.m3} onChange={e => handleContainerChange(index, 'm3', e.target.value)} className='h-8 text-xs'/></TableCell>
-                              <TableCell><Input value={c.vgm} onChange={e => handleContainerChange(index, 'vgm', e.target.value)} className='h-8 text-xs font-bold text-primary'/></TableCell>
+                          {formData.containers.map((ctr, index) => (
+                            <TableRow key={ctr.id}>
+                              <TableCell><Input value={ctr.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="CAAU..." className='h-8 text-xs font-mono uppercase'/></TableCell>
+                              <TableCell><Input value={ctr.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="MLBR..." className='h-8 text-xs uppercase'/></TableCell>
+                              <TableCell><Input value={ctr.tare} onChange={e => handleContainerChange(index, 'tare', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={ctr.qty_especie} onChange={e => handleContainerChange(index, 'qty_especie', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={ctr.gross_weight} onChange={e => handleContainerChange(index, 'gross_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={ctr.net_weight} onChange={e => handleContainerChange(index, 'net_weight', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={ctr.m3} onChange={e => handleContainerChange(index, 'm3', e.target.value)} className='h-8 text-xs'/></TableCell>
+                              <TableCell><Input value={ctr.vgm} onChange={e => handleContainerChange(index, 'vgm', e.target.value)} className='h-8 text-xs font-bold text-primary'/></TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('containers', formData.containers.filter((_: any, i: number) => i !== index))}>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('containers', formData.containers.filter((_, i) => i !== index))}>
                                   <Trash2 className='h-4 w-4 text-destructive'/>
                                 </Button>
                               </TableCell>
@@ -934,17 +946,17 @@ export default function NovoProcessoPage() {
                 <div className="pt-4 border-t">
                     <h3 className="text-md font-bold text-primary uppercase mb-4">Inspeção Física e Lacração</h3>
                     <div className="space-y-2 rounded-md border p-4 bg-muted/20">
-                      {formData.containers.map((c: any, i: number) => (
-                        <div key={c.id} className="flex items-center gap-4 p-2 border-b last:border-0">
-                          <Checkbox checked={c.inspecionado} onCheckedChange={v => handleContainerChange(i, 'inspecionado', !!v)} />
+                      {formData.containers.map((ctr, i) => (
+                        <div key={ctr.id} className="flex items-center gap-4 p-2 border-b last:border-0">
+                          <Checkbox checked={ctr.inspecionado} onCheckedChange={v => handleContainerChange(i, 'inspecionado', !!v)} />
                           <div className='flex-1 flex flex-col'>
-                            <Label className="font-bold text-xs">{c.numero || `CONTÊINER ${i + 1}`}</Label>
-                            <span className='text-[10px] text-muted-foreground uppercase'>VGM: {c.vgm} {c.lacre_original && `| Lacre: ${c.lacre_original}`}</span>
+                            <Label className="font-bold text-xs">{ctr.numero || `CONTÊINER ${i + 1}`}</Label>
+                            <span className='text-[10px] text-muted-foreground uppercase'>VGM: {ctr.vgm} {ctr.lacre_original && `| Lacre: ${ctr.lacre_original}`}</span>
                           </div>
-                          {c.inspecionado && (
+                          {ctr.inspecionado && (
                             <div className='flex items-center gap-2'>
                               <span className='text-[10px] font-bold text-muted-foreground uppercase'>NOVO LACRE:</span>
-                              <Input value={c.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre MAPA/Senior" className="h-8 w-[180px] text-xs uppercase" />
+                              <Input value={ctr.novo_lacre || ''} onChange={e => handleContainerChange(i, 'novo_lacre', e.target.value)} placeholder="Novo Lacre MAPA/Senior" className="h-8 w-[180px] text-xs uppercase" />
                             </div>
                           )}
                         </div>
