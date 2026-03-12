@@ -129,6 +129,7 @@ const initialFormData = {
   notas_fiscais: [],
   documentos_fiscais: [],
   awb_courier: '',
+  awb_file: null,
   analistaId: '',
   analistaNome: '',
   draft_bl_file: null,
@@ -985,7 +986,37 @@ export default function NovoProcessoPage() {
                     <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', formData.documentos_pos_embarque.filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
-                <div className="flex items-end gap-4 border-t pt-4"><div className="space-y-2 flex-1"><Label>AWB Courier (Rastreio DHL/etc)</Label><Input value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} className="uppercase" /></div><Button type="button" variant="outline" onClick={generateOriginalDocsPdf}><FileDown className="mr-2 h-4 w-4" />Gerar Malote PDF</Button></div>
+                
+                <div className="flex flex-col gap-4 border-t pt-4">
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>AWB Courier (Rastreio DHL/etc)</Label>
+                      <Input value={formData.awb_courier || ''} onChange={e => handleInputChange('awb_courier', e.target.value)} className="uppercase" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Anexo Courier</Label>
+                      <div className="flex items-center gap-2">
+                        <div className="flex-1 p-2 border rounded-md bg-muted overflow-hidden h-12 flex items-center">
+                          {renderFileState(formData.awb_file)}
+                        </div>
+                        {formData.awb_file ? (
+                          <Button variant="ghost" size="icon" type="button" onClick={() => removeFile('awb_file')}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        ) : (
+                          <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload('awb_file')}>
+                            <Upload className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-4">
+                    <Button type="button" variant="outline" onClick={generateOriginalDocsPdf}>
+                      <FileDown className="mr-2 h-4 w-4" /> Gerar Malote PDF
+                    </Button>
+                  </div>
+                </div>
               </CardContent></Card>
             </AccordionContent>
           </AccordionItem>
