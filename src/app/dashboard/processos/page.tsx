@@ -204,10 +204,20 @@ export default function GestaoProcessosPage() {
                     packing: getDocStatus('PACKING LIST'),
                   };
 
-                  const fiscalLPCO = (processo.documentos_fiscais || []).find((df: any) => df.tipo?.toUpperCase() === 'LPCO');
-                  const fiscalDUE = (processo.documentos_fiscais || []).find((df: any) => df.tipo?.toUpperCase() === 'DUE');
-                  const fiscalTreatment = (processo.documentos_fiscais || []).find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
+                  const fiscalDocs = processo.documentos_fiscais || [];
+                  const fiscalLPCO = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'LPCO');
+                  const fiscalDUE = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'DUE');
+                  const fiscalTreatment = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
                   
+                  // Busca específica para datas de DUE/Desembaraço/Averbação buscando em toda a lista
+                  const dueEntries = fiscalDocs.filter((df: any) => df.tipo?.toUpperCase() === 'DUE');
+                  const desembaraçoEntry = dueEntries.find((df: any) => 
+                    df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA')
+                  );
+                  const averbaçãoEntry = dueEntries.find((df: any) => 
+                    df.status?.toUpperCase().includes('AVERBADA')
+                  );
+
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL);
@@ -380,8 +390,8 @@ export default function GestaoProcessosPage() {
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.toUpperCase().includes('DESEMBARAÇADA') || fiscalDUE?.status?.toUpperCase().includes('AVERBADA')) ? formatDate(fiscalDUE.data) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{(fiscalDUE?.status?.toUpperCase() === 'AVERBADA') ? formatDate(fiscalDUE.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoEntry?.data ? formatDate(desembaraçoEntry.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbaçãoEntry?.data ? formatDate(averbaçãoEntry.data) : '---'}</span></div>
                         </div>
                       </td>
 
