@@ -49,7 +49,7 @@ import {
   updateDocumentNonBlocking 
 } from '@/firebase';
 import { collection, doc, setDoc } from 'firebase/firestore';
-import { ref, uploadBytesResumable, getDownloadURL, deleteObject } from 'firebase/storage';
+import { ref, uploadBytesResumable, getDownloadURL, deleteObject, getBytes } from 'firebase/storage';
 import { Combobox } from '@/components/ui/combobox';
 import { Progress } from '@/components/ui/progress';
 
@@ -384,7 +384,7 @@ export default function NovoProcessoPage() {
             syncData[target] = null;
         } else {
             const key = target.type === 'nota_fiscal' ? 'notas_fiscais' : target.type === 'documento_pos_embarque' ? 'documentos_pos_embarque' : 'documentos_fiscais';
-            newState[key] = prev[key].map((item: any) => {
+            newState[key] = (prev[key] || []).map((item: any) => {
                 if (item.id === target.id) { fileToRemove = item.file; return { ...item, file: null }; }
                 return item;
             });
@@ -430,7 +430,7 @@ export default function NovoProcessoPage() {
 
   const handlePostShipmentDocChange = (id: string | number, field: string, value: any) => {
     setFormData((prev: any) => {
-      const newList = prev.documentos_pos_embarque.map((d: any) => d.id === id ? { ...d, [field]: value } : d);
+      const newList = (prev.documentos_pos_embarque || []).map((d: any) => d.id === id ? { ...d, [field]: value } : d);
       if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_pos_embarque: newList });
       return { ...prev, documentos_pos_embarque: newList };
     });
@@ -438,7 +438,7 @@ export default function NovoProcessoPage() {
 
   const handleNotaFiscalChange = (id: string | number, field: string, value: any) => {
     setFormData((prev: any) => {
-      const newList = prev.notas_fiscais.map((nf: any) => nf.id === id ? { ...nf, [field]: value } : nf);
+      const newList = (prev.notas_fiscais || []).map((nf: any) => nf.id === id ? { ...nf, [field]: value } : nf);
       if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { notas_fiscais: newList });
       return { ...prev, notas_fiscais: newList };
     });
@@ -485,7 +485,7 @@ export default function NovoProcessoPage() {
     docPdf.text('Documentos de Embarque', 10, 10);
     (docPdf as any).autoTable({
       head: [['Nome', 'Originais', 'Cópias', 'Emissão', 'Liberação']],
-      body: formData.documentos_pos_embarque.map((d: any) => [d.nome, d.originais, d.copias, d.data_emissao || 'N/A', d.data_liberacao || 'N/A']),
+      body: (formData.documentos_pos_embarque || []).map((d: any) => [d.nome, d.originais, d.copias, d.data_emissao || 'N/A', d.data_liberacao || 'N/A']),
     });
     docPdf.save(`Docs_${formData.processo_interno}.pdf`);
   };
@@ -496,16 +496,20 @@ export default function NovoProcessoPage() {
       const { default: jsPDF } = await import('jspdf');
       await import('jspdf-autotable');
 
-      const filesToProcess = formData.notas_fiscais.filter((nf: any) => nf.file && nf.file.downloadURL);
+      const filesToProcess = (formData.notas_fiscais || []).filter((nf: any) => nf.file && nf.file.storagePath);
       
       if (filesToProcess.length === 0) {
         toast({ title: "Aviso", description: "Nenhuma nota fiscal com arquivo anexado para gerar o pacote." });
         return;
       }
 
+      if (!storage) {
+        toast({ title: "Erro", description: "Serviço de armazenamento não disponível.", variant: "destructive" });
+        return;
+      }
+
       toast({ title: "Processando", description: "Gerando pacote de notas unificado... Por favor aguarde." });
 
-      // 1. Gerar folha de rosto com resumo usando jsPDF
       const cover = new jsPDF();
       cover.setFontSize(18);
       cover.text('Pacote de Notas Fiscais', 14, 20);
@@ -517,7 +521,7 @@ export default function NovoProcessoPage() {
       (cover as any).autoTable({
         startY: 50,
         head: [['Tipo', 'Chave / ID', 'Data Recebida', 'Nome do Arquivo']],
-        body: formData.notas_fiscais.map((nf: any) => [
+        body: (formData.notas_fiscais || []).map((nf: any) => [
           nf.tipo,
           nf.chave || '---',
           nf.data_recebida ? new Date(nf.data_recebida).toLocaleDateString('pt-BR') : '---',
@@ -526,21 +530,21 @@ export default function NovoProcessoPage() {
       });
 
       const coverBuffer = cover.output('arraybuffer');
-      
-      // 2. Usar pdf-lib para mesclar os documentos reais
       const mergedPdf = await PDFDocument.load(coverBuffer);
       
+      let processedCount = 0;
+
       for (const nf of filesToProcess) {
         try {
-          const response = await fetch(nf.file.downloadURL);
-          if (!response.ok) continue;
-          
-          const bytes = await response.arrayBuffer();
+          // Usar getBytes do SDK para evitar erros de CORS do fetch direto
+          const fileRef = ref(storage, nf.file.storagePath);
+          const bytes = await getBytes(fileRef);
           
           if (nf.file.type === 'application/pdf') {
             const pdfToMerge = await PDFDocument.load(bytes);
             const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
             copiedPages.forEach(page => mergedPdf.addPage(page));
+            processedCount++;
           } else if (nf.file.type.startsWith('image/')) {
             let image;
             if (nf.file.type.includes('jpeg') || nf.file.type.includes('jpg')) {
@@ -553,11 +557,17 @@ export default function NovoProcessoPage() {
               const { width, height } = image.scale(1);
               const page = mergedPdf.addPage([width, height]);
               page.drawImage(image, { x: 0, y: 0, width, height });
+              processedCount++;
             }
           }
         } catch (e) {
-          console.error(`Erro ao processar arquivo ${nf.file?.name}:`, e);
+          console.warn(`Erro ao processar anexo ${nf.file?.name}:`, e);
         }
+      }
+
+      if (processedCount === 0) {
+        toast({ title: "Erro", description: "Não foi possível processar nenhum dos anexos selecionados.", variant: "destructive" });
+        return;
       }
 
       const mergedPdfBytes = await mergedPdf.save();
@@ -570,7 +580,7 @@ export default function NovoProcessoPage() {
       link.click();
       document.body.removeChild(link);
       
-      toast({ title: "Sucesso", description: "PDF unificado com todos os anexos gerado com sucesso." });
+      toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s).` });
     } catch (error: any) {
       console.error("Erro ao unificar PDFs:", error);
       toast({ title: "Erro", description: "Falha ao processar e unificar os documentos.", variant: "destructive" });
@@ -629,7 +639,7 @@ export default function NovoProcessoPage() {
         
         setFormData((prev: any) => ({
           ...prev,
-          notas_fiscais: [...prev.notas_fiscais, { id, tipo: 'Exportação', chave: '', data_pedido: null, data_recebida: null, file: placeholder }]
+          notas_fiscais: [...(prev.notas_fiscais || []), { id, tipo: 'Exportação', chave: '', data_pedido: null, data_recebida: null, file: placeholder }]
         }));
 
         const uploadTask = uploadBytesResumable(ref(storage, filePath), file, { contentType });
@@ -646,7 +656,7 @@ export default function NovoProcessoPage() {
             const final = { ...placeholder, downloadURL: url, uploadState: 'success', uploadProgress: 100 };
             setUploadProgresses(prev => { const s = {...prev}; delete s[filePath]; return s; });
             setFormData((prev: any) => {
-              const newList = prev.notas_fiscais.map((n: any) => n.id === id ? { ...n, file: final } : n);
+              const newList = (prev.notas_fiscais || []).map((n: any) => n.id === id ? { ...n, file: final } : n);
               if (firestore) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { notas_fiscais: newList });
               return { ...prev, notas_fiscais: newList };
             });
@@ -687,7 +697,7 @@ export default function NovoProcessoPage() {
   };
 
   const terminalItems = useMemo(() => {
-    return terminais?.map(term => ({ value: String(term.id), label: term.name })) || [];
+    return (terminais || []).map(term => ({ value: String(term.id), label: term.name }));
   }, [terminais]);
 
   const pageTitle = isEditing ? `Editar Processo ${formData.processo_interno || ''}` : 'Novo Processo';
@@ -884,7 +894,7 @@ export default function NovoProcessoPage() {
                   <div className="flex justify-between items-center">
                     <h3 className="text-md font-bold text-primary uppercase">Notas Fiscais</h3>
                     <div className="flex gap-2">
-                      <Button variant="secondary" size="sm" type="button" onClick={generateNFsPdf} disabled={formData.notas_fiscais.length === 0}>
+                      <Button variant="secondary" size="sm" type="button" onClick={generateNFsPdf} disabled={(formData.notas_fiscais || []).length === 0}>
                         <FileDown className="mr-2 h-4 w-4" /> PDF Notas
                       </Button>
                       <Button variant="outline" size="sm" type="button" onClick={() => nfFileInputRef.current?.click()}>
@@ -894,7 +904,7 @@ export default function NovoProcessoPage() {
                   </div>
                   <Table>
                     <TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Chave / ID</TableHead><TableHead>Datas Operacionais</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                    <TableBody>{formData.notas_fiscais.map((nf: any) => (
+                    <TableBody>{(formData.notas_fiscais || []).map((nf: any) => (
                       <TableRow key={nf.id}>
                         <TableCell>
                           <select value={nf.tipo} onChange={e => handleNotaFiscalChange(nf.id, 'tipo', e.target.value)} className="bg-transparent text-xs border rounded p-1">
@@ -918,7 +928,7 @@ export default function NovoProcessoPage() {
                           </div>
                         </TableCell>
                         <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md bg-muted min-w-[120px] overflow-hidden">{renderFileState(nf.file)}</div>{nf.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'nota_fiscal', id: nf.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'nota_fiscal', id: nf.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('notas_fiscais', formData.notas_fiscais.filter((x: any) => x.id !== nf.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                        <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('notas_fiscais', (formData.notas_fiscais || []).filter((x: any) => x.id !== nf.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                       </TableRow>
                     ))}</TableBody>
                   </Table>
@@ -933,7 +943,7 @@ export default function NovoProcessoPage() {
                   </div>
                   <div className="overflow-x-auto rounded-md border">
                     <Table><TableHeader><TableRow><TableHead>Tipo</TableHead><TableHead>Identificação</TableHead><TableHead>Status</TableHead><TableHead>Data</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                    <TableBody>{formData.documentos_fiscais?.map((df: any) => (
+                    <TableBody>{(formData.documentos_fiscais || []).map((df: any) => (
                       <TableRow key={df.id}>
                         <TableCell><Select value={df.tipo} onValueChange={v => handleFiscalDocChange(df.id, 'tipo', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{fiscalDocTypes.map(docType => <SelectItem key={docType} value={docType}>{docType}</SelectItem>)}</SelectContent></Select></TableCell>
                         <TableCell>{df.tipo === 'TRATAMENTO' ? <Select value={df.identificacao} onValueChange={v => handleFiscalDocChange(df.id, 'identificacao', v)}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{treatmentTypeOptions.map(opt => <SelectItem key={opt} value={opt}>{opt}</SelectItem>)}</SelectContent></Select> : <Input value={df.identificacao} onChange={e => handleFiscalDocChange(df.id, 'identificacao', e.target.value)} />}</TableCell>
@@ -1050,15 +1060,15 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold text-left">Etapa 5: Pós-Embarque (Malote)</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-6 pt-6">
-                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...formData.documentos_pos_embarque, { id: Date.now(), nome: '', originais: '1', copias: '1', file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
+                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...(formData.documentos_pos_embarque || []), { id: Date.now(), nome: '', originais: '1', copias: '1', file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
                 <Table><TableHeader><TableRow><TableHead>Documento</TableHead><TableHead>Originais</TableHead><TableHead>Cópias</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
-                <TableBody>{formData.documentos_pos_embarque.map((d: any) => (
+                <TableBody>{(formData.documentos_pos_embarque || []).map((d: any) => (
                   <TableRow key={d.id}>
                     <TableCell><Select value={d.nome} onValueChange={v => handlePostShipmentDocChange(d.id, 'nome', v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{documentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></TableCell>
                     <TableCell><Input type="text" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
                     <TableCell><Input type="text" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
                     <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(d.file)}</div>{d.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_pos_embarque', id: d.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: d.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
-                    <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', formData.documentos_pos_embarque.filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
+                    <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', (formData.documentos_pos_embarque || []).filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                   </TableRow>
                 ))}</TableBody></Table>
                 
