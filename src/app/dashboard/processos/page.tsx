@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Pencil, Trash2, Loader2, Globe } from 'lucide-react';
+import { PlusCircle, Search, Pencil, Trash2, Loader2, Globe, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import {
   AlertDialog,
@@ -183,16 +183,21 @@ export default function GestaoProcessosPage() {
                 {!isLoading && filteredProcessos.map((processo) => {
                   const getDocStatus = (name: string) => {
                     const docItem = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
+                    const mainDate = formatDate(docItem?.data_liberacao);
+                    const fallbackDate = formatDate(docItem?.data_emissao);
+                    
                     return {
                       status: docItem ? 'APROVADO' : '---',
                       action: docItem ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO') : '---',
-                      date: docItem?.data_liberacao ? formatDate(docItem.data_liberacao) : '---'
+                      date: mainDate !== '---' ? mainDate : fallbackDate
                     };
                   };
 
                   const getNFDate = (type: string) => {
                     const nf = processo.notas_fiscais?.find((n: any) => n.tipo === type);
-                    return nf?.data_recebida ? formatDate(nf.data_recebida) : '---';
+                    const received = formatDate(nf?.data_recebida);
+                    const requested = formatDate(nf?.data_pedido);
+                    return received !== '---' ? received : requested;
                   };
 
                   const docs = {
@@ -221,7 +226,7 @@ export default function GestaoProcessosPage() {
 
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
-                  const isDraftOk = !!(processo.deadline_draft_file?.downloadURL);
+                  const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
 
@@ -291,14 +296,24 @@ export default function GestaoProcessosPage() {
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-destructive font-bold">{processo.portoEmbarqueNome || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{formatDate(processo.etd)}</span>
+                          <div className="flex flex-col text-[7px] text-muted-foreground uppercase leading-tight">
+                            <span>ETD: {formatDate(processo.etd)}</span>
+                            <span className="text-primary/70 italic">CHEG: {formatDate(processo.data_chegada_embarque)}</span>
+                          </div>
                         </div>
                       </td>
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-foreground font-bold">{processo.portoDescargaNome || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{formatDate(processo.eta)}</span>
+                          <div className="flex flex-col text-[7px] text-muted-foreground uppercase leading-tight">
+                            <span>ETA: {formatDate(processo.eta)}</span>
+                            <span className="italic">CHEG: {formatDate(processo.data_chegada_descarga)}</span>
+                            <div className="mt-1 pt-1 border-t border-primary/5 flex flex-col">
+                               <span className="text-blue-600 font-extrabold truncate max-w-[100px]">{processo.destino || '---'}</span>
+                               <span className="text-[6px] italic">DEST: {formatDate(processo.data_chegada_destino)}</span>
+                            </div>
+                          </div>
                         </div>
                       </td>
 
@@ -314,37 +329,28 @@ export default function GestaoProcessosPage() {
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>DRAFT</span> 
                             <div className="flex items-center gap-1">
-                              {isDraftOk ? (
-                                <span className="text-green-600 font-extrabold uppercase">OK</span>
-                              ) : (
-                                <span className="text-destructive font-bold">
+                                <span className={cn(isDraftOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
                                   {formatDate(processo.deadline_draft, true)}
                                 </span>
-                              )}
+                                {isDraftOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
                           </div>
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>VGM</span> 
                             <div className="flex items-center gap-1">
-                              {isVGMOk ? (
-                                <span className="text-green-600 font-extrabold uppercase">OK</span>
-                              ) : (
-                                <span className="text-destructive font-bold">
+                                <span className={cn(isVGMOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
                                   {formatDate(processo.deadline_vgm, true)}
                                 </span>
-                              )}
+                                {isVGMOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
                           </div>
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>CARGA</span> 
                             <div className="flex items-center gap-1">
-                              {isCargaOk ? (
-                                <span className="text-green-600 font-extrabold uppercase">OK</span>
-                              ) : (
-                                <span className="text-destructive font-bold">
+                                <span className={cn(isCargaOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
                                   {formatDate(processo.deadline_carga, true)}
                                 </span>
-                              )}
+                                {isCargaOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
                           </div>
                         </div>
