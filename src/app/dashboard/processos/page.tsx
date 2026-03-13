@@ -101,7 +101,9 @@ export default function GestaoProcessosPage() {
           processo.navio,
           processo.portoEmbarqueNome,
           processo.portoDescargaNome,
-          processo.destino
+          processo.destino,
+          processo.terminalDespachoNome,
+          processo.terminalEmbarqueNome
         ];
 
         return searchFields.some(field => 
@@ -209,7 +211,6 @@ export default function GestaoProcessosPage() {
                   const fiscalDUE = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'DUE');
                   const fiscalTreatment = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
                   
-                  // Busca específica para datas de DUE/Desembaraço/Averbação buscando em toda a lista
                   const dueEntries = fiscalDocs.filter((df: any) => df.tipo?.toUpperCase() === 'DUE');
                   const desembaraçoEntry = dueEntries.find((df: any) => 
                     df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA')

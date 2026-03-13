@@ -238,6 +238,11 @@ export default function NovoProcessoPage() {
   const terminaisCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
   const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminaisCollection);
 
+  const terminalsMap = useMemo(() => {
+    if (!terminais) return new Map();
+    return new Map(terminais.map(t => [t.id, t.name]));
+  }, [terminais]);
+
   const isUploading = useMemo(() => {
     return Object.values(uploadProgresses).some(p => p > 0 && p < 100);
   }, [uploadProgresses]);
@@ -467,6 +472,8 @@ export default function NovoProcessoPage() {
         portoEmbarqueNome: portsMap.get(formData.portoEmbarqueId) || '',
         portoDescargaNome: portsMap.get(formData.portoDescargaId) || '',
         armadorNome: partnersMap.get(formData.armadorId) || '',
+        terminalDespachoNome: terminalsMap.get(formData.terminalDespachoId) || '',
+        terminalEmbarqueNome: terminalsMap.get(formData.terminalEmbarqueId) || '',
       };
 
       await setDoc(ref, payload, { merge: true });
@@ -536,7 +543,6 @@ export default function NovoProcessoPage() {
 
       for (const nf of filesToProcess) {
         try {
-          // Usar getBytes do SDK para evitar erros de CORS do fetch direto
           const fileRef = ref(storage, nf.file.storagePath);
           const bytes = await getBytes(fileRef);
           
@@ -577,7 +583,6 @@ export default function NovoProcessoPage() {
       const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
-      // Trigger download
       const link = document.createElement('a');
       link.href = url;
       link.download = `Pacote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
@@ -585,7 +590,6 @@ export default function NovoProcessoPage() {
       link.click();
       document.body.removeChild(link);
       
-      // Cleanup
       setTimeout(() => URL.revokeObjectURL(url), 100);
       
       toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s).` });
