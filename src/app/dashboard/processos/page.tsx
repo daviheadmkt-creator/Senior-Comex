@@ -186,9 +186,16 @@ export default function GestaoProcessosPage() {
                     const mainDate = formatDate(docItem?.data_liberacao);
                     const fallbackDate = formatDate(docItem?.data_emissao);
                     
+                    let action = '---';
+                    if (docItem) {
+                      if (docItem.data_liberacao) action = name === 'BL' ? 'LIBERADO/TELEX' : 'LIBERADO';
+                      else if (docItem.data_emissao) action = 'EMITIDO';
+                      else action = 'RECEBIDO';
+                    }
+
                     return {
                       status: docItem ? 'APROVADO' : '---',
-                      action: docItem ? (name === 'BL' ? 'LIBERADO/TELEX' : 'RECEBIDO') : '---',
+                      action,
                       date: mainDate !== '---' ? mainDate : fallbackDate
                     };
                   };

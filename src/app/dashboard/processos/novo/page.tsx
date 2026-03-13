@@ -1072,13 +1072,25 @@ export default function NovoProcessoPage() {
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(5)}<h3 className="text-lg font-semibold text-left">Etapa 5: Pós-Embarque (Malote)</h3></div></AccordionTrigger>
             <AccordionContent>
               <Card><CardContent className="space-y-6 pt-6">
-                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...(formData.documentos_pos_embarque || []), { id: Date.now(), nome: '', originais: '1', copias: '1', file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
-                <Table><TableHeader><TableRow><TableHead>Documento</TableHead><TableHead>Originais</TableHead><TableHead>Cópias</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
+                <div className="flex justify-between items-center"><h3 className="font-bold text-primary">Documentos Originais</h3><Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('documentos_pos_embarque', [...(formData.documentos_pos_embarque || []), { id: Date.now(), nome: '', originais: '1', copias: '1', data_emissao: null, data_liberacao: null, file: null }])}><PlusCircle className="mr-2 h-4 w-4" />Adicionar</Button></div>
+                <Table><TableHeader><TableRow><TableHead>Documento</TableHead><TableHead>Originais</TableHead><TableHead>Cópias</TableHead><TableHead>Datas (Emis./Lib.)</TableHead><TableHead>Anexo</TableHead><TableHead></TableHead></TableRow></TableHeader>
                 <TableBody>{(formData.documentos_pos_embarque || []).map((d: any) => (
                   <TableRow key={d.id}>
                     <TableCell><Select value={d.nome} onValueChange={v => handlePostShipmentDocChange(d.id, 'nome', v)}><SelectTrigger><SelectValue/></SelectTrigger><SelectContent>{documentTypes.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}</SelectContent></Select></TableCell>
                     <TableCell><Input type="text" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
                     <TableCell><Input type="text" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
+                    <TableCell>
+                      <div className="flex flex-col gap-1 min-w-[150px]">
+                        <div className="flex items-center gap-1">
+                          <span className="text-[8px] font-bold text-muted-foreground w-8">EMIS:</span>
+                          <DatePicker date={d.data_emissao} onDateChange={v => handlePostShipmentDocChange(d.id, 'data_emissao', v)} compact />
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="text-[8px] font-bold text-muted-foreground w-8">LIB:</span>
+                          <DatePicker date={d.data_liberacao} onDateChange={v => handlePostShipmentDocChange(d.id, 'data_liberacao', v)} compact />
+                        </div>
+                      </div>
+                    </TableCell>
                     <TableCell><div className="flex items-center gap-2"><div className="flex-1 p-2 border rounded-md min-w-[120px] bg-muted overflow-hidden">{renderFileState(d.file)}</div>{d.file ? <Button variant="ghost" size="icon" type="button" onClick={() => removeFile({ type: 'documento_pos_embarque', id: d.id })}><Trash2 className="h-3 w-3" /></Button> : <Button variant="outline" size="icon" type="button" onClick={() => triggerFileUpload({ type: 'documento_pos_embarque', id: d.id })}><Upload className="h-3 w-3" /></Button>}</div></TableCell>
                     <TableCell><Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('documentos_pos_embarque', (formData.documentos_pos_embarque || []).filter((x: any) => x.id !== d.id))}><Trash2 className="h-3 w-3 text-destructive" /></Button></TableCell>
                   </TableRow>
