@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -227,8 +228,8 @@ export default function NovoProcessoPage() {
     return new Map(parceiros.map(p => [p.id, p.nome_fantasia || p.razao_social]));
   }, [parceiros]);
 
-  const portsCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
-  const { data: portos, isLoading: isLoadingPorts } = useCollection(portsCollection);
+  const portosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
+  const { data: portos, isLoading: isLoadingPorts } = useCollection(portosCollection);
 
   const portsMap = useMemo(() => {
     if (!portos) return new Map();
@@ -323,9 +324,9 @@ export default function NovoProcessoPage() {
               if (targetField) {
                   newState[targetField] = placeholder;
               } else if (targetType === 'nota_fiscal') {
-                  newState.notas_fiscais = prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: placeholder } : nf);
+                  newState.notas_fiscais = (prev.notas_fiscais || []).map((nf: any) => nf.id === targetId ? { ...nf, file: placeholder } : nf);
               } else if (targetType === 'documento_pos_embarque') {
-                  newState.documentos_pos_embarque = prev.documentos_pos_embarque.map((d: any) => d.id === targetId ? { ...d, file: placeholder } : d);
+                  newState.documentos_pos_embarque = (prev.documentos_pos_embarque || []).map((d: any) => d.id === targetId ? { ...d, file: placeholder } : d);
               } else if (targetType === 'documento_fiscal') {
                   newState.documentos_fiscais = (prev.documentos_fiscais || []).map((df: any) => df.id === targetId ? { ...df, file: placeholder } : df);
               }
@@ -353,18 +354,24 @@ export default function NovoProcessoPage() {
 
                   setFormData((prev: any) => {
                       const newState = { ...prev };
+                      let syncData: any = null;
+
                       if (targetField) {
                           newState[targetField] = finalFileData;
-                          if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { [targetField]: finalFileData });
+                          syncData = { [targetField]: finalFileData };
                       } else if (targetType === 'nota_fiscal') {
-                          newState.notas_fiscais = prev.notas_fiscais.map((nf: any) => nf.id === targetId ? { ...nf, file: finalFileData } : nf);
-                          if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { notas_fiscais: newState.notas_fiscais });
+                          newState.notas_fiscais = (prev.notas_fiscais || []).map((nf: any) => nf.id === targetId ? { ...nf, file: finalFileData } : nf);
+                          syncData = { notas_fiscais: newState.notas_fiscais };
                       } else if (targetType === 'documento_pos_embarque') {
-                          newState.documentos_pos_embarque = prev.documentos_pos_embarque.map((d: any) => d.id === targetId ? { ...d, file: finalFileData } : d);
-                          if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_pos_embarque: newState.documentos_pos_embarque });
+                          newState.documentos_pos_embarque = (prev.documentos_pos_embarque || []).map((d: any) => d.id === targetId ? { ...d, file: finalFileData } : d);
+                          syncData = { documentos_pos_embarque: newState.documentos_pos_embarque };
                       } else if (targetType === 'documento_fiscal') {
                           newState.documentos_fiscais = (prev.documentos_fiscais || []).map((df: any) => df.id === targetId ? { ...df, file: finalFileData } : df);
-                          if (firestore && pageProcessId) updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { documentos_fiscais: newState.documentos_fiscais });
+                          syncData = { documentos_fiscais: newState.documentos_fiscais };
+                      }
+
+                      if (syncData && firestore && pageProcessId) {
+                          updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), syncData);
                       }
                       return newState;
                   });
@@ -450,7 +457,7 @@ export default function NovoProcessoPage() {
   };
 
   const handleContainerChange = (index: number, field: string, value: any) => {
-    const updated = [...formData.containers];
+    const updated = [...(formData.containers || [])];
     updated[index] = { ...updated[index], [field]: value };
     setFormData(prev => ({ ...prev, containers: updated }));
   };
@@ -461,7 +468,7 @@ export default function NovoProcessoPage() {
     if (!firestore || !pageProcessId) return;
     setIsSaving(true);
     try {
-      const ref = doc(firestore, 'processos', pageProcessId);
+      const refDoc = doc(firestore, 'processos', pageProcessId);
       const finalStatus = formData.status || processoData?.status || 'NOMEAÇÃO RECEBIDA';
       
       const payload = { 
@@ -476,7 +483,7 @@ export default function NovoProcessoPage() {
         terminalEmbarqueNome: terminalsMap.get(formData.terminalEmbarqueId) || '',
       };
 
-      await setDoc(ref, payload, { merge: true });
+      await setDoc(refDoc, payload, { merge: true });
       toast({ title: "Sucesso!", description: "Processo salvo com sucesso." });
       router.push('/dashboard/processos');
     } catch { toast({ title: "Erro", description: "Falha ao salvar.", variant: "destructive" }); }
@@ -626,7 +633,7 @@ export default function NovoProcessoPage() {
       }));
       setFormData(prev => ({ 
         ...prev, 
-        containers: [...prev.containers, ...newContainers],
+        containers: [...(prev.containers || []), ...newContainers],
         data_containers: now
       }));
       setIsImporting(false);
@@ -659,8 +666,8 @@ export default function NovoProcessoPage() {
 
         uploadTask.on('state_changed', 
           snapshot => {
-            const prog = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
-            setUploadProgresses(prev => ({ ...prev, [filePath]: prog }));
+            const progValue = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            setUploadProgresses(prev => ({ ...prev, [filePath]: progValue }));
           },
           err => toast({ title: "Falha", description: err.message }),
           async () => {
@@ -684,7 +691,7 @@ export default function NovoProcessoPage() {
     if (prog > 0 && prog < 100) return (
         <div className="flex flex-col gap-1 w-full py-1">
           <div className="flex justify-between text-[10px] font-medium"><span>A carregar...</span><span>{Math.round(prog)}%</span></div>
-          <Progress value={prog} className="h-1.5" />
+          <Progress value={Number(prog) || 0} className="h-1.5" />
         </div>
     );
     if (prog === 100 && file.uploadState !== 'success') return <div className='flex items-center gap-2 text-[10px]'><Loader2 className='h-3 w-3 animate-spin'/>A finalizar...</div>;
@@ -978,7 +985,7 @@ export default function NovoProcessoPage() {
                         </Button>
                         <Button variant="outline" size="sm" type="button" onClick={() => {
                           const now = new Date().toISOString();
-                          const newContainers = [...formData.containers, { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }];
+                          const newContainers = [...(formData.containers || []), { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }];
                           setFormData(prev => ({ ...prev, containers: newContainers, data_containers: now }));
                         }}>
                           <PlusCircle className='mr-2 h-4 w-4'/> Add Manual
@@ -1001,7 +1008,7 @@ export default function NovoProcessoPage() {
                           </TableRow>
                         </TableHeader>
                         <TableBody>
-                          {formData.containers.map((ctr, index) => (
+                          {(formData.containers || []).map((ctr, index) => (
                             <TableRow key={ctr.id}>
                               <TableCell><Input value={ctr.numero} onChange={e => handleContainerChange(index, 'numero', e.target.value)} placeholder="CAAU..." className='h-8 text-xs font-mono uppercase'/></TableCell>
                               <TableCell><Input value={ctr.lacre_original} onChange={e => handleContainerChange(index, 'lacre_original', e.target.value)} placeholder="MLBR..." className='h-8 text-xs uppercase'/></TableCell>
@@ -1012,13 +1019,13 @@ export default function NovoProcessoPage() {
                               <TableCell><Input value={ctr.m3} onChange={e => handleContainerChange(index, 'm3', e.target.value)} className='h-8 text-xs'/></TableCell>
                               <TableCell><Input value={ctr.vgm} onChange={e => handleContainerChange(index, 'vgm', e.target.value)} className='h-8 text-xs font-bold text-primary'/></TableCell>
                               <TableCell>
-                                <Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('containers', formData.containers.filter((_, i) => i !== index))}>
+                                <Button variant="ghost" size="icon" type="button" onClick={() => handleInputChange('containers', (formData.containers || []).filter((_, i) => i !== index))}>
                                   <Trash2 className='h-4 w-4 text-destructive'/>
                                 </Button>
                               </TableCell>
                             </TableRow>
                           ))}
-                          {formData.containers.length === 0 && (
+                          {(formData.containers || []).length === 0 && (
                             <TableRow>
                               <TableCell colSpan={9} className='text-center py-8 text-muted-foreground italic text-xs'>
                                 Nenhum contêiner cadastrado. Importe uma planilha ou adicione manualmente.
@@ -1033,7 +1040,7 @@ export default function NovoProcessoPage() {
                 <div className="pt-4 border-t">
                     <h3 className="text-md font-bold text-primary uppercase mb-4">Inspeção Física e Lacração</h3>
                     <div className="space-y-2 rounded-md border p-4 bg-muted/20">
-                      {formData.containers.map((ctr, i) => (
+                      {(formData.containers || []).map((ctr, i) => (
                         <div key={ctr.id} className="flex items-center gap-4 p-2 border-b last:border-0">
                           <Checkbox checked={ctr.inspecionado} onCheckedChange={v => handleContainerChange(i, 'inspecionado', !!v)} />
                           <div className='flex-1 flex flex-col'>
@@ -1048,7 +1055,7 @@ export default function NovoProcessoPage() {
                           )}
                         </div>
                       ))}
-                      {formData.containers.length === 0 && <p className='text-xs text-muted-foreground text-center py-4'>Aguardando cadastro de contêineres para inspeção.</p>}
+                      {(formData.containers || []).length === 0 && <p className='text-xs text-muted-foreground text-center py-4'>Aguardando cadastro de contêineres para inspeção.</p>}
                     </div>
                 </div>
               </CardContent></Card>
