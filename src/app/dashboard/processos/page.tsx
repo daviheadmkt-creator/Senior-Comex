@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -182,26 +183,34 @@ export default function GestaoProcessosPage() {
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
                   const getDocStatus = (name: string) => {
-                    const docItem = processo.documentos_pos_embarque?.find((d: any) => d.nome === name);
-                    const mainDate = formatDate(docItem?.data_liberacao);
-                    const fallbackDate = formatDate(docItem?.data_emissao);
+                    const docItem = (processo.documentos_pos_embarque || []).find((d: any) => d.nome === name);
+                    const libDate = formatDate(docItem?.data_liberacao);
+                    const emissDate = formatDate(docItem?.data_emissao);
                     
                     let action = '---';
+                    let displayDate = '---';
+
                     if (docItem) {
-                      if (docItem.data_liberacao) action = name === 'BL' ? 'LIBERADO/TELEX' : 'LIBERADO';
-                      else if (docItem.data_emissao) action = 'EMITIDO';
-                      else action = 'RECEBIDO';
+                      if (docItem.data_liberacao) {
+                        action = (name === 'BL') ? 'LIBERADO/TELEX' : 'LIBERADO';
+                        displayDate = libDate;
+                      } else if (docItem.data_emissao) {
+                        action = 'EMITIDO';
+                        displayDate = emissDate;
+                      } else {
+                        action = 'RECEBIDO';
+                      }
                     }
 
                     return {
                       status: docItem ? 'APROVADO' : '---',
                       action,
-                      date: mainDate !== '---' ? mainDate : fallbackDate
+                      date: displayDate
                     };
                   };
 
                   const getNFDate = (type: string) => {
-                    const nf = processo.notas_fiscais?.find((n: any) => n.tipo === type);
+                    const nf = (processo.notas_fiscais || []).find((n: any) => n.tipo === type);
                     const received = formatDate(nf?.data_recebida);
                     const requested = formatDate(nf?.data_pedido);
                     return received !== '---' ? received : requested;
@@ -223,12 +232,12 @@ export default function GestaoProcessosPage() {
                   const fiscalDUE = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'DUE');
                   const fiscalTreatment = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
                   
-                  const dueEntries = fiscalDocs.filter((df: any) => df.tipo?.toUpperCase() === 'DUE');
-                  const desembaraçoEntry = dueEntries.find((df: any) => 
-                    df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA')
+                  // Busca específica por status de averbação em qualquer entrada de DUE
+                  const averbacaoEntry = fiscalDocs.find((df: any) => 
+                    df.tipo?.toUpperCase() === 'DUE' && df.status?.toUpperCase().includes('AVERBADA')
                   );
-                  const averbaçãoEntry = dueEntries.find((df: any) => 
-                    df.status?.toUpperCase().includes('AVERBADA')
+                  const desembaraçoEntry = fiscalDocs.find((df: any) => 
+                    df.tipo?.toUpperCase() === 'DUE' && (df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA'))
                   );
 
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
@@ -405,7 +414,7 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoEntry?.data ? formatDate(desembaraçoEntry.data) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbaçãoEntry?.data ? formatDate(averbaçãoEntry.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbacaoEntry?.data ? formatDate(averbacaoEntry.data) : '---'}</span></div>
                         </div>
                       </td>
 
