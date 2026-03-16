@@ -182,7 +182,8 @@ export default function GestaoProcessosPage() {
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
                   const getDocStatus = (name: string) => {
-                    const docItem = (processo.documentos_pos_embarque || []).find((d: any) => String(d.nome || '').toUpperCase() === name.toUpperCase());
+                    const docsList = processo.documentos_pos_embarque || [];
+                    const docItem = docsList.find((d: any) => String(d.nome || '').toUpperCase() === name.toUpperCase());
                     
                     let action = '---';
                     let displayDate = '---';
@@ -225,7 +226,7 @@ export default function GestaoProcessosPage() {
                   };
 
                   const fiscalDocs = processo.documentos_fiscais || [];
-                  const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO' && (df.identificacao || df.data)) || fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
+                  const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
                   
                   // Desembaraço: status "DESEMBARAÇADA" ou "AVERBADA"
                   const desembaraçoEntry = fiscalDocs.find((df: any) => 
