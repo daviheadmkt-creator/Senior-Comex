@@ -225,9 +225,7 @@ export default function GestaoProcessosPage() {
                   };
 
                   const fiscalDocs = processo.documentos_fiscais || [];
-                  const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
-                  const fiscalDUE = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'DUE');
-                  const fiscalTreatment = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'TRATAMENTO');
+                  const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO' && (df.identificacao || df.data)) || fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
                   
                   // Desembaraço: status "DESEMBARAÇADA" ou "AVERBADA"
                   const desembaraçoEntry = fiscalDocs.find((df: any) => 
@@ -241,7 +239,7 @@ export default function GestaoProcessosPage() {
                   );
                   
                   const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
-                  const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : (docs.fumigation.date !== '---' ? docs.fumigation.date : '---');
+                  const treatmentDate = docs.fumigation.date !== '---' ? docs.fumigation.date : '---';
 
                   const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
@@ -413,7 +411,7 @@ export default function GestaoProcessosPage() {
 
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{fiscalDUE?.identificacao || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{(processo.documentos_fiscais || []).find((df: any) => df.tipo === 'DUE')?.identificacao || '---'}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoEntry?.data ? formatDate(desembaraçoEntry.data) : '---'}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbacaoEntry?.data ? formatDate(averbacaoEntry.data) : '---'}</span></div>
                         </div>

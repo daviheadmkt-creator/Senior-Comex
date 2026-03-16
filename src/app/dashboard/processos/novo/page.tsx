@@ -1089,11 +1089,19 @@ export default function NovoProcessoPage() {
                       <div className="flex flex-col gap-1 min-w-[150px]">
                         <div className="flex items-center gap-1">
                           <span className="text-[8px] font-bold text-muted-foreground w-8">EMIS:</span>
-                          <DatePicker date={d.data_emissao} onDateChange={v => handlePostShipmentDocChange(d.id, 'data_emissao', v)} compact />
+                          <DatePicker 
+                            date={d.data_emissao} 
+                            onDateChange={v => handlePostShipmentDocChange(d.id, 'data_emissao', v)} 
+                            className="h-7 text-[10px] w-[110px]"
+                          />
                         </div>
                         <div className="flex items-center gap-1">
                           <span className="text-[8px] font-bold text-muted-foreground w-8">LIB:</span>
-                          <DatePicker date={d.data_liberacao} onDateChange={v => handlePostShipmentDocChange(d.id, 'data_liberacao', v)} compact />
+                          <DatePicker 
+                            date={d.data_liberacao} 
+                            onDateChange={v => handlePostShipmentDocChange(d.id, 'data_liberacao', v)} 
+                            className="h-7 text-[10px] w-[110px]"
+                          />
                         </div>
                       </div>
                     </TableCell>

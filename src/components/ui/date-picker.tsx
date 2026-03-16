@@ -1,4 +1,3 @@
-
 "use client"
 
 import * as React from "react"
@@ -21,9 +20,10 @@ interface DatePickerProps {
     date?: Date | string | null;
     onDateChange?: (date: string | null) => void;
     compact?: boolean;
+    className?: string;
 }
 
-export function DatePicker({ showTime = false, date: propDate, onDateChange, compact = false }: DatePickerProps) {
+export function DatePicker({ showTime = false, date: propDate, onDateChange, compact = false, className }: DatePickerProps) {
   const [date, setDate] = React.useState<Date | undefined>();
   const [time, setTime] = React.useState("00:00");
   const [isOpen, setIsOpen] = React.useState(false);
@@ -82,7 +82,7 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange, com
         const [hours, minutes] = newTime.split(':').map(Number);
         if (!isNaN(hours) && !isNaN(minutes) && hours >= 0 && hours < 24 && minutes >= 0 && minutes < 60) {
             let newDate = setHours(date, hours);
-            newDate = setMinutes(newDate, minutes);
+            newDate = setMinutes(date, minutes);
             setDate(newDate);
              if (onDateChange) {
                onDateChange(newDate.toISOString());
@@ -102,7 +102,8 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange, com
             size="icon"
             className={cn(
               "w-10 h-10",
-              !date && "text-muted-foreground"
+              !date && "text-muted-foreground",
+              className
             )}
           >
             <CalendarIcon className="h-4 w-4" />
@@ -137,11 +138,14 @@ export function DatePicker({ showTime = false, date: propDate, onDateChange, com
           variant={"outline"}
           className={cn(
             "w-full justify-start text-left font-normal",
-            !date && "text-muted-foreground"
+            !date && "text-muted-foreground",
+            className
           )}
         >
-          <CalendarIcon className="mr-2 h-4 w-4" />
-          {date ? format(date, displayFormat, { locale: ptBR }) : <span>Selecione uma data</span>}
+          <CalendarIcon className="mr-2 h-4 w-4 shrink-0" />
+          <span className="truncate">
+            {date ? format(date, displayFormat, { locale: ptBR }) : <span>Selecione uma data</span>}
+          </span>
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0">
