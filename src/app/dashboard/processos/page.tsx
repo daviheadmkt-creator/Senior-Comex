@@ -34,7 +34,7 @@ import { cn } from '@/lib/utils';
  * @param includeTime Se true, inclui o horário (HH:mm).
  */
 const formatDate = (dateString: string | null | undefined, includeTime: boolean = false) => {
-    if (!dateString) return '---';
+    if (!dateString || dateString === '---') return '---';
     try {
         const date = parseISO(dateString);
         return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
@@ -182,9 +182,7 @@ export default function GestaoProcessosPage() {
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
                   const getDocStatus = (name: string) => {
-                    const docItem = (processo.documentos_pos_embarque || []).find((d: any) => d.nome === name);
-                    const libDate = formatDate(docItem?.data_liberacao);
-                    const emissDate = formatDate(docItem?.data_emissao);
+                    const docItem = (processo.documentos_pos_embarque || []).find((d: any) => String(d.nome || '').toUpperCase() === name.toUpperCase());
                     
                     let action = '---';
                     let displayDate = '---';
@@ -192,10 +190,10 @@ export default function GestaoProcessosPage() {
                     if (docItem) {
                       if (docItem.data_liberacao && docItem.data_liberacao !== '---') {
                         action = (name === 'BL') ? 'LIBERADO/TELEX' : 'LIBERADO';
-                        displayDate = libDate;
+                        displayDate = formatDate(docItem.data_liberacao);
                       } else if (docItem.data_emissao && docItem.data_emissao !== '---') {
                         action = 'EMITIDO';
-                        displayDate = emissDate;
+                        displayDate = formatDate(docItem.data_emissao);
                       } else {
                         action = 'RECEBIDO';
                       }
@@ -227,23 +225,23 @@ export default function GestaoProcessosPage() {
                   };
 
                   const fiscalDocs = processo.documentos_fiscais || [];
-                  const fiscalLPCO = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'LPCO');
-                  const fiscalDUE = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'DUE');
-                  const fiscalTreatment = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
-                  
-                  // Averbação: especificamente o status que contém "AVERBADA"
-                  const averbacaoEntry = fiscalDocs.find((df: any) => 
-                    df.tipo?.toUpperCase() === 'DUE' && df.status?.toUpperCase().includes('AVERBADA')
-                  );
+                  const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
+                  const fiscalDUE = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'DUE');
+                  const fiscalTreatment = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'TRATAMENTO');
                   
                   // Desembaraço: status "DESEMBARAÇADA" ou "AVERBADA"
                   const desembaraçoEntry = fiscalDocs.find((df: any) => 
-                    df.tipo?.toUpperCase() === 'DUE' && (df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA'))
+                    String(df.tipo || '').toUpperCase() === 'DUE' && 
+                    (String(df.status || '').toUpperCase().includes('DESEMBARAÇADA') || String(df.status || '').toUpperCase().includes('AVERBADA'))
                   );
 
-                  // LPCO / Inspeção Logic: Puxa a data do documento fiscal do tipo LPCO
+                  // Averbação: especificamente o status que contém "AVERBADA"
+                  const averbacaoEntry = fiscalDocs.find((df: any) => 
+                    String(df.tipo || '').toUpperCase() === 'DUE' && String(df.status || '').toUpperCase().includes('AVERBADA')
+                  );
+                  
                   const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
-                  const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
+                  const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : (docs.fumigation.date !== '---' ? docs.fumigation.date : '---');
 
                   const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
