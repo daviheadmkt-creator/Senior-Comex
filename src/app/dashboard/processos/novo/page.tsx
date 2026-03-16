@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -254,7 +253,7 @@ export default function NovoProcessoPage() {
 
   useEffect(() => {
     if (isEditing && processoData && parceiros && !hasInitialized.current) {
-      const selectedExporter = parceiros?.find(p => p.id === processoData.exportadorId);
+      const selectedExporter = (parceiros || []).find(p => p.id === processoData.exportadorId);
       const newContacts = selectedExporter?.contatos?.filter((c: any) => c.nome).map((c: any, index: number) => ({ ...c, id: String(index) })) || [];
       setExporterContacts(newContacts);
 
@@ -295,7 +294,7 @@ export default function NovoProcessoPage() {
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
-      const target = uploadTarget; // Captura o alvo atual localmente
+      const target = uploadTarget; 
       
       if (!file || !target || !storage || !pageProcessId) return;
 
