@@ -219,9 +219,9 @@ export default function GestaoProcessosPage() {
                     bl: getDocStatus('BL'),
                     origem: getDocStatus('ORIGEM'),
                     fito: getDocStatus('FITO'),
-                    health: getDocStatus('HEALTH'),
-                    fumigation: getDocStatus('FUMIGATION'),
-                    quality: getDocStatus('QUALITY'),
+                    health: getDocStatus('HEALTH'), // LAUDO PRAGAS
+                    fumigation: getDocStatus('FUMIGATION'), // CERT. FUMIG.
+                    quality: getDocStatus('QUALITY'), // CERT. SUPERV.
                     invoice: getDocStatus('INVOICE'),
                     packing: getDocStatus('PACKING LIST'),
                   };
@@ -231,14 +231,17 @@ export default function GestaoProcessosPage() {
                   const fiscalDUE = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'DUE');
                   const fiscalTreatment = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
                   
+                  // Averbação: especificamente o status que contém "AVERBADA"
                   const averbacaoEntry = fiscalDocs.find((df: any) => 
                     df.tipo?.toUpperCase() === 'DUE' && df.status?.toUpperCase().includes('AVERBADA')
                   );
+                  
+                  // Desembaraço: status "DESEMBARAÇADA" ou "AVERBADA"
                   const desembaraçoEntry = fiscalDocs.find((df: any) => 
                     df.tipo?.toUpperCase() === 'DUE' && (df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA'))
                   );
 
-                  // LPCO / Inspeção Logic
+                  // LPCO / Inspeção Logic: Puxa a data do documento fiscal do tipo LPCO
                   const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
