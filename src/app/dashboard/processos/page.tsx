@@ -190,10 +190,10 @@ export default function GestaoProcessosPage() {
                     let displayDate = '---';
 
                     if (docItem) {
-                      if (docItem.data_liberacao) {
+                      if (docItem.data_liberacao && docItem.data_liberacao !== '---') {
                         action = (name === 'BL') ? 'LIBERADO/TELEX' : 'LIBERADO';
                         displayDate = libDate;
-                      } else if (docItem.data_emissao) {
+                      } else if (docItem.data_emissao && docItem.data_emissao !== '---') {
                         action = 'EMITIDO';
                         displayDate = emissDate;
                       } else {
@@ -231,7 +231,6 @@ export default function GestaoProcessosPage() {
                   const fiscalDUE = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'DUE');
                   const fiscalTreatment = fiscalDocs.find((df: any) => df.tipo?.toUpperCase() === 'TRATAMENTO');
                   
-                  // Busca específica por status de averbação em qualquer entrada de DUE
                   const averbacaoEntry = fiscalDocs.find((df: any) => 
                     df.tipo?.toUpperCase() === 'DUE' && df.status?.toUpperCase().includes('AVERBADA')
                   );
@@ -239,6 +238,8 @@ export default function GestaoProcessosPage() {
                     df.tipo?.toUpperCase() === 'DUE' && (df.status?.toUpperCase().includes('DESEMBARAÇADA') || df.status?.toUpperCase().includes('AVERBADA'))
                   );
 
+                  // LPCO / Inspeção Logic
+                  const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
                   const treatmentDate = fiscalTreatment?.data ? formatDate(fiscalTreatment.data) : docs.fumigation.date;
 
                   const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
@@ -404,7 +405,7 @@ export default function GestaoProcessosPage() {
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{fiscalLPCO?.identificacao || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{inspecaoDate}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{treatmentDate}</span></div>
                         </div>
                       </td>
