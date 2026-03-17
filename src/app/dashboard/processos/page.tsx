@@ -189,25 +189,16 @@ export default function GestaoProcessosPage() {
                       return keywords.some(k => name === k.toUpperCase() || name.includes(k.toUpperCase()));
                     });
                     
-                    let statusLabel = '---';
-                    let displayDate = '';
-
                     if (docItem) {
-                      if (docItem.data_liberacao) {
-                        statusLabel = 'APROVADO';
-                        displayDate = formatDate(docItem.data_liberacao);
-                      } else if (docItem.data_emissao) {
-                        statusLabel = 'APROVADO';
-                        displayDate = formatDate(docItem.data_emissao);
-                      } else {
-                        statusLabel = 'RECEBIDO';
-                      }
-                    } else if (fallbackFile && fallbackFile.downloadURL) {
-                        statusLabel = 'APROVADO';
-                        displayDate = 'ANEXADO';
+                      const date = docItem.data_liberacao || docItem.data_emissao;
+                      return { status: 'APROVADO', date: formatDate(date) };
+                    }
+                    
+                    if (fallbackFile?.downloadURL) {
+                      return { status: 'APROVADO', date: 'ANEXADO' };
                     }
 
-                    return { status: statusLabel, date: displayDate };
+                    return { status: '---', date: '---' };
                   };
 
                   // Helper robusto para encontrar dados em documentos fiscais (DUE/LPCO)
@@ -258,7 +249,7 @@ export default function GestaoProcessosPage() {
                   const treatmentDoc = findFiscalData('TRATAMENTO');
                   const treatmentDate = treatmentDoc?.data ? formatDate(treatmentDoc.data) : '---';
 
-                  // Lógica de Deadline: OK se verde, Data se vermelho
+                  // Lógica de Deadline: OK se houver anexo
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const isVgmOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
@@ -428,109 +419,20 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* BL */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.bl.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.bl.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.bl.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* CERT. ORIGEM */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.origem.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.origem.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.origem.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* CERT. FITO */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fito.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.fito.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.fito.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* LAUDO PRAGAS */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.health.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.health.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.health.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* CERT. FUMIG. */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fumigation.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.fumigation.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.fumigation.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* CERT. SUPERV. */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.quality.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.quality.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.quality.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* INVOICE */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.invoice.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.invoice.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.invoice.date}
-                          </div>
-                        </div>
-                      </td>
-
-                      {/* PACKING LIST */}
-                      <td className="p-0 text-center">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.packing.status}</div>
-                          <div className="py-0.5 text-red-600 leading-none font-bold">
-                            {docs.packing.status === 'APROVADO' ? 'RECEBIDO' : ''}
-                          </div>
-                          <div className="py-0.5 font-bold text-destructive">
-                            {docs.packing.date}
-                          </div>
-                        </div>
-                      </td>
+                      {/* Renderização de Colunas de Documentos */}
+                      {[docs.bl, docs.origem, docs.fito, docs.health, docs.fumigation, docs.quality, docs.invoice, docs.packing].map((docItem, idx) => (
+                        <td key={idx} className="p-0 text-center">
+                          {docItem.status === 'APROVADO' ? (
+                            <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                              <div className="py-0.5 text-primary font-bold uppercase">APROVADO</div>
+                              <div className="py-0.5 text-red-600 font-bold uppercase">RECEBIDO</div>
+                              <div className="py-0.5 text-muted-foreground">{docItem.date}</div>
+                            </div>
+                          ) : (
+                            <div className="py-4 text-muted-foreground">---</div>
+                          )}
+                        </td>
+                      ))}
 
                       <td className="px-2 py-1 text-center text-[8px] text-muted-foreground uppercase">
                         {processo.processo_interno || '---'}

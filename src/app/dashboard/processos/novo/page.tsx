@@ -469,9 +469,25 @@ export default function NovoProcessoPage() {
   };
 
   const handleContainerChange = (index: number, field: string, value: any) => {
-    const updated = [...(formData.containers || [])];
-    updated[index] = { ...updated[index], [field]: value };
-    setFormData(prev => ({ ...prev, containers: updated }));
+    setFormData(prev => {
+      const updated = [...(prev.containers || [])];
+      updated[index] = { ...updated[index], [field]: value };
+      
+      const now = new Date().toISOString();
+      const newState = { 
+        ...prev, 
+        containers: updated,
+        data_containers: now // Atualiza data quando houver alteração
+      };
+
+      if (firestore && pageProcessId) {
+        updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { 
+          containers: updated,
+          data_containers: now
+        });
+      }
+      return newState;
+    });
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -651,7 +667,21 @@ export default function NovoProcessoPage() {
         inspecionado: false,
         novo_lacre: ''
       }));
-      setFormData(prev => ({ ...prev, containers: [...(prev.containers || []), ...newContainers] }));
+      
+      const now = new Date().toISOString();
+      setFormData(prev => ({ 
+        ...prev, 
+        containers: [...(prev.containers || []), ...newContainers],
+        data_containers: now
+      }));
+
+      if (firestore && pageProcessId) {
+        updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), { 
+          containers: [...(formData.containers || []), ...newContainers],
+          data_containers: now
+        });
+      }
+
       setIsImporting(false);
       toast({ title: "Importação Concluída", description: `${newContainers.length} contêineres adicionados.` });
     };
@@ -1011,7 +1041,11 @@ export default function NovoProcessoPage() {
                         </Button>
                         <Button variant="outline" size="sm" type="button" onClick={() => {
                           const newContainers = [...(formData.containers || []), { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }];
-                          setFormData(prev => ({ ...prev, containers: newContainers }));
+                          setFormData(prev => ({ 
+                            ...prev, 
+                            containers: newContainers,
+                            data_containers: new Date().toISOString()
+                          }));
                         }}>
                           <PlusCircle className='mr-2 h-4 w-4'/> Add Manual
                         </Button>
