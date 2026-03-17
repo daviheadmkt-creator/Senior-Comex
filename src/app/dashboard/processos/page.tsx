@@ -30,13 +30,14 @@ import { cn } from '@/lib/utils';
 
 /**
  * Formata uma string de data ISO para o padrão brasileiro.
- * @param dateString A string de data ISO.
+ * @param dateString A string de data ISO ou objeto Date.
  * @param includeTime Se true, inclui o horário (HH:mm).
  */
-const formatDate = (dateString: string | null | undefined, includeTime: boolean = false) => {
+const formatDate = (dateString: any, includeTime: boolean = false) => {
     if (!dateString || dateString === '---') return '---';
     try {
-        const date = parseISO(dateString);
+        const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+        if (isNaN(date.getTime())) return '---';
         return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
     } catch {
         return '---';
@@ -189,10 +190,10 @@ export default function GestaoProcessosPage() {
                     let displayDate = '---';
 
                     if (docItem) {
-                      if (docItem.data_liberacao && docItem.data_liberacao !== '---') {
+                      if (docItem.data_liberacao) {
                         action = (name === 'BL') ? 'LIBERADO/TELEX' : 'LIBERADO';
                         displayDate = formatDate(docItem.data_liberacao);
-                      } else if (docItem.data_emissao && docItem.data_emissao !== '---') {
+                      } else if (docItem.data_emissao) {
                         action = 'EMITIDO';
                         displayDate = formatDate(docItem.data_emissao);
                       } else {
@@ -208,9 +209,11 @@ export default function GestaoProcessosPage() {
                   };
 
                   const getNFDate = (type: string) => {
-                    const nf = (processo.notas_fiscais || []).find((n: any) => n.tipo === type);
-                    const received = formatDate(nf?.data_recebida);
-                    const requested = formatDate(nf?.data_pedido);
+                    const nfList = processo.notas_fiscais || [];
+                    const nf = nfList.find((n: any) => n.tipo === type);
+                    if (!nf) return '---';
+                    const received = formatDate(nf.data_recebida);
+                    const requested = formatDate(nf.data_pedido);
                     return received !== '---' ? received : requested;
                   };
 
@@ -226,21 +229,29 @@ export default function GestaoProcessosPage() {
                   };
 
                   const fiscalDocs = processo.documentos_fiscais || [];
+                  
+                  // LPCO / Inspeção
                   const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
-                  
-                  // Desembaraço: status "DESEMBARAÇADA" ou "AVERBADA"
-                  const desembaraçoEntry = fiscalDocs.find((df: any) => 
-                    String(df.tipo || '').toUpperCase() === 'DUE' && 
-                    (String(df.status || '').toUpperCase().includes('DESEMBARAÇADA') || String(df.status || '').toUpperCase().includes('AVERBADA'))
-                  );
-
-                  // Averbação: especificamente o status que contém "AVERBADA"
-                  const averbacaoEntry = fiscalDocs.find((df: any) => 
-                    String(df.tipo || '').toUpperCase() === 'DUE' && String(df.status || '').toUpperCase().includes('AVERBADA')
-                  );
-                  
                   const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
-                  const treatmentDate = docs.fumigation.date !== '---' ? docs.fumigation.date : '---';
+                  const lpcoIdent = fiscalLPCO?.identificacao || '---';
+                  
+                  // Desembaraço: procura por status DESEMBARAÇADA ou AVERBADA
+                  const dueDocs = fiscalDocs.filter((df: any) => String(df.tipo || '').toUpperCase() === 'DUE');
+                  const desembaraçoDoc = dueDocs.find((df: any) => 
+                    String(df.status || '').toUpperCase().includes('DESEMBARAÇADA') || 
+                    String(df.status || '').toUpperCase().includes('AVERBADA')
+                  );
+                  const averbacaoDoc = dueDocs.find((df: any) => 
+                    String(df.status || '').toUpperCase().includes('AVERBADA')
+                  );
+                  
+                  const dueIdent = dueDocs[0]?.identificacao || '---';
+                  const desembaraçoDate = desembaraçoDoc?.data ? formatDate(desembaraçoDoc.data) : '---';
+                  const averbacaoDate = averbacaoDoc?.data ? formatDate(averbacaoDoc.data) : '---';
+                  
+                  // Tratamento
+                  const treatmentDoc = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'TRATAMENTO');
+                  const treatmentDate = treatmentDoc?.data ? formatDate(treatmentDoc.data) : '---';
 
                   const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
@@ -404,7 +415,7 @@ export default function GestaoProcessosPage() {
 
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{fiscalLPCO?.identificacao || '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{lpcoIdent}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{inspecaoDate}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{treatmentDate}</span></div>
                         </div>
@@ -412,9 +423,9 @@ export default function GestaoProcessosPage() {
 
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{(processo.documentos_fiscais || []).find((df: any) => df.tipo === 'DUE')?.identificacao || '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoEntry?.data ? formatDate(desembaraçoEntry.data) : '---'}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbacaoEntry?.data ? formatDate(averbacaoEntry.data) : '---'}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{dueIdent}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoDate}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbacaoDate}</span></div>
                         </div>
                       </td>
 

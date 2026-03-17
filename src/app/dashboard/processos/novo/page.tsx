@@ -501,7 +501,7 @@ export default function NovoProcessoPage() {
     docPdf.text('Documentos de Embarque', 10, 10);
     (docPdf as any).autoTable({
       head: [['Nome', 'Originais', 'Cópias', 'Emissão', 'Liberação']],
-      body: (formData.documentos_pos_embarque || []).map((d: any) => [d.nome, d.originais, d.copias, d.data_emissao || 'N/A', d.data_liberacao || 'N/A']),
+      body: (formData.documentos_pos_embarque || []).map((d: any) => [d.nome, d.originais, d.copias, formatDate(d.data_emissao), formatDate(d.data_liberacao)]),
     });
     docPdf.save(`Docs_${formData.processo_interno}.pdf`);
   };
@@ -1086,13 +1086,13 @@ export default function NovoProcessoPage() {
                     <TableCell><Input type="text" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
                     <TableCell><Input type="text" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1 min-w-[150px]">
+                      <div className="flex flex-col gap-1 min-w-[180px]">
                         <div className="flex items-center gap-1">
                           <span className="text-[8px] font-bold text-muted-foreground w-8">EMIS:</span>
                           <DatePicker 
                             date={d.data_emissao} 
                             onDateChange={v => handlePostShipmentDocChange(d.id, 'data_emissao', v)} 
-                            className="h-7 text-[10px] w-[110px]"
+                            className="h-7 text-[10px] w-full"
                           />
                         </div>
                         <div className="flex items-center gap-1">
@@ -1100,7 +1100,7 @@ export default function NovoProcessoPage() {
                           <DatePicker 
                             date={d.data_liberacao} 
                             onDateChange={v => handlePostShipmentDocChange(d.id, 'data_liberacao', v)} 
-                            className="h-7 text-[10px] w-[110px]"
+                            className="h-7 text-[10px] w-full"
                           />
                         </div>
                       </div>
