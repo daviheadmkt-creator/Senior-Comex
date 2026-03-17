@@ -185,7 +185,7 @@ export default function GestaoProcessosPage() {
                   const getDocStatus = (keywords: string[]) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
-                      const name = String(d.nome || '').toUpperCase();
+                      const name = String(d.nome || d.type || '').toUpperCase();
                       return keywords.some(k => name === k.toUpperCase() || name.includes(k.toUpperCase()));
                     });
                     
@@ -202,6 +202,20 @@ export default function GestaoProcessosPage() {
                       } else {
                         statusLabel = 'RECEBIDO';
                       }
+                    } else {
+                        // Fallback para campos de draft na raiz do processo se for BL, FITO ou CO
+                        if (keywords.includes('BL') && processo.draft_bl_file) {
+                            statusLabel = 'DRAFT';
+                            displayDate = 'ANEXADO';
+                        }
+                        if (keywords.includes('FITO') && processo.draft_fito_file) {
+                            statusLabel = 'DRAFT';
+                            displayDate = 'ANEXADO';
+                        }
+                        if (keywords.includes('ORIGEM') && processo.draft_co_file) {
+                            statusLabel = 'DRAFT';
+                            displayDate = 'ANEXADO';
+                        }
                     }
 
                     return { status: statusLabel, date: displayDate };
@@ -226,13 +240,13 @@ export default function GestaoProcessosPage() {
                   };
 
                   const docs = {
-                    bl: getDocStatus(['BL', 'BILL OF LADING']),
-                    origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN']),
-                    fito: getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO']),
-                    health: getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY']), 
-                    fumigation: getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.']), 
-                    quality: getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.']), 
-                    invoice: getDocStatus(['INVOICE', 'FATURA']),
+                    bl: getDocStatus(['BL', 'BILL OF LADING', 'B.L.']),
+                    origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM']),
+                    fito: getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO']),
+                    health: getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS']), 
+                    fumigation: getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.', 'CERTIFICADO DE FUMIGACAO']), 
+                    quality: getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA', 'CERTIFICADO DE QUALIDADE']), 
+                    invoice: getDocStatus(['INVOICE', 'FATURA', 'INV']),
                     packing: getDocStatus(['PACKING', 'P.L.', 'LIST', 'PACKING LIST']),
                   };
 
@@ -245,7 +259,7 @@ export default function GestaoProcessosPage() {
                   const dueDoc = findFiscalData('DUE');
                   const dueIdent = dueDoc?.identificacao || '---';
                   
-                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'AVERB']);
+                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'AVERB', 'DEFERIDA', 'LIBERADA']);
                   const desembaraçoDate = desembaraçoDoc?.data ? formatDate(desembaraçoDoc.data) : '---';
                   
                   const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERB']);
@@ -435,7 +449,7 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
                           <div className="py-0.5 text-primary leading-none">{docs.bl.status}</div>
                           <div className="py-0.5 text-destructive font-bold">{docs.bl.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">{docs.bl.status === 'LIBERADO' ? 'BL LIBERADO' : ''}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">{docs.bl.status === 'LIBERADO' ? 'BL LIBERADO' : docs.bl.status === 'EMITIDO' ? 'ORIGINAL' : ''}</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
