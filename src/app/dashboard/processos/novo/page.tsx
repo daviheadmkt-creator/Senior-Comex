@@ -33,6 +33,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
 import { DatePicker } from '@/components/ui/date-picker';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -203,6 +211,11 @@ export default function NovoProcessoPage() {
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
   const [exporterContacts, setExporterContacts] = useState<any[]>([]);
 
+  // Estados para Importação em Massa de NF
+  const [bulkNFType, setBulkNFType] = useState('Exportação');
+  const [bulkNFDate, setBulkNFDate] = useState<string | null>(new Date().toISOString());
+  const [isBulkNFDialogOpen, setIsBulkNFDialogOpen] = useState(false);
+
   const isEditing = searchParams.has('edit');
   const processId = searchParams.get('id');
 
@@ -284,7 +297,7 @@ export default function NovoProcessoPage() {
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digitsOnly = e.target.value.replace(/\D/g, '');
     if (!digitsOnly) { handleInputChange('quantidade', ''); return; }
-    const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 5, maximumFractionDigits: 5 }).format(parseInt(digitsOnly, 10) / 100000);
+    const formatted = new Intl.FormatNumber('pt-BR', { minimumFractionDigits: 5, maximumFractionDigits: 5 }).format(parseInt(digitsOnly, 10) / 100000);
     handleInputChange('quantidade', `${formatted} TON`);
   };
 
@@ -649,6 +662,9 @@ export default function NovoProcessoPage() {
     const files = e.target.files;
     if (!files || !pageProcessId || !storage) return;
     
+    const selectedType = bulkNFType;
+    const selectedDate = bulkNFDate;
+
     Array.from(files).forEach((file, index) => {
       try {
         validarArquivo(file);
@@ -661,7 +677,7 @@ export default function NovoProcessoPage() {
         
         setFormData((prev: any) => ({
           ...prev,
-          notas_fiscais: [...(prev.notas_fiscais || []), { id, tipo: 'Exportação', chave: '', data_pedido: null, data_recebida: null, file: placeholder }]
+          notas_fiscais: [...(prev.notas_fiscais || []), { id, tipo: selectedType, chave: '', data_pedido: null, data_recebida: selectedDate, file: placeholder }]
         }));
 
         const uploadTask = uploadBytesResumable(ref(storage, filePath), file, { contentType });
@@ -686,6 +702,8 @@ export default function NovoProcessoPage() {
         );
       } catch(e: any) { toast({ title: "Erro", description: e.message }); }
     });
+
+    if (nfFileInputRef.current) nfFileInputRef.current.value = '';
   };
 
   const renderFileState = (file: FileData | null) => {
@@ -915,8 +933,11 @@ export default function NovoProcessoPage() {
                       <Button variant="secondary" size="sm" type="button" onClick={generateNFsPdf} disabled={(formData.notas_fiscais || []).length === 0}>
                         <FileDown className="mr-2 h-4 w-4" /> PDF Notas
                       </Button>
-                      <Button variant="outline" size="sm" type="button" onClick={() => nfFileInputRef.current?.click()}>
-                        <PlusCircle className="mr-2 h-4 w-4" /> Adicionar Notas
+                      <Button variant="outline" size="sm" type="button" onClick={() => setIsBulkNFDialogOpen(true)}>
+                        <FileUp className="mr-2 h-4 w-4" /> Importar em Massa
+                      </Button>
+                      <Button variant="outline" size="sm" type="button" onClick={() => handleInputChange('notas_fiscais', [...(formData.notas_fiscais || []), { id: Date.now(), tipo: 'Exportação', chave: '', data_pedido: null, data_recebida: null, file: null }])}>
+                        <PlusCircle className="mr-2 h-4 w-4" /> Add Manual
                       </Button>
                     </div>
                   </div>
@@ -1159,6 +1180,46 @@ export default function NovoProcessoPage() {
           </AccordionItem>
         </Accordion>
       </form>
+
+      {/* Dialog de Importação em Massa de NF */}
+      <Dialog open={isBulkNFDialogOpen} onOpenChange={setIsBulkNFDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Importação em Massa de Notas</DialogTitle>
+            <DialogDescription>
+              Defina o tipo e a data para todos os ficheiros que irá carregar de seguida.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid gap-2">
+              <Label>Tipo de Nota</Label>
+              <Select value={bulkNFType} onValueChange={setBulkNFType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Selecione o tipo" />
+                </SelectTrigger>
+                <SelectContent>
+                  <option value="Remessa">Remessa</option>
+                  <option value="Retorno">NF Produtor</option>
+                  <option value="Exportação">Exportação</option>
+                  <option value="Devolução">Devolução</option>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Data de Recebimento</Label>
+              <DatePicker date={bulkNFDate} onDateChange={setBulkNFDate} />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => {
+              nfFileInputRef.current?.click();
+              setIsBulkNFDialogOpen(false);
+            }}>
+              <Upload className="mr-2 h-4 w-4" /> Selecionar Ficheiros
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
