@@ -194,7 +194,7 @@ export default function GestaoProcessosPage() {
 
                     if (docItem) {
                       if (docItem.data_liberacao) {
-                        statusLabel = 'LIBERADO';
+                        statusLabel = 'APROVADO';
                         displayDate = formatDate(docItem.data_liberacao);
                       } else if (docItem.data_emissao) {
                         statusLabel = 'EMITIDO';
@@ -428,60 +428,107 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
+                      {/* BL */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.bl.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.bl.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">{docs.bl.status === 'LIBERADO' ? 'BL LIBERADO' : docs.bl.status === 'EMITIDO' ? 'ORIGINAL' : ''}</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.bl.status === 'APROVADO' ? 'Aprovado' : docs.bl.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.bl.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.bl.status === 'APROVADO' ? 'recebido' : docs.bl.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.bl.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.bl.status === 'APROVADO' ? docs.bl.date : (docs.bl.status === 'EMITIDO' ? 'ORIGINAL' : '')}
+                          </div>
                         </div>
                       </td>
+
+                      {/* CERT. ORIGEM */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.origem.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.origem.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">ORIGEM</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.origem.status === 'APROVADO' ? 'Aprovado' : docs.origem.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.origem.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.origem.status === 'APROVADO' ? 'recebido' : docs.origem.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.origem.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.origem.status === 'APROVADO' ? docs.origem.date : 'ORIGEM'}
+                          </div>
                         </div>
                       </td>
+
+                      {/* CERT. FITO */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.fito.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.fito.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">FITO</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fito.status === 'APROVADO' ? 'Aprovado' : docs.fito.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.fito.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.fito.status === 'APROVADO' ? 'recebido' : docs.fito.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.fito.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.fito.status === 'APROVADO' ? docs.fito.date : 'FITO'}
+                          </div>
                         </div>
                       </td>
+
+                      {/* LAUDO PRAGAS */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.health.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.health.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">PRAGAS</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.health.status === 'APROVADO' ? 'Aprovado' : docs.health.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.health.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.health.status === 'APROVADO' ? 'recebido' : docs.health.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.health.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.health.status === 'APROVADO' ? docs.health.date : 'PRAGAS'}
+                          </div>
                         </div>
                       </td>
+
+                      {/* CERT. FUMIG. */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.fumigation.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.fumigation.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">FUMIG.</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fumigation.status === 'APROVADO' ? 'Aprovado' : docs.fumigation.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.fumigation.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.fumigation.status === 'APROVADO' ? 'recebido' : docs.fumigation.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.fumigation.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.fumigation.status === 'APROVADO' ? docs.fumigation.date : 'FUMIG.'}
+                          </div>
                         </div>
                       </td>
+
+                      {/* CERT. SUPERV. */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.quality.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.quality.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">SUPERV.</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.quality.status === 'APROVADO' ? 'Aprovado' : docs.quality.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.quality.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.quality.status === 'APROVADO' ? 'recebido' : docs.quality.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.quality.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.quality.status === 'APROVADO' ? docs.quality.date : 'SUPERV.'}
+                          </div>
                         </div>
                       </td>
+
+                      {/* INVOICE */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.invoice.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.invoice.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">INVOICE</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.invoice.status === 'APROVADO' ? 'Aprovado' : docs.invoice.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.invoice.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.invoice.status === 'APROVADO' ? 'recebido' : docs.invoice.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.invoice.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.invoice.status === 'APROVADO' ? docs.invoice.date : 'INVOICE'}
+                          </div>
                         </div>
                       </td>
+
+                      {/* PACKING LIST */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none">{docs.packing.status}</div>
-                          <div className="py-0.5 text-destructive font-bold">{docs.packing.date}</div>
-                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">P. LIST</div>
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.packing.status === 'APROVADO' ? 'Aprovado' : docs.packing.status}</div>
+                          <div className={cn("py-0.5 font-bold", docs.packing.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
+                            {docs.packing.status === 'APROVADO' ? 'recebido' : docs.packing.date}
+                          </div>
+                          <div className={cn("py-0.5 font-bold", docs.packing.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
+                            {docs.packing.status === 'APROVADO' ? docs.packing.date : 'P. LIST'}
+                          </div>
                         </div>
                       </td>
 
