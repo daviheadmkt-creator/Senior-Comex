@@ -186,7 +186,7 @@ export default function GestaoProcessosPage() {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
                       const name = String(d.nome || '').toUpperCase();
-                      return keywords.some(k => name.includes(k.toUpperCase()));
+                      return keywords.some(k => name === k.toUpperCase() || name.includes(k.toUpperCase()));
                     });
                     
                     let statusLabel = '---';
@@ -233,7 +233,7 @@ export default function GestaoProcessosPage() {
                     fumigation: getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.']), 
                     quality: getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.']), 
                     invoice: getDocStatus(['INVOICE', 'FATURA']),
-                    packing: getDocStatus(['PACKING', 'P.L.', 'LIST']),
+                    packing: getDocStatus(['PACKING', 'P.L.', 'LIST', 'PACKING LIST']),
                   };
 
                   // LPCO / Inspeção

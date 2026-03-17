@@ -539,7 +539,7 @@ export default function NovoProcessoPage() {
         return;
       }
 
-      toast({ title: "Processando", description: "Gerando pacote de notas unificado... Por favor aguarde." });
+      toast({ title: "Processando", description: `Gerando malote com ${filesToProcess.length} ficheiro(s)...` });
 
       // Capa
       const cover = new jsPDF();
@@ -567,6 +567,7 @@ export default function NovoProcessoPage() {
 
       for (const nf of filesToProcess) {
         try {
+          toast({ title: "Unificando", description: `Processando: ${nf.file.name}...` });
           const fileRef = ref(storage, nf.file.storagePath);
           const bytes = await getBytes(fileRef);
           
@@ -603,22 +604,20 @@ export default function NovoProcessoPage() {
       const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
-      // Abrir em nova aba para visualização
+      // Visualização
       window.open(url, '_blank');
 
-      // Também oferecer o download
-      const link = document.createElement('a');
+      // Download
+      const link = document.body.appendChild(document.createElement('a'));
       link.href = url;
-      link.download = `Pacote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
-      document.body.appendChild(link);
+      link.download = `Malote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
       link.click();
       
       setTimeout(() => {
         document.body.removeChild(link);
-        // Não revogar o URL imediatamente para que a nova aba consiga carregar
       }, 5000);
       
-      toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s) e aberto em nova aba.` });
+      toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s).` });
     } catch (error: any) {
       console.error("Erro ao unificar PDFs:", error);
       toast({ title: "Erro", description: "Falha ao processar e unificar os documentos.", variant: "destructive" });
@@ -1100,13 +1099,13 @@ export default function NovoProcessoPage() {
                     <TableCell><Input type="text" className="w-20" value={d.originais} onChange={e => handlePostShipmentDocChange(d.id, 'originais', e.target.value)} /></TableCell>
                     <TableCell><Input type="text" className="w-20" value={d.copias} onChange={e => handlePostShipmentDocChange(d.id, 'copias', e.target.value)} /></TableCell>
                     <TableCell>
-                      <div className="flex flex-col gap-1 min-w-[180px]">
+                      <div className="flex flex-col gap-1 min-w-[220px]">
                         <div className="flex items-center gap-1">
                           <span className="text-[10px] font-bold text-muted-foreground w-10">EMIS:</span>
                           <DatePicker 
                             date={d.data_emissao} 
                             onDateChange={v => handlePostShipmentDocChange(d.id, 'data_emissao', v)} 
-                            className="h-8 text-xs w-full"
+                            className="h-8 text-xs"
                           />
                         </div>
                         <div className="flex items-center gap-1">
@@ -1114,7 +1113,7 @@ export default function NovoProcessoPage() {
                           <DatePicker 
                             date={d.data_liberacao} 
                             onDateChange={v => handlePostShipmentDocChange(d.id, 'data_liberacao', v)} 
-                            className="h-8 text-xs w-full"
+                            className="h-8 text-xs"
                           />
                         </div>
                       </div>
