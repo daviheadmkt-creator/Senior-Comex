@@ -125,7 +125,7 @@ export default function GestaoProcessosPage() {
       <Card className="overflow-hidden">
         <CardHeader className="pb-3">
           <div className="flex items-center gap-4">
-            <div className="relative w-full max-w-sm">
+            <div className="relative w-full max-sm:max-w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
               <Input 
                   placeholder="Buscar Analista, PO, Produto, Navio, Origem..." 
@@ -144,7 +144,7 @@ export default function GestaoProcessosPage() {
                 <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
                   <th className="px-2 min-w-[80px] w-[80px] sticky left-0 z-40 bg-primary">AÇÕES</th>
                   <th className="px-2 min-w-[90px] w-[90px] sticky left-[80px] z-40 bg-primary">ANALISTA</th>
-                  <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
+                  <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
                   <th className="px-2 min-w-[120px]">NAVIO / VIAGEM</th>
@@ -313,7 +313,7 @@ export default function GestaoProcessosPage() {
 
                       <td className="px-2 py-1 text-center text-blue-600 uppercase sticky left-[80px] z-10 bg-card">{processo.analistaNome || '---'}</td>
                       
-                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5_rgba(0,0,0,0.05)] border-r">
+                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5px_rgba(0,0,0,0.05)] border-r">
                         <div className="flex flex-col">
                           <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
                           <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
@@ -339,23 +339,16 @@ export default function GestaoProcessosPage() {
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-destructive font-bold">{processo.portoEmbarqueNome || '---'}</span>
-                          <div className="flex flex-col text-[7px] text-muted-foreground uppercase leading-tight">
-                            <span>ETD: {formatDate(processo.etd)}</span>
-                            <span className="text-primary/70 italic">CHEG: {formatDate(processo.data_chegada_embarque)}</span>
-                          </div>
+                          <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.etd)}</span>
                         </div>
                       </td>
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-foreground font-bold">{processo.portoDescargaNome || '---'}</span>
-                          <div className="flex flex-col text-[7px] text-muted-foreground uppercase leading-tight">
-                            <span>ETA: {formatDate(processo.eta)}</span>
-                            <span className="italic">CHEG: {formatDate(processo.data_chegada_descarga)}</span>
-                            <div className="mt-1 pt-1 border-t border-primary/5 flex flex-col">
-                               <span className="text-blue-600 font-extrabold truncate max-w-[100px]">{processo.destino || '---'}</span>
-                               <span className="text-[6px] italic">DEST: {formatDate(processo.data_chegada_destino)}</span>
-                            </div>
+                          <div className="flex flex-col">
+                            <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.eta)}</span>
+                            <span className="text-blue-600 font-bold uppercase">{processo.destino || '---'}</span>
                           </div>
                         </div>
                       </td>
