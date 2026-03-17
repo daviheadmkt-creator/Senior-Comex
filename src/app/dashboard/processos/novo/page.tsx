@@ -297,7 +297,7 @@ export default function NovoProcessoPage() {
   const handleQuantityChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digitsOnly = e.target.value.replace(/\D/g, '');
     if (!digitsOnly) { handleInputChange('quantidade', ''); return; }
-    const formatted = new Intl.FormatNumber('pt-BR', { minimumFractionDigits: 5, maximumFractionDigits: 5 }).format(parseInt(digitsOnly, 10) / 100000);
+    const formatted = new Intl.NumberFormat('pt-BR', { minimumFractionDigits: 5, maximumFractionDigits: 5 }).format(parseInt(digitsOnly, 10) / 100000);
     handleInputChange('quantidade', `${formatted} TON`);
   };
 
@@ -1198,10 +1198,10 @@ export default function NovoProcessoPage() {
                   <SelectValue placeholder="Selecione o tipo" />
                 </SelectTrigger>
                 <SelectContent>
-                  <option value="Remessa">Remessa</option>
-                  <option value="Retorno">NF Produtor</option>
-                  <option value="Exportação">Exportação</option>
-                  <option value="Devolução">Devolução</option>
+                  <SelectItem value="Remessa">Remessa</SelectItem>
+                  <SelectItem value="Retorno">NF Produtor</SelectItem>
+                  <SelectItem value="Exportação">Exportação</SelectItem>
+                  <SelectItem value="Devolução">Devolução</SelectItem>
                 </SelectContent>
               </Select>
             </div>
