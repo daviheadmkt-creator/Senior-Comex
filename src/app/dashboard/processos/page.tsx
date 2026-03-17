@@ -182,7 +182,7 @@ export default function GestaoProcessosPage() {
                 {!isLoading && filteredProcessos.map((processo) => {
                   
                   // Helper robusto para encontrar dados em documentos originais (Pós-embarque)
-                  const getDocStatus = (keywords: string[]) => {
+                  const getDocStatus = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
                       const name = String(d.nome || d.type || '').toUpperCase();
@@ -202,20 +202,9 @@ export default function GestaoProcessosPage() {
                       } else {
                         statusLabel = 'RECEBIDO';
                       }
-                    } else {
-                        // Fallback para campos de draft na raiz do processo se for BL, FITO ou CO
-                        if (keywords.includes('BL') && processo.draft_bl_file) {
-                            statusLabel = 'DRAFT';
-                            displayDate = 'ANEXADO';
-                        }
-                        if (keywords.includes('FITO') && processo.draft_fito_file) {
-                            statusLabel = 'DRAFT';
-                            displayDate = 'ANEXADO';
-                        }
-                        if (keywords.includes('ORIGEM') && processo.draft_co_file) {
-                            statusLabel = 'DRAFT';
-                            displayDate = 'ANEXADO';
-                        }
+                    } else if (fallbackFile) {
+                        statusLabel = 'DRAFT';
+                        displayDate = 'ANEXADO';
                     }
 
                     return { status: statusLabel, date: displayDate };
@@ -226,10 +215,9 @@ export default function GestaoProcessosPage() {
                     const fiscalDocs = processo.documentos_fiscais || [];
                     return fiscalDocs.find((df: any) => {
                       const dType = String(df.tipo || '').toUpperCase();
-                      const dIdent = String(df.identificacao || '').toUpperCase();
                       const dStatus = String(df.status || '').toUpperCase();
                       
-                      const typeMatch = dType.includes(typeKey.toUpperCase()) || dIdent.includes(typeKey.toUpperCase());
+                      const typeMatch = dType === typeKey.toUpperCase();
                       if (!typeMatch) return false;
                       
                       if (statusKeywords) {
@@ -240,9 +228,9 @@ export default function GestaoProcessosPage() {
                   };
 
                   const docs = {
-                    bl: getDocStatus(['BL', 'BILL OF LADING', 'B.L.']),
-                    origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM']),
-                    fito: getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO']),
+                    bl: getDocStatus(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file),
+                    origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file),
+                    fito: getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file),
                     health: getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS']), 
                     fumigation: getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.', 'CERTIFICADO DE FUMIGACAO']), 
                     quality: getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA', 'CERTIFICADO DE QUALIDADE']), 
@@ -259,10 +247,10 @@ export default function GestaoProcessosPage() {
                   const dueDoc = findFiscalData('DUE');
                   const dueIdent = dueDoc?.identificacao || '---';
                   
-                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'AVERB', 'DEFERIDA', 'LIBERADA']);
+                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'DEFERIDA', 'LIBERADA']);
                   const desembaraçoDate = desembaraçoDoc?.data ? formatDate(desembaraçoDoc.data) : '---';
                   
-                  const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERB']);
+                  const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERBACAO']);
                   const averbaçãoDate = averbaçãoDoc?.data ? formatDate(averbaçãoDoc.data) : '---';
                   
                   // Tratamento
