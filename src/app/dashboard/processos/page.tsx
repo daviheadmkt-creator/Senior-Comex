@@ -190,20 +190,20 @@ export default function GestaoProcessosPage() {
                     });
                     
                     let statusLabel = '---';
-                    let displayDate = '---';
+                    let displayDate = '';
 
                     if (docItem) {
                       if (docItem.data_liberacao) {
                         statusLabel = 'APROVADO';
                         displayDate = formatDate(docItem.data_liberacao);
                       } else if (docItem.data_emissao) {
-                        statusLabel = 'EMITIDO';
+                        statusLabel = 'APROVADO';
                         displayDate = formatDate(docItem.data_emissao);
                       } else {
                         statusLabel = 'RECEBIDO';
                       }
-                    } else if (fallbackFile) {
-                        statusLabel = 'DRAFT';
+                    } else if (fallbackFile && fallbackFile.downloadURL) {
+                        statusLabel = 'APROVADO';
                         displayDate = 'ANEXADO';
                     }
 
@@ -259,8 +259,8 @@ export default function GestaoProcessosPage() {
                   const treatmentDate = treatmentDoc?.data ? formatDate(treatmentDoc.data) : '---';
 
                   // Lógica de Deadline: OK se verde, Data se vermelho
-                  const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
-                  const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
+                  const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
+                  const isVgmOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
 
                   return (
@@ -364,10 +364,10 @@ export default function GestaoProcessosPage() {
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
                             <span>VGM</span> 
                             <div className="flex items-center gap-1">
-                                <span className={cn(isVGMOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {isVGMOk ? "OK" : formatDate(processo.deadline_vgm, true)}
+                                <span className={cn(isVgmOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                                  {isVgmOk ? "OK" : formatDate(processo.deadline_vgm, true)}
                                 </span>
-                                {isVGMOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
+                                {isVgmOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
                           </div>
                           <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
@@ -431,12 +431,12 @@ export default function GestaoProcessosPage() {
                       {/* BL */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.bl.status === 'APROVADO' ? 'APROVADO' : docs.bl.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.bl.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.bl.status === 'APROVADO' ? 'RECEBIDO' : docs.bl.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.bl.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.bl.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.bl.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.bl.status === 'APROVADO' ? docs.bl.date : (docs.bl.status === 'EMITIDO' ? 'ORIGINAL' : '')}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.bl.date}
                           </div>
                         </div>
                       </td>
@@ -444,12 +444,12 @@ export default function GestaoProcessosPage() {
                       {/* CERT. ORIGEM */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.origem.status === 'APROVADO' ? 'APROVADO' : docs.origem.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.origem.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.origem.status === 'APROVADO' ? 'RECEBIDO' : docs.origem.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.origem.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.origem.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.origem.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.origem.status === 'APROVADO' ? docs.origem.date : 'ORIGEM'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.origem.date}
                           </div>
                         </div>
                       </td>
@@ -457,12 +457,12 @@ export default function GestaoProcessosPage() {
                       {/* CERT. FITO */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fito.status === 'APROVADO' ? 'APROVADO' : docs.fito.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.fito.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.fito.status === 'APROVADO' ? 'RECEBIDO' : docs.fito.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fito.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.fito.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.fito.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.fito.status === 'APROVADO' ? docs.fito.date : 'FITO'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.fito.date}
                           </div>
                         </div>
                       </td>
@@ -470,12 +470,12 @@ export default function GestaoProcessosPage() {
                       {/* LAUDO PRAGAS */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.health.status === 'APROVADO' ? 'APROVADO' : docs.health.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.health.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.health.status === 'APROVADO' ? 'RECEBIDO' : docs.health.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.health.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.health.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.health.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.health.status === 'APROVADO' ? docs.health.date : 'PRAGAS'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.health.date}
                           </div>
                         </div>
                       </td>
@@ -483,12 +483,12 @@ export default function GestaoProcessosPage() {
                       {/* CERT. FUMIG. */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fumigation.status === 'APROVADO' ? 'APROVADO' : docs.fumigation.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.fumigation.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.fumigation.status === 'APROVADO' ? 'RECEBIDO' : docs.fumigation.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.fumigation.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.fumigation.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.fumigation.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.fumigation.status === 'APROVADO' ? docs.fumigation.date : 'FUMIG.'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.fumigation.date}
                           </div>
                         </div>
                       </td>
@@ -496,12 +496,12 @@ export default function GestaoProcessosPage() {
                       {/* CERT. SUPERV. */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.quality.status === 'APROVADO' ? 'APROVADO' : docs.quality.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.quality.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.quality.status === 'APROVADO' ? 'RECEBIDO' : docs.quality.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.quality.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.quality.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.quality.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.quality.status === 'APROVADO' ? docs.quality.date : 'SUPERV.'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.quality.date}
                           </div>
                         </div>
                       </td>
@@ -509,12 +509,12 @@ export default function GestaoProcessosPage() {
                       {/* INVOICE */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.invoice.status === 'APROVADO' ? 'APROVADO' : docs.invoice.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.invoice.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.invoice.status === 'APROVADO' ? 'RECEBIDO' : docs.invoice.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.invoice.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.invoice.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.invoice.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.invoice.status === 'APROVADO' ? docs.invoice.date : 'INVOICE'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.invoice.date}
                           </div>
                         </div>
                       </td>
@@ -522,12 +522,12 @@ export default function GestaoProcessosPage() {
                       {/* PACKING LIST */}
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary leading-none font-bold">{docs.packing.status === 'APROVADO' ? 'APROVADO' : docs.packing.status}</div>
-                          <div className={cn("py-0.5 font-bold", docs.packing.status === 'APROVADO' ? "text-red-600 text-[10px]" : "text-destructive")}>
-                            {docs.packing.status === 'APROVADO' ? 'RECEBIDO' : docs.packing.date}
+                          <div className="py-0.5 text-primary leading-none font-bold">{docs.packing.status}</div>
+                          <div className="py-0.5 text-red-600 leading-none font-bold">
+                            {docs.packing.status === 'APROVADO' ? 'RECEBIDO' : ''}
                           </div>
-                          <div className={cn("py-0.5 font-bold", docs.packing.status === 'APROVADO' ? "text-destructive" : "text-primary/50 text-[7px] uppercase leading-none")}>
-                            {docs.packing.status === 'APROVADO' ? docs.packing.date : 'P. LIST'}
+                          <div className="py-0.5 font-bold text-destructive">
+                            {docs.packing.date}
                           </div>
                         </div>
                       </td>
