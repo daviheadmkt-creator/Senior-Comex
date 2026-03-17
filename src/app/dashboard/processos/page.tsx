@@ -184,7 +184,18 @@ export default function GestaoProcessosPage() {
                 {!isLoading && filteredProcessos.map((processo) => {
                   const getDocStatus = (name: string) => {
                     const docsList = processo.documentos_pos_embarque || [];
-                    const docItem = docsList.find((d: any) => String(d.nome || '').toUpperCase() === name.toUpperCase());
+                    
+                    // Busca flexível por nome do documento (ex: HEALTH -> LAUDO PRAGAS)
+                    const searchNames = [name.toUpperCase()];
+                    if (name === 'HEALTH') searchNames.push('LAUDO PRAGAS');
+                    if (name === 'FUMIGATION') searchNames.push('CERT. FUMIG.', 'FUMIGAÇÃO');
+                    if (name === 'QUALITY') searchNames.push('CERT. SUPERV.', 'QUALIDADE');
+                    if (name === 'ORIGEM') searchNames.push('CERT. ORIGEM', 'C.O.');
+                    if (name === 'FITO') searchNames.push('CERT. FITO', 'FITOSSANITÁRIO');
+
+                    const docItem = docsList.find((d: any) => 
+                      searchNames.includes(String(d.nome || '').toUpperCase())
+                    );
                     
                     let action = '---';
                     let displayDate = '---';
@@ -221,21 +232,24 @@ export default function GestaoProcessosPage() {
                     bl: getDocStatus('BL'),
                     origem: getDocStatus('ORIGEM'),
                     fito: getDocStatus('FITO'),
-                    health: getDocStatus('HEALTH'), // LAUDO PRAGAS
-                    fumigation: getDocStatus('FUMIGATION'), // CERT. FUMIG.
-                    quality: getDocStatus('QUALITY'), // CERT. SUPERV.
+                    health: getDocStatus('HEALTH'), 
+                    fumigation: getDocStatus('FUMIGATION'), 
+                    quality: getDocStatus('QUALITY'), 
                     invoice: getDocStatus('INVOICE'),
                     packing: getDocStatus('PACKING LIST'),
                   };
 
                   const fiscalDocs = processo.documentos_fiscais || [];
                   
-                  // LPCO / Inspeção
-                  const fiscalLPCO = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'LPCO');
+                  // LPCO / Inspeção: busca por tipo ou identificação contendo LPCO
+                  const fiscalLPCO = fiscalDocs.find((df: any) => 
+                    String(df.tipo || '').toUpperCase() === 'LPCO' || 
+                    String(df.identificacao || '').toUpperCase().includes('LPCO')
+                  );
                   const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
                   const lpcoIdent = fiscalLPCO?.identificacao || '---';
                   
-                  // Desembaraço: procura por status DESEMBARAÇADA ou AVERBADA
+                  // Desembaraço: busca por status DESEMBARAÇADA ou AVERBADA
                   const dueDocs = fiscalDocs.filter((df: any) => String(df.tipo || '').toUpperCase() === 'DUE');
                   const desembaraçoDoc = dueDocs.find((df: any) => 
                     String(df.status || '').toUpperCase().includes('DESEMBARAÇADA') || 

@@ -214,6 +214,7 @@ export default function NovoProcessoPage() {
   // Estados para Importação em Massa de NF
   const [bulkNFType, setBulkNFType] = useState('Exportação');
   const [bulkNFDate, setBulkNFDate] = useState<string | null>(new Date().toISOString());
+  const [bulkNFRequestedDate, setBulkNFRequestedDate] = useState<string | null>(new Date().toISOString());
   const [isBulkNFDialogOpen, setIsBulkNFDialogOpen] = useState(false);
 
   const isEditing = searchParams.has('edit');
@@ -664,6 +665,7 @@ export default function NovoProcessoPage() {
     
     const selectedType = bulkNFType;
     const selectedDate = bulkNFDate;
+    const selectedRequestedDate = bulkNFRequestedDate;
 
     Array.from(files).forEach((file, index) => {
       try {
@@ -677,7 +679,7 @@ export default function NovoProcessoPage() {
         
         setFormData((prev: any) => ({
           ...prev,
-          notas_fiscais: [...(prev.notas_fiscais || []), { id, tipo: selectedType, chave: '', data_pedido: null, data_recebida: selectedDate, file: placeholder }]
+          notas_fiscais: [...(prev.notas_fiscais || []), { id, tipo: selectedType, chave: '', data_pedido: selectedRequestedDate, data_recebida: selectedDate, file: placeholder }]
         }));
 
         const uploadTask = uploadBytesResumable(ref(storage, filePath), file, { contentType });
@@ -1187,7 +1189,7 @@ export default function NovoProcessoPage() {
           <DialogHeader>
             <DialogTitle>Importação em Massa de Notas</DialogTitle>
             <DialogDescription>
-              Defina o tipo e a data para todos os ficheiros que irá carregar de seguida.
+              Defina o tipo e as datas padrão para todos os ficheiros que irá carregar de seguida.
             </DialogDescription>
           </DialogHeader>
           <div className="grid gap-4 py-4">
@@ -1204,6 +1206,10 @@ export default function NovoProcessoPage() {
                   <SelectItem value="Devolução">Devolução</SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+            <div className="grid gap-2">
+              <Label>Data Solicitada</Label>
+              <DatePicker date={bulkNFRequestedDate} onDateChange={setBulkNFRequestedDate} />
             </div>
             <div className="grid gap-2">
               <Label>Data de Recebimento</Label>
