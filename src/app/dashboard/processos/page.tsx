@@ -30,8 +30,6 @@ import { cn } from '@/lib/utils';
 
 /**
  * Formata uma string de data ISO para o padrão brasileiro.
- * @param dateString A string de data ISO ou objeto Date.
- * @param includeTime Se true, inclui o horário (HH:mm).
  */
 const formatDate = (dateString: any, includeTime: boolean = false) => {
     if (!dateString || dateString === '---') return '---';
@@ -152,7 +150,7 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[120px]">NAVIO / VIAGEM</th>
                   <th className="px-2 min-w-[100px]">ORIGEM / ETD</th>
                   <th className="px-2 min-w-[100px]">DESTINO / ETA</th>
-                  <th className="px-2 min-w-[90px]">CONTAINERS / KGS</th>
+                  <th className="px-2 min-w-[90px]">CTR / KGS</th>
                   <th className="px-2 min-w-[140px]">DEAD LINE / PRAZO</th>
                   <th className="px-2 min-w-[130px]">REMARK (STATUS)</th>
                   <th className="px-2 min-w-[150px]">ARMAZÉM / TERMINAIS</th>
@@ -182,89 +180,79 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  const getDocStatus = (name: string) => {
+                  
+                  // Helper robusto para encontrar dados em documentos originais (Pós-embarque)
+                  const getDocStatus = (keywords: string[]) => {
                     const docsList = processo.documentos_pos_embarque || [];
+                    const docItem = docsList.find((d: any) => {
+                      const name = String(d.nome || '').toUpperCase();
+                      return keywords.some(k => name.includes(k.toUpperCase()));
+                    });
                     
-                    // Busca flexível por nome do documento (ex: HEALTH -> LAUDO PRAGAS)
-                    const searchNames = [name.toUpperCase()];
-                    if (name === 'HEALTH') searchNames.push('LAUDO PRAGAS');
-                    if (name === 'FUMIGATION') searchNames.push('CERT. FUMIG.', 'FUMIGAÇÃO');
-                    if (name === 'QUALITY') searchNames.push('CERT. SUPERV.', 'QUALIDADE');
-                    if (name === 'ORIGEM') searchNames.push('CERT. ORIGEM', 'C.O.');
-                    if (name === 'FITO') searchNames.push('CERT. FITO', 'FITOSSANITÁRIO');
-
-                    const docItem = docsList.find((d: any) => 
-                      searchNames.includes(String(d.nome || '').toUpperCase())
-                    );
-                    
-                    let action = '---';
+                    let statusLabel = '---';
                     let displayDate = '---';
 
                     if (docItem) {
                       if (docItem.data_liberacao) {
-                        action = (name === 'BL') ? 'LIBERADO/TELEX' : 'LIBERADO';
+                        statusLabel = 'LIBERADO';
                         displayDate = formatDate(docItem.data_liberacao);
                       } else if (docItem.data_emissao) {
-                        action = 'EMITIDO';
+                        statusLabel = 'EMITIDO';
                         displayDate = formatDate(docItem.data_emissao);
                       } else {
-                        action = 'RECEBIDO';
+                        statusLabel = 'RECEBIDO';
                       }
                     }
 
-                    return {
-                      status: docItem ? 'APROVADO' : '---',
-                      action,
-                      date: displayDate
-                    };
+                    return { status: statusLabel, date: displayDate };
                   };
 
-                  const getNFDate = (type: string) => {
-                    const nfList = processo.notas_fiscais || [];
-                    const nf = nfList.find((n: any) => n.tipo === type);
-                    if (!nf) return '---';
-                    const received = formatDate(nf.data_recebida);
-                    const requested = formatDate(nf.data_pedido);
-                    return received !== '---' ? received : requested;
+                  // Helper robusto para encontrar dados em documentos fiscais (DUE/LPCO)
+                  const findFiscalData = (typeKey: string, statusKeywords?: string[]) => {
+                    const fiscalDocs = processo.documentos_fiscais || [];
+                    return fiscalDocs.find((df: any) => {
+                      const dType = String(df.tipo || '').toUpperCase();
+                      const dIdent = String(df.identificacao || '').toUpperCase();
+                      const dStatus = String(df.status || '').toUpperCase();
+                      
+                      const typeMatch = dType.includes(typeKey.toUpperCase()) || dIdent.includes(typeKey.toUpperCase());
+                      if (!typeMatch) return false;
+                      
+                      if (statusKeywords) {
+                        return statusKeywords.some(sk => dStatus.includes(sk.toUpperCase()));
+                      }
+                      return true;
+                    });
                   };
 
                   const docs = {
-                    bl: getDocStatus('BL'),
-                    origem: getDocStatus('ORIGEM'),
-                    fito: getDocStatus('FITO'),
-                    health: getDocStatus('HEALTH'), 
-                    fumigation: getDocStatus('FUMIGATION'), 
-                    quality: getDocStatus('QUALITY'), 
-                    invoice: getDocStatus('INVOICE'),
-                    packing: getDocStatus('PACKING LIST'),
+                    bl: getDocStatus(['BL', 'BILL OF LADING']),
+                    origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN']),
+                    fito: getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO']),
+                    health: getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY']), 
+                    fumigation: getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.']), 
+                    quality: getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.']), 
+                    invoice: getDocStatus(['INVOICE', 'FATURA']),
+                    packing: getDocStatus(['PACKING', 'P.L.', 'LIST']),
                   };
 
-                  const fiscalDocs = processo.documentos_fiscais || [];
+                  // LPCO / Inspeção
+                  const lpcoDoc = findFiscalData('LPCO');
+                  const lpcoIdent = lpcoDoc?.identificacao || '---';
+                  const lpcoDate = lpcoDoc?.data ? formatDate(lpcoDoc.data) : '---';
                   
-                  // LPCO / Inspeção: busca por tipo ou identificação contendo LPCO
-                  const fiscalLPCO = fiscalDocs.find((df: any) => 
-                    String(df.tipo || '').toUpperCase() === 'LPCO' || 
-                    String(df.identificacao || '').toUpperCase().includes('LPCO')
-                  );
-                  const inspecaoDate = fiscalLPCO?.data ? formatDate(fiscalLPCO.data) : '---';
-                  const lpcoIdent = fiscalLPCO?.identificacao || '---';
+                  // DUE / Desembaraço / Averbação
+                  const dueDoc = findFiscalData('DUE');
+                  const dueIdent = dueDoc?.identificacao || '---';
                   
-                  // Desembaraço: busca por status DESEMBARAÇADA ou AVERBADA
-                  const dueDocs = fiscalDocs.filter((df: any) => String(df.tipo || '').toUpperCase() === 'DUE');
-                  const desembaraçoDoc = dueDocs.find((df: any) => 
-                    String(df.status || '').toUpperCase().includes('DESEMBARAÇADA') || 
-                    String(df.status || '').toUpperCase().includes('AVERBADA')
-                  );
-                  const averbacaoDoc = dueDocs.find((df: any) => 
-                    String(df.status || '').toUpperCase().includes('AVERBADA')
-                  );
-                  
-                  const dueIdent = dueDocs[0]?.identificacao || '---';
+                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'AVERB']);
                   const desembaraçoDate = desembaraçoDoc?.data ? formatDate(desembaraçoDoc.data) : '---';
-                  const averbacaoDate = averbacaoDoc?.data ? formatDate(averbacaoDoc.data) : '---';
+                  
+                  const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERB']);
+                  const averbaçãoDate = averbaçãoDoc?.data ? formatDate(averbaçãoDoc.data) : '---';
                   
                   // Tratamento
-                  const treatmentDoc = fiscalDocs.find((df: any) => String(df.tipo || '').toUpperCase() === 'TRATAMENTO');
+                  const treatmentDoc = findFiscalData('TRATAMENTO');
                   const treatmentDate = treatmentDoc?.data ? formatDate(treatmentDoc.data) : '---';
 
                   const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
@@ -422,15 +410,15 @@ export default function GestaoProcessosPage() {
                               {processo.containers?.length > 0 ? formatDate(processo.data_containers) : '---'}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{getNFDate('Remessa')}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold">{getNFDate('Exportação')}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{formatDate(processo.notas_fiscais?.find((n:any)=>n.tipo === 'Remessa')?.data_recebida)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold">{formatDate(processo.notas_fiscais?.find((n:any)=>n.tipo === 'Exportação')?.data_recebida)}</span></div>
                         </div>
                       </td>
 
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{lpcoIdent}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{inspecaoDate}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{lpcoDate}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{treatmentDate}</span></div>
                         </div>
                       </td>
@@ -439,64 +427,64 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
                           <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{dueIdent}</span></div>
                           <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoDate}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbacaoDate}</span></div>
+                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbaçãoDate}</span></div>
                         </div>
                       </td>
 
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.bl.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.bl.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.bl.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.bl.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.bl.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">{docs.bl.status === 'LIBERADO' ? 'BL LIBERADO' : ''}</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.origem.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.origem.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.origem.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.origem.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.origem.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">ORIGEM</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.fito.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.fito.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.fito.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.fito.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.fito.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">FITO</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.health.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.health.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.health.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.health.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.health.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">PRAGAS</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.fumigation.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.fumigation.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.fumigation.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.fumigation.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.fumigation.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">FUMIG.</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.quality.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.quality.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.quality.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.quality.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.quality.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">SUPERV.</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.invoice.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.invoice.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.invoice.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.invoice.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.invoice.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">INVOICE</div>
                         </div>
                       </td>
                       <td className="p-0 text-center">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary">{docs.packing.status}</div>
-                          <div className="py-0.5 text-destructive leading-none text-[7px]">{docs.packing.action}</div>
-                          <div className="py-0.5 text-destructive">{docs.packing.date}</div>
+                          <div className="py-0.5 text-primary leading-none">{docs.packing.status}</div>
+                          <div className="py-0.5 text-destructive font-bold">{docs.packing.date}</div>
+                          <div className="py-0.5 text-primary/50 text-[7px] uppercase leading-none">P. LIST</div>
                         </div>
                       </td>
 

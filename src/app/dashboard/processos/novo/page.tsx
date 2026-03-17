@@ -192,6 +192,16 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
   return 'outline';
 };
 
+const formatDate = (dateString: any) => {
+    if (!dateString) return '---';
+    try {
+        const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+        return date.toLocaleDateString('pt-BR');
+    } catch {
+        return '---';
+    }
+};
+
 export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -208,6 +218,7 @@ export default function NovoProcessoPage() {
   const [uploadTarget, setUploadTarget] = useState<any>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
   const [exporterContacts, setExporterContacts] = useState<any[]>([]);
 
@@ -233,29 +244,14 @@ export default function NovoProcessoPage() {
 
   const { data: processoData, isLoading: isLoadingProcesso } = useDoc(processoDocRef);
 
-  const partnersCollection = useMemoFirebase(() => firestore ? collection(firestore, 'partners') : null, [firestore]);
-  const { data: parceiros, isLoading: isLoadingParceiros } = useCollection(partnersCollection);
-
-  const partnersMap = useMemo(() => {
-    if (!parceiros) return new Map();
-    return new Map(parceiros.map(p => [p.id, p.nome_fantasia || p.razao_social]));
-  }, [parceiros]);
+  const parceirosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'partners') : null, [firestore]);
+  const { data: parceiros, isLoading: isLoadingParceiros } = useCollection(parceirosCollection);
 
   const portosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'ports') : null, [firestore]);
   const { data: portos, isLoading: isLoadingPorts } = useCollection(portosCollection);
 
-  const portsMap = useMemo(() => {
-    if (!portos) return new Map();
-    return new Map(portos.map(p => [p.id, p.name]));
-  }, [portos]);
-
   const terminaisCollection = useMemoFirebase(() => firestore ? collection(firestore, 'terminals') : null, [firestore]);
   const { data: terminais, isLoading: isLoadingTerminals } = useCollection(terminaisCollection);
-
-  const terminalsMap = useMemo(() => {
-    if (!terminais) return new Map();
-    return new Map(terminais.map(t => [String(t.id), t.name]));
-  }, [terminais]);
 
   const terminalItems = useMemo(() => {
     return (terminais || []).map(t => ({ value: String(t.id), label: t.name }));
@@ -276,7 +272,6 @@ export default function NovoProcessoPage() {
         ...processoData,
         status: processoData.status || 'NOMEAÇÃO RECEBIDA',
         containers: processoData.containers || [],
-        data_containers: processoData.data_containers || null,
         documentos_fiscais: processoData.documentos_fiscais || [],
         documentos_pos_embarque: processoData.documentos_pos_embarque || [],
         notas_fiscais: processoData.notas_fiscais || [],
@@ -485,18 +480,19 @@ export default function NovoProcessoPage() {
     setIsSaving(true);
     try {
       const refDoc = doc(firestore, 'processos', pageProcessId);
-      const finalStatus = formData.status || processoData?.status || 'NOMEAÇÃO RECEBIDA';
-      
+      const partnersMap = new Map(parceiros?.map(p => [p.id, p.nome_fantasia || p.razao_social]) || []);
+      const portsMap = new Map(portos?.map(p => [p.id, p.name]) || []);
+      const termsMap = new Map(terminais?.map(t => [String(t.id), t.name]) || []);
+
       const payload = { 
         ...formData, 
         id: pageProcessId,
-        status: finalStatus,
         exportadorNome: partnersMap.get(formData.exportadorId) || '',
         portoEmbarqueNome: portsMap.get(formData.portoEmbarqueId) || '',
         portoDescargaNome: portsMap.get(formData.portoDescargaId) || '',
         armadorNome: partnersMap.get(formData.armadorId) || '',
-        terminalDespachoNome: terminalsMap.get(formData.terminalDespachoId) || '',
-        terminalEmbarqueNome: terminalsMap.get(formData.terminalEmbarqueId) || '',
+        terminalDespachoNome: termsMap.get(formData.terminalDespachoId) || '',
+        terminalEmbarqueNome: termsMap.get(formData.terminalEmbarqueId) || '',
       };
 
       await setDoc(refDoc, payload, { merge: true });
@@ -521,6 +517,9 @@ export default function NovoProcessoPage() {
   };
 
   const generateNFsPdf = async () => {
+    if (isGeneratingPdf) return;
+    setIsGeneratingPdf(true);
+    
     try {
       const { PDFDocument } = await import('pdf-lib');
       const { default: jsPDF } = await import('jspdf');
@@ -530,26 +529,28 @@ export default function NovoProcessoPage() {
       
       if (filesToProcess.length === 0) {
         toast({ title: "Aviso", description: "Nenhuma nota fiscal com arquivo anexado para gerar o pacote." });
+        setIsGeneratingPdf(false);
         return;
       }
 
       if (!storage) {
         toast({ title: "Erro", description: "Serviço de armazenamento não disponível.", variant: "destructive" });
+        setIsGeneratingPdf(false);
         return;
       }
 
       toast({ title: "Processando", description: "Gerando pacote de notas unificado... Por favor aguarde." });
 
+      // Capa
       const cover = new jsPDF();
       cover.setFontSize(18);
       cover.text('Pacote de Notas Fiscais', 14, 20);
       cover.setFontSize(10);
       cover.text(`Processo Interno: ${formData.processo_interno || '---'}`, 14, 30);
-      cover.text(`Exportador: ${partnersMap.get(formData.exportadorId) || '---'}`, 14, 35);
-      cover.text(`Data de Geração: ${new Date().toLocaleString('pt-BR')}`, 14, 40);
+      cover.text(`Data de Geração: ${new Date().toLocaleString('pt-BR')}`, 14, 35);
 
       (cover as any).autoTable({
-        startY: 50,
+        startY: 45,
         head: [['Tipo', 'Chave / ID', 'Data Recebida', 'Nome do Arquivo']],
         body: (formData.notas_fiscais || []).map((nf: any) => [
           nf.tipo,
@@ -574,7 +575,7 @@ export default function NovoProcessoPage() {
           const isImage = nf.file.type.startsWith('image/') || /\.(jpg|jpeg|png)$/i.test(fileName);
 
           if (isPdf) {
-            const pdfToMerge = await PDFDocument.load(bytes);
+            const pdfToMerge = await PDFDocument.load(bytes, { ignoreEncryption: true });
             const copiedPages = await mergedPdf.copyPages(pdfToMerge, pdfToMerge.getPageIndices());
             copiedPages.forEach(page => mergedPdf.addPage(page));
             processedCount++;
@@ -598,11 +599,6 @@ export default function NovoProcessoPage() {
         }
       }
 
-      if (processedCount === 0) {
-        toast({ title: "Erro", description: "Não foi possível processar nenhum dos anexos selecionados.", variant: "destructive" });
-        return;
-      }
-
       const mergedPdfBytes = await mergedPdf.save();
       const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
@@ -612,14 +608,18 @@ export default function NovoProcessoPage() {
       link.download = `Pacote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       
-      setTimeout(() => URL.revokeObjectURL(url), 100);
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 200);
       
       toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s).` });
     } catch (error: any) {
       console.error("Erro ao unificar PDFs:", error);
       toast({ title: "Erro", description: "Falha ao processar e unificar os documentos.", variant: "destructive" });
+    } finally {
+      setIsGeneratingPdf(false);
     }
   };
 
@@ -633,7 +633,6 @@ export default function NovoProcessoPage() {
       const data = new Uint8Array(evt.target?.result as ArrayBuffer);
       const workbook = XLSX.read(data, { type: 'array' });
       const json = XLSX.utils.sheet_to_json(workbook.Sheets[workbook.SheetNames[0]]);
-      const now = new Date().toISOString();
       const newContainers = json.map((r: any) => ({ 
         id: Date.now() + Math.random(), 
         numero: String(r.numero || r.numero_container || ''),
@@ -648,11 +647,7 @@ export default function NovoProcessoPage() {
         inspecionado: false,
         novo_lacre: ''
       }));
-      setFormData(prev => ({ 
-        ...prev, 
-        containers: [...(prev.containers || []), ...newContainers],
-        data_containers: now
-      }));
+      setFormData(prev => ({ ...prev, containers: [...(prev.containers || []), ...newContainers] }));
       setIsImporting(false);
       toast({ title: "Importação Concluída", description: `${newContainers.length} contêineres adicionados.` });
     };
@@ -932,8 +927,9 @@ export default function NovoProcessoPage() {
                   <div className="flex justify-between items-center">
                     <h3 className="text-md font-bold text-primary uppercase">Notas Fiscais</h3>
                     <div className="flex gap-2">
-                      <Button variant="secondary" size="sm" type="button" onClick={generateNFsPdf} disabled={(formData.notas_fiscais || []).length === 0}>
-                        <FileDown className="mr-2 h-4 w-4" /> PDF Notas
+                      <Button variant="secondary" size="sm" type="button" onClick={generateNFsPdf} disabled={(formData.notas_fiscais || []).length === 0 || isGeneratingPdf}>
+                        {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} 
+                        {isGeneratingPdf ? 'Gerando...' : 'PDF Notas'}
                       </Button>
                       <Button variant="outline" size="sm" type="button" onClick={() => setIsBulkNFDialogOpen(true)}>
                         <FileUp className="mr-2 h-4 w-4" /> Importar em Massa
@@ -1006,9 +1002,8 @@ export default function NovoProcessoPage() {
                           Importar XLSX
                         </Button>
                         <Button variant="outline" size="sm" type="button" onClick={() => {
-                          const now = new Date().toISOString();
                           const newContainers = [...(formData.containers || []), { id: Date.now(), numero: '', tare: '', qty_especie: '', gross_weight: '', net_weight: '', m3: '', vgm: '', lacre_original: '', inspecionado: false, novo_lacre: '' }];
-                          setFormData(prev => ({ ...prev, containers: newContainers, data_containers: now }));
+                          setFormData(prev => ({ ...prev, containers: newContainers }));
                         }}>
                           <PlusCircle className='mr-2 h-4 w-4'/> Add Manual
                         </Button>
@@ -1047,13 +1042,6 @@ export default function NovoProcessoPage() {
                               </TableCell>
                             </TableRow>
                           ))}
-                          {(formData.containers || []).length === 0 && (
-                            <TableRow>
-                              <TableCell colSpan={9} className='text-center py-8 text-muted-foreground italic text-xs'>
-                                Nenhum contêiner cadastrado. Importe uma planilha ou adicione manualmente.
-                              </TableCell>
-                            </TableRow>
-                          )}
                         </TableBody>
                       </Table>
                     </div>
@@ -1077,7 +1065,6 @@ export default function NovoProcessoPage() {
                           )}
                         </div>
                       ))}
-                      {(formData.containers || []).length === 0 && <p className='text-xs text-muted-foreground text-center py-4'>Aguardando cadastro de contêineres para inspeção.</p>}
                     </div>
                 </div>
               </CardContent></Card>
@@ -1111,19 +1098,19 @@ export default function NovoProcessoPage() {
                     <TableCell>
                       <div className="flex flex-col gap-1 min-w-[180px]">
                         <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-muted-foreground w-8">EMIS:</span>
+                          <span className="text-[10px] font-bold text-muted-foreground w-10">EMIS:</span>
                           <DatePicker 
                             date={d.data_emissao} 
                             onDateChange={v => handlePostShipmentDocChange(d.id, 'data_emissao', v)} 
-                            className="h-7 text-[10px] w-full"
+                            className="h-8 text-xs w-full"
                           />
                         </div>
                         <div className="flex items-center gap-1">
-                          <span className="text-[8px] font-bold text-muted-foreground w-8">LIB:</span>
+                          <span className="text-[10px] font-bold text-muted-foreground w-10">LIB:</span>
                           <DatePicker 
                             date={d.data_liberacao} 
                             onDateChange={v => handlePostShipmentDocChange(d.id, 'data_liberacao', v)} 
-                            className="h-7 text-[10px] w-full"
+                            className="h-8 text-xs w-full"
                           />
                         </div>
                       </div>
@@ -1170,12 +1157,7 @@ export default function NovoProcessoPage() {
           <AccordionItem value="item-6" disabled={!isEditing}>
             <AccordionTrigger><div className='flex items-center gap-3'>{getStepStatusIcon(6)}<h3 className="text-lg font-semibold text-left">Etapa 6: Finalização</h3></div></AccordionTrigger>
             <AccordionContent>
-              <Card><CardContent className="pt-6 text-center space-y-4">
-                <div className='bg-green-50 border border-green-100 p-6 rounded-lg'>
-                  <CheckCircle className='h-12 w-12 text-green-500 mx-auto mb-4'/>
-                  <h4 className='text-xl font-bold text-green-800'>Processo Pronto para Concluir</h4>
-                  <p className="text-green-700 mt-2">O processo será marcado como "Concluído" e arquivado no histórico do cliente.</p>
-                </div>
+              <Card><CardContent className="pt-6 text-center">
                 <Button className="w-full h-14 text-lg font-bold" type="button" onClick={() => handleInputChange('status', 'Concluído')} variant="default"><CheckCircle className="mr-2 h-6 w-6" />FINALIZAR PROCESSO AGORA</Button>
               </CardContent></Card>
             </AccordionContent>
