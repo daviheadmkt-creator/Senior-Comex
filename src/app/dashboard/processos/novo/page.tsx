@@ -121,6 +121,7 @@ const initialFormData = {
   po_number: '',
   produtoNome: '',
   quantidade: '',
+  quantidade_escrito_ctr: '',
   exportadorId: '',
   portoEmbarqueId: '',
   portoDescargaId: '',
@@ -825,9 +826,13 @@ export default function NovoProcessoPage() {
                     <Label>Armador</Label>
                     <Combobox items={parceiros?.filter(p => p.tipo_parceiro === 'Armador').map(p => ({ value: p.id, label: `${p.nome_fantasia || p.razao_social}${p.cnpj ? ` - ${p.cnpj}` : ''}` })) || []} value={formData.armadorId} onValueChange={v => handleInputChange('armadorId', v)} />
                   </div>
-                  <div className="space-y-2 md:col-span-2">
+                  <div className="space-y-2">
                     <Label>Armazém</Label>
                     <Input value={formData.viagem || ''} onChange={e => handleInputChange('viagem', e.target.value)} className="uppercase" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Qtde. CTR (Escrito)</Label>
+                    <Input value={formData.quantidade_escrito_ctr || ''} onChange={e => handleInputChange('quantidade_escrito_ctr', e.target.value)} placeholder="Ex: 10x40'HC" className="uppercase" />
                   </div>
                 </div>
 

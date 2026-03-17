@@ -345,7 +345,7 @@ export default function GestaoProcessosPage() {
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
-                          <span className="text-foreground">{processo.containers?.length || 0} CTR</span>
+                          <span className="text-foreground uppercase">{processo.quantidade_escrito_ctr || (processo.containers?.length ? `${processo.containers.length} CTR` : '0 CTR')}</span>
                           <span className="text-[8px] font-normal text-muted-foreground">{processo.quantidade || '---'}</span>
                         </div>
                       </td>
