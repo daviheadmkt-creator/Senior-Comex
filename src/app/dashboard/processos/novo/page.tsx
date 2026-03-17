@@ -22,7 +22,8 @@ import {
   Loader2, 
   FileUp, 
   Download, 
-  Save 
+  Save,
+  ExternalLink
 } from 'lucide-react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -164,6 +165,16 @@ function sanitizeFileName(name: string) {
     .replace(/[^a-zA-Z0-9._-]/g, '');
 }
 
+const formatDate = (dateString: any) => {
+    if (!dateString) return '---';
+    try {
+        const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
+        return date.toLocaleDateString('pt-BR');
+    } catch {
+        return '---';
+    }
+};
+
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
   if (!status) return 'outline';
   const lowerStatus = status.toLowerCase();
@@ -192,16 +203,6 @@ const getStatusVariant = (status: string): "default" | "secondary" | "destructiv
   return 'outline';
 };
 
-const formatDate = (dateString: any) => {
-    if (!dateString) return '---';
-    try {
-        const date = typeof dateString === 'string' ? new Date(dateString) : dateString;
-        return date.toLocaleDateString('pt-BR');
-    } catch {
-        return '---';
-    }
-};
-
 export default function NovoProcessoPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -222,7 +223,6 @@ export default function NovoProcessoPage() {
   const [uploadProgresses, setUploadProgresses] = useState<Record<string, number>>({});
   const [exporterContacts, setExporterContacts] = useState<any[]>([]);
 
-  // Estados para Importação em Massa de NF
   const [bulkNFType, setBulkNFType] = useState('Exportação');
   const [bulkNFDate, setBulkNFDate] = useState<string | null>(new Date().toISOString());
   const [bulkNFRequestedDate, setBulkNFRequestedDate] = useState<string | null>(new Date().toISOString());
@@ -603,6 +603,10 @@ export default function NovoProcessoPage() {
       const blob = new Blob([mergedPdfBytes], { type: 'application/pdf' });
       const url = URL.createObjectURL(blob);
       
+      // Abrir em nova aba para visualização
+      window.open(url, '_blank');
+
+      // Também oferecer o download
       const link = document.createElement('a');
       link.href = url;
       link.download = `Pacote_NFs_${formData.processo_interno || 'Processo'}.pdf`;
@@ -611,10 +615,10 @@ export default function NovoProcessoPage() {
       
       setTimeout(() => {
         document.body.removeChild(link);
-        URL.revokeObjectURL(url);
-      }, 200);
+        // Não revogar o URL imediatamente para que a nova aba consiga carregar
+      }, 5000);
       
-      toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s).` });
+      toast({ title: "Sucesso", description: `PDF unificado gerado com ${processedCount} anexo(s) e aberto em nova aba.` });
     } catch (error: any) {
       console.error("Erro ao unificar PDFs:", error);
       toast({ title: "Erro", description: "Falha ao processar e unificar os documentos.", variant: "destructive" });
@@ -928,8 +932,8 @@ export default function NovoProcessoPage() {
                     <h3 className="text-md font-bold text-primary uppercase">Notas Fiscais</h3>
                     <div className="flex gap-2">
                       <Button variant="secondary" size="sm" type="button" onClick={generateNFsPdf} disabled={(formData.notas_fiscais || []).length === 0 || isGeneratingPdf}>
-                        {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileDown className="mr-2 h-4 w-4" />} 
-                        {isGeneratingPdf ? 'Gerando...' : 'PDF Notas'}
+                        {isGeneratingPdf ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ExternalLink className="mr-2 h-4 w-4" />} 
+                        {isGeneratingPdf ? 'A processar...' : 'Ver e Unificar Notas'}
                       </Button>
                       <Button variant="outline" size="sm" type="button" onClick={() => setIsBulkNFDialogOpen(true)}>
                         <FileUp className="mr-2 h-4 w-4" /> Importar em Massa
@@ -1165,7 +1169,6 @@ export default function NovoProcessoPage() {
         </Accordion>
       </form>
 
-      {/* Dialog de Importação em Massa de NF */}
       <Dialog open={isBulkNFDialogOpen} onOpenChange={setIsBulkNFDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
