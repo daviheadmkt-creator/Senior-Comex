@@ -227,6 +227,7 @@ export default function GestaoProcessosPage() {
                     });
                   };
 
+                  // Mapeamento de documentos técnicos
                   const docs = {
                     bl: getDocStatus(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file),
                     origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file),
@@ -243,7 +244,7 @@ export default function GestaoProcessosPage() {
                   const lpcoIdent = lpcoDoc?.identificacao || '---';
                   const lpcoDate = lpcoDoc?.data ? formatDate(lpcoDoc.data) : '---';
                   
-                  // DUE / Desembaraço / Averbação
+                  // DUE / Desembaraço
                   const dueDoc = findFiscalData('DUE');
                   const dueIdent = dueDoc?.identificacao || '---';
                   
@@ -257,6 +258,7 @@ export default function GestaoProcessosPage() {
                   const treatmentDoc = findFiscalData('TRATAMENTO');
                   const treatmentDate = treatmentDoc?.data ? formatDate(treatmentDoc.data) : '---';
 
+                  // Lógica de Deadline: OK se verde, Data se vermelho
                   const isDraftOk = !!(processo.draft_bl_file?.downloadURL || processo.deadline_draft_file?.downloadURL);
                   const isVGMOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
@@ -354,7 +356,7 @@ export default function GestaoProcessosPage() {
                             <span>DRAFT</span> 
                             <div className="flex items-center gap-1">
                                 <span className={cn(isDraftOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {formatDate(processo.deadline_draft, true)}
+                                  {isDraftOk ? "OK" : formatDate(processo.deadline_draft, true)}
                                 </span>
                                 {isDraftOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
@@ -363,7 +365,7 @@ export default function GestaoProcessosPage() {
                             <span>VGM</span> 
                             <div className="flex items-center gap-1">
                                 <span className={cn(isVGMOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {formatDate(processo.deadline_vgm, true)}
+                                  {isVGMOk ? "OK" : formatDate(processo.deadline_vgm, true)}
                                 </span>
                                 {isVGMOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
@@ -372,7 +374,7 @@ export default function GestaoProcessosPage() {
                             <span>CARGA</span> 
                             <div className="flex items-center gap-1">
                                 <span className={cn(isCargaOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {formatDate(processo.deadline_carga, true)}
+                                  {isCargaOk ? "OK" : formatDate(processo.deadline_carga, true)}
                                 </span>
                                 {isCargaOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
                             </div>
