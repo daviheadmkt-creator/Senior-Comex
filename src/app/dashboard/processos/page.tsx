@@ -32,14 +32,14 @@ import { cn } from '@/lib/utils';
  * Formata uma string de data ISO para o padrão brasileiro.
  */
 const formatDate = (dateString: any, includeTime: boolean = false) => {
-    if (!dateString || dateString === '---') return '---';
-    try {
-        const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-        if (!date || isNaN(date.getTime())) return '---';
-        return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
-    } catch {
-        return '---';
-    }
+  if (!dateString || dateString === '---') return '---';
+  try {
+    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
+    if (!date || isNaN(date.getTime())) return '---';
+    return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
+  } catch {
+    return '---';
+  }
 };
 
 const getStatusVariant = (status: string): "default" | "secondary" | "destructive" | "outline" => {
@@ -81,14 +81,14 @@ export default function GestaoProcessosPage() {
   const { data: processos, isLoading } = useCollection(processosCollection);
 
   const handleDelete = (id: string) => {
-    if(!firestore) return;
+    if (!firestore) return;
     deleteDocumentNonBlocking(doc(firestore, 'processos', id));
   };
-  
+
   const filteredProcessos = useMemo(() => {
     if (!processos) return [];
     const term = searchTerm.toLowerCase();
-    
+
     return [...processos]
       .sort((a, b) => (b.processo_interno || '').localeCompare(a.processo_interno || ''))
       .filter(processo => {
@@ -108,7 +108,7 @@ export default function GestaoProcessosPage() {
           processo.terminalEmbarqueNome
         ];
 
-        return searchFields.some(field => 
+        return searchFields.some(field =>
           field && String(field).toLowerCase().includes(term)
         );
       });
@@ -125,29 +125,29 @@ export default function GestaoProcessosPage() {
         </div>
       </div>
 
-      <Card className="overflow-hidden">
-        <CardHeader className="pb-3">
+      <Card className="overflow-hidden border-primary/20 shadow-lg">
+        <CardHeader className="pb-3 border-b bg-muted/30">
           <div className="flex items-center gap-4">
             <div className="relative w-full max-sm:max-w-full max-w-sm">
               <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-              <Input 
-                  placeholder="Buscar Analista, PO, Produto, Navio, Origem..." 
-                  className="pl-8" 
-                  value={searchTerm}
-                  onChange={e => setSearchTerm(e.target.value)}
-                  type="search"
+              <Input
+                placeholder="Buscar Analista, PO, Produto, Navio, Origem..."
+                className="pl-8 bg-background border-primary/20"
+                value={searchTerm}
+                onChange={e => setSearchTerm(e.target.value)}
+                type="search"
               />
             </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
           <div className="overflow-auto max-h-[calc(100vh-280px)]">
-            <table className="w-full border-collapse border border-primary/20 text-[9px] relative">
+            <table className="w-full border-collapse text-[10px] relative">
               <thead className="sticky top-0 z-30">
-                <tr className="bg-primary text-primary-foreground text-center h-12 uppercase font-bold divide-x divide-primary-foreground/20">
-                  <th className="px-2 min-w-[80px] w-[80px] sticky left-0 z-40 bg-primary">AÇÕES</th>
-                  <th className="px-2 min-w-[90px] w-[90px] sticky left-[80px] z-40 bg-primary">ANALISTA</th>
-                  <th className="px-2 min-w-[120px] w-[120px] sticky left-[170px] z-40 bg-primary shadow-[2px_0_5px_rgba(0,0,0,0.1)]">PO / CLIENTE</th>
+                <tr className="bg-primary text-white text-center h-12 uppercase font-bold divide-x divide-white/10">
+                  <th className="px-2 min-w-[80px] sticky left-0 z-40 bg-primary">AÇÕES</th>
+                  <th className="px-2 min-w-[90px] sticky left-[80px] z-40 bg-primary">ANALISTA</th>
+                  <th className="px-2 min-w-[120px] sticky left-[170px] z-40 bg-primary shadow-md">PO / CLIENTE</th>
                   <th className="px-2 min-w-[120px]">PRODUTO / DATA NOMEAÇÃO</th>
                   <th className="px-2 min-w-[120px]">RESERVA / AGÊNCIA / ARMADOR</th>
                   <th className="px-2 min-w-[120px]">NAVIO / VIAGEM</th>
@@ -171,237 +171,195 @@ export default function GestaoProcessosPage() {
                   <th className="px-2 min-w-[100px]">REF. SENIOR</th>
                 </tr>
               </thead>
-              <tbody className="bg-background">
+              <tbody className="bg-white">
                 {isLoading && (
                   <tr>
                     <td colSpan={24} className="px-4 py-8 text-center bg-background">
                       <div className='flex justify-center items-center gap-2'>
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
-                        <span className="text-sm font-medium">Carregando dados da planilha...</span>
+                        <span className="text-sm font-medium italic">Sincronizando dados em tempo real...</span>
                       </div>
                     </td>
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  
+
                   // Helper robusto para encontrar dados em documentos originais (Pós-embarque)
-                  const getDocStatus = (keywords: string[], fallbackFile?: any) => {
+                  const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
                       const name = String(d.nome || d.type || '').toUpperCase();
                       return keywords.some(k => name === k.toUpperCase() || name.includes(k.toUpperCase()));
                     });
-                    
-                    if ((docItem && docItem.file?.downloadURL) || fallbackFile?.downloadURL) {
-                      const dateSource = docItem ? (docItem.data_liberacao || docItem.data_emissao) : null;
+
+                    const fileObj = docItem?.file || fallbackFile;
+
+                    if (fileObj && fileObj.downloadURL) {
+                      const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao);
                       return (
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary font-bold uppercase text-center">APROVADO</div>
-                          <div className="py-0.5 text-red-600 font-bold uppercase text-center">RECEBIDO</div>
-                          <div className="py-0.5 text-muted-foreground text-center">{formatDate(dateSource)}</div>
+                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100">
+                          <div className="py-1 text-blue-600 font-extrabold uppercase text-center bg-blue-50/30">APROVADO</div>
+                          <div className="py-1 text-red-600 font-extrabold uppercase text-center bg-red-50/30">RECEBIDO</div>
+                          <div className="py-1 text-gray-500 text-center font-medium">{dateDisplay}</div>
                         </div>
                       );
                     }
-                    
+
                     return <div className="py-4 text-muted-foreground text-center">---</div>;
                   };
 
-                  // Helper robusto para encontrar dados em documentos fiscais (DUE/LPCO)
-                  const findFiscalData = (typeKey: string, statusKeywords?: string[]) => {
-                    const fiscalDocs = processo.documentos_fiscais || [];
-                    return fiscalDocs.find((df: any) => {
-                      const dType = String(df.tipo || '').toUpperCase();
-                      const dStatus = String(df.status || '').toUpperCase();
-                      
-                      const typeMatch = dType === typeKey.toUpperCase();
-                      if (!typeMatch) return false;
-                      
-                      if (statusKeywords) {
-                        return statusKeywords.some(sk => dStatus.includes(sk.toUpperCase()));
-                      }
-                      return true;
-                    });
+                  // Helper para buscar documentos fiscais
+                  const findFiscal = (type: string) => {
+                    return (processo.documentos_fiscais || []).find((d: any) => d.tipo === type);
                   };
 
-                  // Checkers de arquivos para mudar cor e texto automaticamente
+                  // Verificação de anexos para os Deadlines
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const isVgmOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
 
-                  const remessaNF = processo.notas_fiscais?.find((n: any) => n.tipo === 'Remessa');
-                  const hasRemessaFile = !!remessaNF?.file?.downloadURL;
+                  // Verificação de Notas Fiscais
+                  const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
+                  const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
 
-                  const exportacaoNF = processo.notas_fiscais?.find((n: any) => n.tipo === 'Exportação');
-                  const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
-
-                  const lpcoDoc = findFiscalData('LPCO');
-                  const hasLpcoFile = !!lpcoDoc?.file?.downloadURL;
-
-                  const treatmentDoc = findFiscalData('TRATAMENTO');
-                  const hasTreatmentFile = !!treatmentDoc?.file?.downloadURL;
-
-                  const dueDoc = findFiscalData('DUE');
-                  const hasDueFile = !!dueDoc?.file?.downloadURL;
-
-                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'DEFERIDA', 'LIBERADA']);
-                  const hasDesembaracoFile = !!desembaraçoDoc?.file?.downloadURL;
-
-                  const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERBACAO']);
-                  const hasAverbacaoFile = !!averbaçãoDoc?.file?.downloadURL;
+                  // Verificação de Fiscais
+                  const lpco = findFiscal('LPCO');
+                  const due = findFiscal('DUE');
+                  const tratamento = findFiscal('TRATAMENTO');
 
                   return (
-                    <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
-                      <td className="px-2 py-1 text-center sticky left-0 z-10 bg-card">
+                    <tr key={processo.id} className="text-primary font-bold border-b border-primary/10 hover:bg-gray-50 transition-colors divide-x divide-primary/10 h-16">
+                      <td className="px-2 py-1 text-center sticky left-0 z-10 bg-white">
                         <div className="flex gap-1 justify-center">
                           <Link href={`/dashboard/processos/novo?id=${processo.id}&edit=true`}>
-                            <Button variant="ghost" size="icon" className="h-6 w-6 text-primary">
-                              <Pencil className="h-3 w-3" />
+                            <Button variant="ghost" size="icon" className="h-7 w-7 text-primary hover:bg-primary/10">
+                              <Pencil className="h-4 w-4" />
                             </Button>
                           </Link>
                           {processo.exportadorId && (
                             <Link href={`/portal/${processo.exportadorId}`} target="_blank">
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-blue-600">
-                                <Globe className="h-3 w-3" />
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-blue-600 hover:bg-blue-50">
+                                <Globe className="h-4 w-4" />
                               </Button>
                             </Link>
                           )}
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-destructive">
-                                <Trash2 className="h-3 w-3" />
+                              <Button variant="ghost" size="icon" className="h-7 w-7 text-destructive hover:bg-red-50">
+                                <Trash2 className="h-4 w-4" />
                               </Button>
                             </AlertDialogTrigger>
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir Processo</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Excluir o processo {processo.processo_interno}? Ação irreversível.
+                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => handleDelete(processo.id)}>Excluir</AlertDialogAction>
+                                <AlertDialogAction className="bg-destructive text-white hover:bg-destructive/90" onClick={() => handleDelete(processo.id)}>Confirmar Exclusão</AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
                         </div>
                       </td>
 
-                      <td className="px-2 py-1 text-center text-blue-600 uppercase sticky left-[80px] z-10 bg-card">{processo.analistaNome || '---'}</td>
-                      
-                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-card shadow-[2px_0_5px_rgba(0,0,0,0.05)] border-r">
+                      <td className="px-2 py-1 text-center text-blue-700 uppercase sticky left-[80px] z-10 bg-white border-r">{processo.analistaNome || '---'}</td>
+
+                      <td className="px-2 py-1 sticky left-[170px] z-10 bg-white shadow-md border-r">
                         <div className="flex flex-col">
-                          <span className="text-destructive font-extrabold">{processo.po_number || '---'}</span>
-                          <span className="text-[8px] uppercase truncate">{processo.exportadorNome}</span>
+                          <span className="text-red-600 font-black">{processo.po_number || '---'}</span>
+                          <span className="text-[9px] uppercase truncate text-gray-600">{processo.exportadorNome}</span>
                         </div>
                       </td>
 
                       <td className="px-2 py-1">
                         <div className="flex flex-col">
-                          <span className="uppercase text-foreground">{processo.produtoNome || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
+                          <span className="uppercase text-gray-800">{processo.produtoNome || '---'}</span>
+                          <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
                         </div>
                       </td>
 
                       <td className="px-2 py-1">
                         <div className="flex flex-col">
-                          <span className="text-foreground">{processo.booking_number || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground uppercase">{processo.armadorNome || '---'}</span>
+                          <span className="text-gray-800">{processo.booking_number || '---'}</span>
+                          <span className="text-[9px] font-normal text-muted-foreground uppercase">{processo.armadorNome || '---'}</span>
                         </div>
                       </td>
 
-                      <td className="px-2 py-1 truncate max-w-[120px] uppercase text-foreground">{processo.navio || '---'}</td>
+                      <td className="px-2 py-1 truncate max-w-[120px] uppercase text-gray-800">{processo.navio || '---'}</td>
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
-                          <span className="text-destructive font-bold">{processo.portoEmbarqueNome || '---'}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.etd)}</span>
-                        </div>
-                      </td>
-
-                      <td className="px-2 py-1 text-center">
-                        <div className="flex flex-col">
-                          <span className="text-foreground font-bold">{processo.portoDescargaNome || '---'}</span>
-                          <div className="flex flex-col">
-                            <span className="text-[8px] font-normal text-muted-foreground">{formatDate(processo.eta)}</span>
-                            <span className="text-blue-600 font-bold uppercase">{processo.destino || '---'}</span>
-                          </div>
+                          <span className="text-red-600 font-bold">{processo.portoEmbarqueNome || '---'}</span>
+                          <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.etd)}</span>
                         </div>
                       </td>
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
-                          <span className="text-foreground uppercase">{processo.quantidade_escrito_ctr || (processo.containers?.length ? `${processo.containers.length} CTR` : '0 CTR')}</span>
-                          <span className="text-[8px] font-normal text-muted-foreground">{processo.quantidade || '---'}</span>
+                          <span className="text-gray-800 font-bold">{processo.portoDescargaNome || '---'}</span>
+                          <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.eta)}</span>
+                          <span className="text-blue-600 font-bold uppercase">{processo.destino || '---'}</span>
+                        </div>
+                      </td>
+
+                      <td className="px-2 py-1 text-center">
+                        <div className="flex flex-col">
+                          <span className="text-gray-800 uppercase">{processo.quantidade_escrito_ctr || (processo.containers?.length ? `${processo.containers.length} CTR` : '---')}</span>
+                          <span className="text-[9px] font-normal text-muted-foreground">{processo.quantidade || '---'}</span>
                         </div>
                       </td>
 
                       <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
-                            <span>DRAFT</span> 
-                            <div className="flex items-center gap-1">
-                                <span className={cn(isDraftOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {isDraftOk ? "OK" : formatDate(processo.deadline_draft, true)}
-                                </span>
-                                {isDraftOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
-                            </div>
+                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100">
+                          <div className="flex justify-between px-2 py-1 italic items-center">
+                            <span>DRAFT</span>
+                            {isDraftOk ? <span className="text-green-600 font-black">OK</span> : <span className="text-red-600 font-bold">{formatDate(processo.deadline_draft, true)}</span>}
                           </div>
-                          <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
-                            <span>VGM</span> 
-                            <div className="flex items-center gap-1">
-                                <span className={cn(isVgmOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {isVgmOk ? "OK" : formatDate(processo.deadline_vgm, true)}
-                                </span>
-                                {isVgmOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
-                            </div>
+                          <div className="flex justify-between px-2 py-1 italic items-center">
+                            <span>VGM</span>
+                            {isVgmOk ? <span className="text-green-600 font-black">OK</span> : <span className="text-red-600 font-bold">{formatDate(processo.deadline_vgm, true)}</span>}
                           </div>
-                          <div className="flex justify-between px-2 py-0.5 italic items-center gap-1">
-                            <span>CARGA</span> 
-                            <div className="flex items-center gap-1">
-                                <span className={cn(isCargaOk ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                                  {isCargaOk ? "OK" : formatDate(processo.deadline_carga, true)}
-                                </span>
-                                {isCargaOk && <CheckCircle2 className="h-2 w-2 text-green-600" />}
-                            </div>
+                          <div className="flex justify-between px-2 py-1 italic items-center">
+                            <span>CARGA</span>
+                            {isCargaOk ? <span className="text-green-600 font-black">OK</span> : <span className="text-red-600 font-bold">{formatDate(processo.deadline_carga, true)}</span>}
                           </div>
                         </div>
                       </td>
 
                       <td className="px-2 py-1 text-center align-middle">
-                        <Badge variant={getStatusVariant(processo.status)} className="text-[8px] px-1 h-5 w-full justify-center">
+                        <Badge variant={getStatusVariant(processo.status)} className="text-[9px] px-1 h-6 w-full justify-center shadow-sm">
                           {processo.status || 'N/A'}
                         </Badge>
                       </td>
 
                       <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted uppercase text-[8px]">
-                          <div className="px-2 py-0.5 flex justify-between"><span>ARMAZÉM</span> <span className="truncate max-w-[80px] text-foreground">{processo.viagem || '---'}</span></div>
-                          <div className="px-2 py-0.5 flex justify-between"><span>EMBARQUE</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalDespachoNome || '---'}</span></div>
-                          <div className="px-2 py-0.5 flex justify-between"><span>DESCARGA</span> <span className="truncate max-w-[80px] text-foreground">{processo.terminalEmbarqueNome || '---'}</span></div>
+                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 uppercase text-[9px]">
+                          <div className="px-2 py-1 flex justify-between"><span>ARMAZÉM</span> <span className="truncate max-w-[80px] text-gray-700">{processo.viagem || '---'}</span></div>
+                          <div className="px-2 py-1 flex justify-between"><span>EMBARQUE</span> <span className="truncate max-w-[80px] text-gray-700 font-medium">{processo.terminalDespachoNome || '---'}</span></div>
+                          <div className="px-2 py-1 flex justify-between"><span>DESCARGA</span> <span className="truncate max-w-[80px] text-gray-700 font-medium">{processo.terminalEmbarqueNome || '---'}</span></div>
                         </div>
                       </td>
 
                       <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>CONTAINERS</span> 
-                            <span className={cn(
-                              "font-bold",
-                              processo.containers?.length > 0 ? "text-green-600 font-extrabold" : "text-destructive"
-                            )}>
-                              {processo.containers?.length > 0 ? "OK" : "---"}
+                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
+                          <div className="flex justify-between px-2 py-1">
+                            <span>CONTAINERS</span>
+                            <span className={cn("font-bold", processo.data_containers ? "text-green-600 font-black" : "text-red-600")}>
+                              {processo.data_containers ? "OK" : "---"}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>REMESSA</span> 
-                            <span className={cn(hasRemessaFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                          <div className="flex justify-between px-2 py-1">
+                            <span>REMESSA</span>
+                            <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-red-600")}>
                               {hasRemessaFile ? "OK" : formatDate(remessaNF?.data_recebida)}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>EXPORTAÇÃO</span> 
-                            <span className={cn(hasExportacaoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                          <div className="flex justify-between px-2 py-1">
+                            <span>EXPORTAÇÃO</span>
+                            <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-red-600")}>
                               {hasExportacaoFile ? "OK" : formatDate(exportacaoNF?.data_recebida)}
                             </span>
                           </div>
@@ -409,72 +367,66 @@ export default function GestaoProcessosPage() {
                       </td>
 
                       <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>LPCO</span> 
-                            <span className={cn(hasLpcoFile ? "text-green-600 font-extrabold" : "text-muted-foreground font-bold")}>
-                              {hasLpcoFile ? "OK" : lpcoDoc?.identificacao || "---"}
+                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
+                          <div className="flex justify-between px-2 py-1">
+                            <span>LPCO</span>
+                            <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-gray-400")}>
+                              {hasLpcoFile ? "OK" : lpco?.identificacao || "---"}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>INSPEÇÃO</span> 
-                            <span className={cn(hasLpcoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                              {hasLpcoFile ? "OK" : formatDate(lpcoDoc?.data)}
+                          <div className="flex justify-between px-2 py-1">
+                            <span>INSPEÇÃO</span>
+                            <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-red-600")}>
+                              {hasLpcoFile ? "OK" : formatDate(lpco?.data)}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>TRATAMENTO</span> 
-                            <span className={cn(hasTreatmentFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                              {hasTreatmentFile ? "OK" : formatDate(treatmentDoc?.data)}
+                          <div className="flex justify-between px-2 py-1">
+                            <span>TRATAMENTO</span>
+                            <span className={cn("font-bold", hasTreatmentFile ? "text-green-600 font-black" : "text-red-600")}>
+                              {hasTreatmentFile ? "OK" : formatDate(tratamento?.data)}
                             </span>
                           </div>
                         </div>
                       </td>
 
                       <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>DUE</span> 
-                            <span className={cn(hasDueFile ? "text-green-600 font-extrabold" : "text-muted-foreground font-bold")}>
-                              {hasDueFile ? "OK" : dueDoc?.identificacao || "---"}
+                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
+                          <div className="flex justify-between px-2 py-1">
+                            <span>DUE</span>
+                            <span className={cn("font-bold", hasDueFile ? "text-green-600 font-black" : "text-gray-400")}>
+                              {hasDueFile ? "OK" : due?.identificacao || "---"}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>DESEMBARAÇO</span> 
-                            <span className={cn(hasDesembaracoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                              {hasDesembaracoFile ? "OK" : formatDate(desembaraçoDoc?.data)}
+                          <div className="flex justify-between px-2 py-1">
+                            <span>DESEMBARAÇO</span>
+                            <span className={cn("font-bold", hasDesembaracoFile ? "text-green-600 font-black" : "text-red-600")}>
+                              {hasDesembaracoFile ? "OK" : formatDate(due?.data)}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5">
-                            <span>AVERBAÇÃO</span> 
-                            <span className={cn(hasAverbacaoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
-                              {hasAverbacaoFile ? "OK" : formatDate(averbaçãoDoc?.data)}
+                          <div className="flex justify-between px-2 py-1">
+                            <span>AVERBAÇÃO</span>
+                            <span className={cn("font-bold", hasAverbacaoFile ? "text-green-600 font-black" : "text-gray-400")}>
+                              {hasAverbacaoFile ? "OK" : "---"}
                             </span>
                           </div>
                         </div>
                       </td>
 
-                      {/* Renderização de Colunas de Documentos */}
-                      <td className="p-0">{getDocStatus(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file)}</td>
-                      <td className="p-0">{getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
-                      <td className="p-0">{getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
-                      <td className="p-0">{getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS'])}</td>
-                      <td className="p-0">{getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.'])}</td>
-                      <td className="p-0">{getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA'])}</td>
-                      <td className="p-0">{getDocStatus(['INVOICE', 'FATURA', 'INV'])}</td>
-                      <td className="p-0">{getDocStatus(['PACKING', 'P.L.', 'LIST', 'PACKING LIST'])}</td>
+                      <td className="p-0">{renderDocCell(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file)}</td>
+                      <td className="p-0">{renderDocCell(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
+                      <td className="p-0">{renderDocCell(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
+                      <td className="p-0">{renderDocCell(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS'])}</td>
+                      <td className="p-0">{renderDocCell(['FUMIGATION', 'FUMIGACAO', 'FUMIG.'])}</td>
+                      <td className="p-0">{renderDocCell(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA'])}</td>
+                      <td className="p-0">{renderDocCell(['INVOICE', 'FATURA', 'INV'])}</td>
+                      <td className="p-0">{renderDocCell(['PACKING', 'P.L.', 'LIST', 'PACKING LIST'])}</td>
 
-                      <td className="px-2 py-1 text-center text-[8px] text-muted-foreground uppercase">
+                      <td className="px-2 py-1 text-center text-[9px] text-muted-foreground uppercase border-l">
                         {processo.processo_interno || '---'}
                       </td>
                     </tr>
                   );
                 })}
-                {!isLoading && filteredProcessos.length === 0 && (
-                  <tr>
-                    <td colSpan={24} className="px-4 py-12 text-center text-muted-foreground bg-background">Nenhum processo encontrado na base de dados.</td>
-                  </tr>
-                )}
               </tbody>
             </table>
           </div>
