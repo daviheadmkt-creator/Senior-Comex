@@ -7,7 +7,7 @@ import {
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PlusCircle, Search, Pencil, Trash2, Loader2, Globe, CheckCircle2 } from 'lucide-react';
+import { PlusCircle, Search, Pencil, Trash2, Loader2, Globe } from 'lucide-react';
 import Link from 'next/link';
 import {
   AlertDialog,
@@ -183,6 +183,27 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
+                  // Helper para buscar documentos fiscais
+                  const findFiscal = (type: string) => {
+                    return (processo.documentos_fiscais || []).find((d: any) => d.tipo === type);
+                  };
+
+                  const lpco = findFiscal('LPCO');
+                  const due = findFiscal('DUE');
+                  const tratamento = findFiscal('TRATAMENTO');
+                  const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
+                  const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
+
+                  // Lógica de flags para anexos
+                  const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
+                  const hasVgmFile = !!(processo.deadline_vgm_file?.downloadURL);
+                  const hasCargaFile = !!(processo.deadline_carga_file?.downloadURL);
+                  
+                  const hasRemessaFile = !!remessaNF?.file?.downloadURL;
+                  const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
+                  const hasLpcoFile = !!lpco?.file?.downloadURL;
+                  const hasDueFile = !!due?.file?.downloadURL;
+                  const hasTreatmentFile = !!tratamento?.file?.downloadURL;
 
                   // Helper robusto para encontrar dados em documentos originais (Pós-embarque)
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
@@ -198,8 +219,8 @@ export default function GestaoProcessosPage() {
                       const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao);
                       return (
                         <div className="grid grid-rows-3 h-full divide-y divide-gray-100">
-                          <div className="py-1 text-blue-600 font-extrabold uppercase text-center bg-blue-50/30">APROVADO</div>
-                          <div className="py-1 text-red-600 font-extrabold uppercase text-center bg-red-50/30">RECEBIDO</div>
+                          <div className="py-1 text-primary font-extrabold uppercase text-center bg-blue-50/30">APROVADO</div>
+                          <div className="py-1 text-destructive font-extrabold uppercase text-center bg-red-50/30">RECEBIDO</div>
                           <div className="py-1 text-gray-500 text-center font-medium">{dateDisplay}</div>
                         </div>
                       );
@@ -207,25 +228,6 @@ export default function GestaoProcessosPage() {
 
                     return <div className="py-4 text-muted-foreground text-center">---</div>;
                   };
-
-                  // Helper para buscar documentos fiscais
-                  const findFiscal = (type: string) => {
-                    return (processo.documentos_fiscais || []).find((d: any) => d.tipo === type);
-                  };
-
-                  // Verificação de anexos para os Deadlines
-                  const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
-                  const isVgmOk = !!(processo.deadline_vgm_file?.downloadURL);
-                  const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
-
-                  // Verificação de Notas Fiscais
-                  const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
-                  const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
-
-                  // Verificação de Fiscais
-                  const lpco = findFiscal('LPCO');
-                  const due = findFiscal('DUE');
-                  const tratamento = findFiscal('TRATAMENTO');
 
                   return (
                     <tr key={processo.id} className="text-primary font-bold border-b border-primary/10 hover:bg-gray-50 transition-colors divide-x divide-primary/10 h-16">
@@ -316,15 +318,21 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-gray-100">
                           <div className="flex justify-between px-2 py-1 italic items-center">
                             <span>DRAFT</span>
-                            {isDraftOk ? <span className="text-green-600 font-black">OK</span> : <span className="text-red-600 font-bold">{formatDate(processo.deadline_draft, true)}</span>}
+                            <span className={cn("font-bold", hasDraftFile ? "text-green-600 font-black" : "text-destructive")}>
+                              {hasDraftFile ? "OK" : formatDate(processo.deadline_draft, true)}
+                            </span>
                           </div>
                           <div className="flex justify-between px-2 py-1 italic items-center">
                             <span>VGM</span>
-                            {isVgmOk ? <span className="text-green-600 font-black">OK</span> : <span className="text-red-600 font-bold">{formatDate(processo.deadline_vgm, true)}</span>}
+                            <span className={cn("font-bold", hasVgmFile ? "text-green-600 font-black" : "text-destructive")}>
+                              {hasVgmFile ? "OK" : formatDate(processo.deadline_vgm, true)}
+                            </span>
                           </div>
                           <div className="flex justify-between px-2 py-1 italic items-center">
                             <span>CARGA</span>
-                            {isCargaOk ? <span className="text-green-600 font-black">OK</span> : <span className="text-red-600 font-bold">{formatDate(processo.deadline_carga, true)}</span>}
+                            <span className={cn("font-bold", hasCargaFile ? "text-green-600 font-black" : "text-destructive")}>
+                              {hasCargaFile ? "OK" : formatDate(processo.deadline_carga, true)}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -347,19 +355,19 @@ export default function GestaoProcessosPage() {
                         <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
                           <div className="flex justify-between px-2 py-1">
                             <span>CONTAINERS</span>
-                            <span className={cn("font-bold", processo.data_containers ? "text-green-600 font-black" : "text-red-600")}>
+                            <span className={cn("font-bold", processo.data_containers ? "text-green-600 font-black" : "text-destructive")}>
                               {processo.data_containers ? "OK" : "---"}
                             </span>
                           </div>
                           <div className="flex justify-between px-2 py-1">
                             <span>REMESSA</span>
-                            <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-red-600")}>
+                            <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-destructive")}>
                               {hasRemessaFile ? "OK" : formatDate(remessaNF?.data_recebida)}
                             </span>
                           </div>
                           <div className="flex justify-between px-2 py-1">
                             <span>EXPORTAÇÃO</span>
-                            <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-red-600")}>
+                            <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-destructive")}>
                               {hasExportacaoFile ? "OK" : formatDate(exportacaoNF?.data_recebida)}
                             </span>
                           </div>
@@ -376,13 +384,13 @@ export default function GestaoProcessosPage() {
                           </div>
                           <div className="flex justify-between px-2 py-1">
                             <span>INSPEÇÃO</span>
-                            <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-red-600")}>
+                            <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-destructive")}>
                               {hasLpcoFile ? "OK" : formatDate(lpco?.data)}
                             </span>
                           </div>
                           <div className="flex justify-between px-2 py-1">
                             <span>TRATAMENTO</span>
-                            <span className={cn("font-bold", hasTreatmentFile ? "text-green-600 font-black" : "text-red-600")}>
+                            <span className={cn("font-bold", hasTreatmentFile ? "text-green-600 font-black" : "text-destructive")}>
                               {hasTreatmentFile ? "OK" : formatDate(tratamento?.data)}
                             </span>
                           </div>
@@ -399,14 +407,14 @@ export default function GestaoProcessosPage() {
                           </div>
                           <div className="flex justify-between px-2 py-1">
                             <span>DESEMBARAÇO</span>
-                            <span className={cn("font-bold", hasDesembaracoFile ? "text-green-600 font-black" : "text-red-600")}>
-                              {hasDesembaracoFile ? "OK" : formatDate(due?.data)}
+                            <span className={cn("font-bold", hasDueFile ? "text-green-600 font-black" : "text-destructive")}>
+                              {hasDueFile ? "OK" : formatDate(due?.data)}
                             </span>
                           </div>
                           <div className="flex justify-between px-2 py-1">
                             <span>AVERBAÇÃO</span>
-                            <span className={cn("font-bold", hasAverbacaoFile ? "text-green-600 font-black" : "text-gray-400")}>
-                              {hasAverbacaoFile ? "OK" : "---"}
+                            <span className={cn("font-bold", (due?.status === 'AVERBADA' && hasDueFile) ? "text-green-600 font-black" : "text-gray-400")}>
+                              {(due?.status === 'AVERBADA' && hasDueFile) ? "OK" : "---"}
                             </span>
                           </div>
                         </div>
