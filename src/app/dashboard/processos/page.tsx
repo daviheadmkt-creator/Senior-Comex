@@ -183,27 +183,19 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  // Helper para buscar documentos fiscais
                   const findFiscal = (type: string) => {
                     return (processo.documentos_fiscais || []).find((d: any) => d.tipo === type);
                   };
 
                   const lpco = findFiscal('LPCO');
                   const due = findFiscal('DUE');
-                  const tratamento = findFiscal('TRATAMENTO');
+                  const tratamiento = findFiscal('TRATAMENTO');
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
 
-                  // Lógica de flags para anexos
-                  const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
-                  const hasVgmFile = !!(processo.deadline_vgm_file?.downloadURL);
-                  const hasCargaFile = !!(processo.deadline_carga_file?.downloadURL);
-                  
+                  const hasContainerData = !!(processo.containers && processo.containers.length > 0);
                   const hasRemessaFile = !!remessaNF?.file?.downloadURL;
                   const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
-                  const hasLpcoFile = !!lpco?.file?.downloadURL;
-                  const hasDueFile = !!due?.file?.downloadURL;
-                  const hasTreatmentFile = !!tratamento?.file?.downloadURL;
 
                   // Helper robusto para encontrar dados em documentos originais (Pós-embarque)
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
@@ -218,10 +210,10 @@ export default function GestaoProcessosPage() {
                     if (fileObj && fileObj.downloadURL) {
                       const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao);
                       return (
-                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100">
-                          <div className="py-1 text-primary font-extrabold uppercase text-center bg-blue-50/30">APROVADO</div>
-                          <div className="py-1 text-destructive font-extrabold uppercase text-center bg-red-50/30">RECEBIDO</div>
-                          <div className="py-1 text-gray-500 text-center font-medium">{dateDisplay}</div>
+                        <div className="flex flex-col items-center justify-center h-full py-1">
+                          <div className="text-[10px] font-bold text-blue-600">APROVADO</div>
+                          <div className="text-[10px] font-bold text-red-600">RECEBIDO</div>
+                          <div className="text-[9px] text-black">{dateDisplay}</div>
                         </div>
                       );
                     }
@@ -255,7 +247,7 @@ export default function GestaoProcessosPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir Processo</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação não pode ser desfeita.
+                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação nem pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -314,26 +306,25 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100">
-                          <div className="flex justify-between px-2 py-1 italic items-center">
-                            <span>DRAFT</span>
-                            <span className={cn("font-bold", hasDraftFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasDraftFile ? "OK" : formatDate(processo.deadline_draft, true)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1 italic items-center">
-                            <span>VGM</span>
-                            <span className={cn("font-bold", hasVgmFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasVgmFile ? "OK" : formatDate(processo.deadline_vgm, true)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1 italic items-center">
-                            <span>CARGA</span>
-                            <span className={cn("font-bold", hasCargaFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasCargaFile ? "OK" : formatDate(processo.deadline_carga, true)}
-                            </span>
-                          </div>
+                      {/* DEAD LINE / PRAZO */}
+                      <td className="p-0 border-r border-primary/10">
+                        <div className="flex justify-between px-2 py-1 italic items-center">
+                          <span>DRAFT</span>
+                          <span className="text-red-600 font-bold">
+                            {formatDate(processo.deadline_draft, true)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 italic items-center border-t border-primary/10">
+                          <span>VGM</span>
+                          <span className="text-red-600 font-bold">
+                            {formatDate(processo.deadline_vgm, true)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 italic items-center border-t border-primary/10">
+                          <span>CARGA</span>
+                          <span className="text-red-600 font-bold">
+                            {formatDate(processo.deadline_carga, true)}
+                          </span>
                         </div>
                       </td>
 
@@ -343,7 +334,7 @@ export default function GestaoProcessosPage() {
                         </Badge>
                       </td>
 
-                      <td className="p-0">
+                      <td className="p-0 border-r border-primary/10">
                         <div className="grid grid-rows-3 h-full divide-y divide-gray-100 uppercase text-[9px]">
                           <div className="px-2 py-1 flex justify-between"><span>ARMAZÉM</span> <span className="truncate max-w-[80px] text-gray-700">{processo.viagem || '---'}</span></div>
                           <div className="px-2 py-1 flex justify-between"><span>EMBARQUE</span> <span className="truncate max-w-[80px] text-gray-700 font-medium">{processo.terminalDespachoNome || '---'}</span></div>
@@ -351,83 +342,81 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
-                          <div className="flex justify-between px-2 py-1">
-                            <span>CONTAINERS</span>
-                            <span className={cn("font-bold", processo.data_containers ? "text-green-600 font-black" : "text-destructive")}>
-                              {processo.data_containers ? "OK" : "---"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1">
-                            <span>REMESSA</span>
-                            <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasRemessaFile ? "OK" : formatDate(remessaNF?.data_recebida)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1">
-                            <span>EXPORTAÇÃO</span>
-                            <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasExportacaoFile ? "OK" : formatDate(exportacaoNF?.data_recebida)}
-                            </span>
-                          </div>
+                      {/* CONTAINERS / NOTAS FISCAIS */}
+                      <td className="p-0 border-r border-primary/10">
+                        <div className="flex justify-between px-2 py-1 italic">
+                          <span>CONTAINERS</span>
+                          <span className={cn("font-bold", hasContainerData ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasContainerData ? "OK" : "---"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10 italic">
+                          <span>REMESSA</span>
+                          <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {formatDate(remessaNF?.data_recebida)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10 italic">
+                          <span>EXPORTAÇÃO</span>
+                          <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {formatDate(exportacaoNF?.data_recebida)}
+                          </span>
                         </div>
                       </td>
 
-                      <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
-                          <div className="flex justify-between px-2 py-1">
-                            <span>LPCO</span>
-                            <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-gray-400")}>
-                              {hasLpcoFile ? "OK" : lpco?.identificacao || "---"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1">
-                            <span>INSPEÇÃO</span>
-                            <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasLpcoFile ? "OK" : formatDate(lpco?.data)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1">
-                            <span>TRATAMENTO</span>
-                            <span className={cn("font-bold", hasTreatmentFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasTreatmentFile ? "OK" : formatDate(tratamento?.data)}
-                            </span>
-                          </div>
+                      {/* LPCO / INSPEÇÃO (MAPA) */}
+                      <td className="p-0 border-r border-primary/10">
+                        <div className="flex justify-between px-2 py-1">
+                          <span>LPCO</span>
+                          <span className="font-bold">
+                            {lpco?.identificacao || "---"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
+                          <span>INSPEÇÃO</span>
+                          <span className="font-bold">
+                            {formatDate(lpco?.data)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
+                          <span>TRATAMENTO</span>
+                          <span className="font-bold">
+                            {formatDate(tratamento?.data)}
+                          </span>
                         </div>
                       </td>
 
-                      <td className="p-0">
-                        <div className="grid grid-rows-3 h-full divide-y divide-gray-100 italic">
-                          <div className="flex justify-between px-2 py-1">
-                            <span>DUE</span>
-                            <span className={cn("font-bold", hasDueFile ? "text-green-600 font-black" : "text-gray-400")}>
-                              {hasDueFile ? "OK" : due?.identificacao || "---"}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1">
-                            <span>DESEMBARAÇO</span>
-                            <span className={cn("font-bold", hasDueFile ? "text-green-600 font-black" : "text-destructive")}>
-                              {hasDueFile ? "OK" : formatDate(due?.data)}
-                            </span>
-                          </div>
-                          <div className="flex justify-between px-2 py-1">
-                            <span>AVERBAÇÃO</span>
-                            <span className={cn("font-bold", (due?.status === 'AVERBADA' && hasDueFile) ? "text-green-600 font-black" : "text-gray-400")}>
-                              {(due?.status === 'AVERBADA' && hasDueFile) ? "OK" : "---"}
-                            </span>
-                          </div>
+                      {/* DUE / DESEMBARAÇO */}
+                      <td className="p-0 border-r border-primary/10">
+                        <div className="flex justify-between px-2 py-1">
+                          <span>DUE</span>
+                          <span className="font-bold">
+                            {due?.identificacao || "---"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
+                          <span>DESEMBARAÇO</span>
+                          <span className="font-bold">
+                            {formatDate(due?.data)}
+                          </span>
+                        </div>
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
+                          <span>AVERBAÇÃO</span>
+                          <span className="font-bold">
+                            {due?.status === 'AVERBADA' ? formatDate(due?.data) : "---"}
+                          </span>
                         </div>
                       </td>
 
-                      <td className="p-0">{renderDocCell(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file)}</td>
-                      <td className="p-0">{renderDocCell(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
-                      <td className="p-0">{renderDocCell(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
-                      <td className="p-0">{renderDocCell(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS'])}</td>
-                      <td className="p-0">{renderDocCell(['FUMIGATION', 'FUMIGACAO', 'FUMIG.'])}</td>
-                      <td className="p-0">{renderDocCell(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA'])}</td>
-                      <td className="p-0">{renderDocCell(['INVOICE', 'FATURA', 'INV'])}</td>
-                      <td className="p-0">{renderDocCell(['PACKING', 'P.L.', 'LIST', 'PACKING LIST'])}</td>
+                      {/* COLUNAS DE DOCUMENTOS */}
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file)}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS'])}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['FUMIGATION', 'FUMIGACAO', 'FUMIG.'])}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA'])}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['INVOICE', 'FATURA', 'INV'])}</td>
+                      <td className="p-0 border-r border-primary/10">{renderDocCell(['PACKING', 'P.L.', 'LIST', 'PACKING LIST'])}</td>
 
                       <td className="px-2 py-1 text-center text-[9px] text-muted-foreground uppercase border-l">
                         {processo.processo_interno || '---'}
