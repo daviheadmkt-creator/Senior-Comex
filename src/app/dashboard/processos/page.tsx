@@ -29,15 +29,28 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Formata uma string de data ISO para o padrão brasileiro.
+ * Formata uma data de forma robusta (String ISO, JS Date ou Firebase Timestamp)
  */
-const formatDate = (dateString: any, includeTime: boolean = false) => {
-  if (!dateString || dateString === '---') return '---';
+const formatDate = (dateInput: any, includeTime: boolean = false) => {
+  if (!dateInput || dateInput === '---') return '---';
+  
+  let date: Date;
+  
   try {
-    const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-    if (!date || isNaN(date.getTime())) return '---';
+    if (dateInput instanceof Date) {
+      date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      date = parseISO(dateInput);
+    } else if (dateInput && typeof dateInput === 'object' && 'seconds' in dateInput) {
+      // Caso seja um Timestamp do Firebase
+      date = new Date(dateInput.seconds * 1000);
+    } else {
+      return '---';
+    }
+
+    if (isNaN(date.getTime())) return '---';
     return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
-  } catch {
+  } catch (err) {
     return '---';
   }
 };
@@ -183,17 +196,18 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  const findFiscal = (type: string) => {
-                    return (processo.documentos_fiscais || []).find((d: any) => d.tipo === type);
-                  };
+                  // Definição de variáveis para evitar erros de referência
+                  const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
+                  const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
+                  const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
 
-                  const lpco = findFiscal('LPCO');
-                  const due = findFiscal('DUE');
-                  const tratamento = findFiscal('TRATAMENTO');
+                  const lpco = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'LPCO');
+                  const due = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'DUE');
+                  const tratamento = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'TRATAMENTO');
+
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
 
-                  // Helper para renderizar células de documentos com o novo layout solicitado
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
@@ -204,12 +218,12 @@ export default function GestaoProcessosPage() {
                     const fileObj = docItem?.file || fallbackFile;
 
                     if (fileObj && fileObj.downloadURL) {
-                      const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao);
+                      const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || (docItem ? null : (fallbackFile ? processo.data_nomeacao : null)));
                       return (
-                        <div className="flex flex-col items-center justify-center h-full py-1 text-center">
-                          <div className="text-[10px] font-bold text-blue-600 leading-none">APROVADO</div>
-                          <div className="text-[10px] font-bold text-red-600 mt-0.5 leading-none">RECEBIDO</div>
-                          <div className="text-[9px] text-black mt-0.5 leading-none">{dateDisplay}</div>
+                        <div className="flex flex-col items-center justify-center h-full py-1 text-center font-bold">
+                          <div className="text-primary">APROVADO</div>
+                          <div className="text-red-600">RECEBIDO</div>
+                          <div className="text-black font-normal">{dateDisplay}</div>
                         </div>
                       );
                     }
@@ -304,22 +318,22 @@ export default function GestaoProcessosPage() {
 
                       {/* DEAD LINE / PRAZO */}
                       <td className="p-0 border-r border-primary/10">
-                        <div className="flex justify-between px-2 py-1 italic items-center">
+                        <div className="flex justify-between px-2 py-1">
                           <span>DRAFT</span>
-                          <span className="text-destructive font-bold">
-                            {formatDate(processo.deadline_draft, true)}
+                          <span className={cn("font-bold", hasDraftFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasDraftFile ? "OK" : formatDate(processo.deadline_draft, true)}
                           </span>
                         </div>
-                        <div className="flex justify-between px-2 py-1 italic items-center border-t border-primary/10">
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>VGM</span>
-                          <span className="text-destructive font-bold">
-                            {formatDate(processo.deadline_vgm, true)}
+                          <span className={cn("font-bold", hasVgmFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasVgmFile ? "OK" : formatDate(processo.deadline_vgm, true)}
                           </span>
                         </div>
-                        <div className="flex justify-between px-2 py-1 italic items-center border-t border-primary/10">
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>CARGA</span>
-                          <span className="text-destructive font-bold">
-                            {formatDate(processo.deadline_carga, true)}
+                          <span className={cn("font-bold", hasCargaFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasCargaFile ? "OK" : formatDate(processo.deadline_carga, true)}
                           </span>
                         </div>
                       </td>
