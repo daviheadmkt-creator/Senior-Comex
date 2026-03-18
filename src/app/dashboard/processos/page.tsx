@@ -196,9 +196,9 @@ export default function GestaoProcessosPage() {
                       const dateSource = docItem ? (docItem.data_liberacao || docItem.data_emissao) : null;
                       return (
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                          <div className="py-0.5 text-primary font-bold uppercase">APROVADO</div>
-                          <div className="py-0.5 text-red-600 font-bold uppercase">RECEBIDO</div>
-                          <div className="py-0.5 text-muted-foreground">{formatDate(dateSource)}</div>
+                          <div className="py-0.5 text-primary font-bold uppercase text-center">APROVADO</div>
+                          <div className="py-0.5 text-red-600 font-bold uppercase text-center">RECEBIDO</div>
+                          <div className="py-0.5 text-muted-foreground text-center">{formatDate(dateSource)}</div>
                         </div>
                       );
                     }
@@ -223,7 +223,7 @@ export default function GestaoProcessosPage() {
                     });
                   };
 
-                  // Checkers de arquivos
+                  // Checkers de arquivos para mudar cor e texto automaticamente
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const isVgmOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
@@ -459,8 +459,8 @@ export default function GestaoProcessosPage() {
                       <td className="p-0">{getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
                       <td className="p-0">{getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
                       <td className="p-0">{getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS'])}</td>
-                      <td className="p-0">{getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.', 'CERTIFICADO DE FUMIGACAO'])}</td>
-                      <td className="p-0">{getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA', 'CERTIFICADO DE QUALIDADE'])}</td>
+                      <td className="p-0">{getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.'])}</td>
+                      <td className="p-0">{getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA'])}</td>
                       <td className="p-0">{getDocStatus(['INVOICE', 'FATURA', 'INV'])}</td>
                       <td className="p-0">{getDocStatus(['PACKING', 'P.L.', 'LIST', 'PACKING LIST'])}</td>
 
