@@ -193,8 +193,6 @@ export default function GestaoProcessosPage() {
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
 
-                  const hasContainerData = !!(processo.containers && processo.containers.length > 0);
-
                   // Helper para renderizar células de documentos com o novo layout solicitado
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
@@ -208,10 +206,10 @@ export default function GestaoProcessosPage() {
                     if (fileObj && fileObj.downloadURL) {
                       const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao);
                       return (
-                        <div className="flex flex-col items-center justify-center h-full py-1">
-                          <div className="text-[10px] font-bold text-blue-600">APROVADO</div>
-                          <div className="text-[10px] font-bold text-red-600">RECEBIDO</div>
-                          <div className="text-[9px] text-black">{dateDisplay}</div>
+                        <div className="flex flex-col items-center justify-center h-full py-1 text-center">
+                          <div className="text-[10px] font-bold text-blue-600 leading-none">APROVADO</div>
+                          <div className="text-[10px] font-bold text-red-600 mt-0.5 leading-none">RECEBIDO</div>
+                          <div className="text-[9px] text-black mt-0.5 leading-none">{dateDisplay}</div>
                         </div>
                       );
                     }
@@ -344,17 +342,17 @@ export default function GestaoProcessosPage() {
                       <td className="p-0 border-r border-primary/10">
                         <div className="flex justify-between px-2 py-1 italic">
                           <span>CONTAINERS</span>
-                          <span className={cn("font-bold", hasContainerData ? "text-green-600 font-black" : "text-red-600")}>
-                            {hasContainerData ? "OK" : "---"}
+                          <span className="text-destructive font-bold">
+                            {formatDate(processo.data_containers)}
                           </span>
                         </div>
-                        <div className="flex justify-between px-2 py-1 border-t border-primary/10 italic">
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>REMESSA</span>
                           <span className="text-destructive font-bold">
                             {formatDate(remessaNF?.data_recebida)}
                           </span>
                         </div>
-                        <div className="flex justify-between px-2 py-1 border-t border-primary/10 italic">
+                        <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>EXPORTAÇÃO</span>
                           <span className="text-destructive font-bold">
                             {formatDate(exportacaoNF?.data_recebida)}
