@@ -189,15 +189,13 @@ export default function GestaoProcessosPage() {
 
                   const lpco = findFiscal('LPCO');
                   const due = findFiscal('DUE');
-                  const tratamiento = findFiscal('TRATAMENTO');
+                  const tratamento = findFiscal('TRATAMENTO');
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
 
                   const hasContainerData = !!(processo.containers && processo.containers.length > 0);
-                  const hasRemessaFile = !!remessaNF?.file?.downloadURL;
-                  const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
 
-                  // Helper robusto para encontrar dados em documentos originais (Pós-embarque)
+                  // Helper para renderizar células de documentos com o novo layout solicitado
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
@@ -310,19 +308,19 @@ export default function GestaoProcessosPage() {
                       <td className="p-0 border-r border-primary/10">
                         <div className="flex justify-between px-2 py-1 italic items-center">
                           <span>DRAFT</span>
-                          <span className="text-red-600 font-bold">
+                          <span className="text-destructive font-bold">
                             {formatDate(processo.deadline_draft, true)}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 italic items-center border-t border-primary/10">
                           <span>VGM</span>
-                          <span className="text-red-600 font-bold">
+                          <span className="text-destructive font-bold">
                             {formatDate(processo.deadline_vgm, true)}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 italic items-center border-t border-primary/10">
                           <span>CARGA</span>
-                          <span className="text-red-600 font-bold">
+                          <span className="text-destructive font-bold">
                             {formatDate(processo.deadline_carga, true)}
                           </span>
                         </div>
@@ -352,13 +350,13 @@ export default function GestaoProcessosPage() {
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10 italic">
                           <span>REMESSA</span>
-                          <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-red-600")}>
+                          <span className="text-destructive font-bold">
                             {formatDate(remessaNF?.data_recebida)}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10 italic">
                           <span>EXPORTAÇÃO</span>
-                          <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-red-600")}>
+                          <span className="text-destructive font-bold">
                             {formatDate(exportacaoNF?.data_recebida)}
                           </span>
                         </div>
