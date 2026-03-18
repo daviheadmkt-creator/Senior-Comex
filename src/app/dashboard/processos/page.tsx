@@ -4,6 +4,8 @@ import {
   Card,
   CardContent,
   CardHeader,
+  CardTitle,
+  CardDescription,
 } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -23,32 +25,31 @@ import {
 import { useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { format, parseISO } from 'date-fns';
+import { format } from 'date-fns';
 import { useSearch } from '@/components/search-provider';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Formata uma data de forma robusta
+ * Formata uma data de forma robusta, lidando com Timestamps do Firebase, Strings ISO ou Objetos Date.
  */
 const formatDate = (dateInput: any, includeTime: boolean = false) => {
-  if (!dateInput || dateInput === '---') return '---';
+  if (!dateInput) return '---';
   
   let date: Date;
   
   try {
-    if (dateInput instanceof Date) {
-      date = dateInput;
-    } else if (typeof dateInput === 'string') {
-      date = new Date(dateInput);
-      if (isNaN(date.getTime())) {
-        if (/\d{2}\/\d{2}\/\d{4}/.test(dateInput)) return dateInput;
-        return '---';
-      }
-    } else if (dateInput && typeof dateInput === 'object' && 'seconds' in dateInput) {
+    // Caso seja um Timestamp do Firebase (possui propriedade seconds)
+    if (dateInput && typeof dateInput === 'object' && 'seconds' in dateInput) {
       date = new Date(dateInput.seconds * 1000);
-    } else {
-      return '---';
+    } 
+    // Caso seja uma instância de Date
+    else if (dateInput instanceof Date) {
+      date = dateInput;
+    } 
+    // Caso seja string ou número
+    else {
+      date = new Date(dateInput);
     }
 
     if (isNaN(date.getTime())) return '---';
@@ -199,6 +200,7 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
+                  // Definição de flags de arquivos para as colunas automatizadas
                   const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
                   const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
@@ -228,12 +230,11 @@ export default function GestaoProcessosPage() {
 
                     if (fileObj && fileObj.downloadURL) {
                       const dateToFormat = docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao;
-                      const dateDisplay = formatDate(dateToFormat);
                       return (
                         <div className="flex flex-col items-center justify-center h-full py-1 text-center font-bold">
-                          <div className="text-primary text-[10px]">APROVADO</div>
+                          <div className="text-blue-600 text-[10px]">APROVADO</div>
                           <div className="text-red-600 text-[10px]">RECEBIDO</div>
-                          <div className="text-black font-normal text-[9px]">{dateDisplay}</div>
+                          <div className="text-black font-normal text-[9px]">{formatDate(dateToFormat)}</div>
                         </div>
                       );
                     }
@@ -290,8 +291,8 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      <td className="px-2 py-1">
-                        <div className="flex flex-col text-center">
+                      <td className="px-2 py-1 text-center">
+                        <div className="flex flex-col">
                           <span className="uppercase text-gray-800">{processo.produtoNome || '---'}</span>
                           <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
                         </div>
@@ -366,7 +367,7 @@ export default function GestaoProcessosPage() {
                       </td>
 
                       <td className="p-0 border-r border-primary/10">
-                        <div className="flex justify-between px-2 py-1">
+                        <div className="flex justify-between px-2 py-1 italic">
                           <span>CONTAINERS</span>
                           <span className="text-destructive font-bold">
                             {formatDate(processo.data_containers)}
@@ -450,10 +451,9 @@ export default function GestaoProcessosPage() {
       </Card>
 
       <Link href="/dashboard/processos/novo" passHref>
-        <Button className="fixed bottom-8 right-8 rounded-full shadow-2xl h-14 w-14 p-0 md:h-auto md:w-auto md:px-6 md:py-4 z-50 transition-transform hover:scale-105 active:scale-95">
-          <PlusCircle className="h-6 w-6 md:mr-2" />
-          <span className="hidden md:inline font-bold">Novo Processo</span>
-        </Button>
+        <button className="fixed bottom-8 right-8 rounded-full shadow-2xl h-14 w-14 flex items-center justify-center bg-primary text-primary-foreground hover:scale-105 active:scale-95 transition-transform z-50">
+          <PlusCircle className="h-6 w-6" />
+        </button>
       </Link>
     </div>
   );
