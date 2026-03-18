@@ -74,7 +74,10 @@ export default function GestaoProcessosPage() {
   const { searchTerm, setSearchTerm } = useSearch();
   const firestore = useFirestore();
 
-  const processosCollection = useMemoFirebase(() => firestore ? collection(firestore, 'processos') : null, [firestore]);
+  const processosCollection = useMemoFirebase(
+    () => (firestore ? collection(firestore, 'processos') : null),
+    [firestore]
+  );
   const { data: processos, isLoading } = useCollection(processosCollection);
 
   const handleDelete = (id: string) => {
@@ -189,16 +192,18 @@ export default function GestaoProcessosPage() {
                       return keywords.some(k => name === k.toUpperCase() || name.includes(k.toUpperCase()));
                     });
                     
-                    if (docItem && docItem.file?.downloadURL) {
-                      const date = docItem.data_liberacao || docItem.data_emissao;
-                      return { status: 'APROVADO', date: formatDate(date) };
+                    if ((docItem && docItem.file?.downloadURL) || fallbackFile?.downloadURL) {
+                      const dateSource = docItem ? (docItem.data_liberacao || docItem.data_emissao) : null;
+                      return (
+                        <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
+                          <div className="py-0.5 text-primary font-bold uppercase">APROVADO</div>
+                          <div className="py-0.5 text-red-600 font-bold uppercase">RECEBIDO</div>
+                          <div className="py-0.5 text-muted-foreground">{formatDate(dateSource)}</div>
+                        </div>
+                      );
                     }
                     
-                    if (fallbackFile?.downloadURL) {
-                      return { status: 'APROVADO', date: 'ANEXADO' };
-                    }
-
-                    return { status: '---', date: '---' };
+                    return <div className="py-4 text-muted-foreground text-center">---</div>;
                   };
 
                   // Helper robusto para encontrar dados em documentos fiscais (DUE/LPCO)
@@ -218,41 +223,31 @@ export default function GestaoProcessosPage() {
                     });
                   };
 
-                  // Mapeamento de documentos técnicos
-                  const docs = {
-                    bl: getDocStatus(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file),
-                    origem: getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file),
-                    fito: getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file),
-                    health: getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS']), 
-                    fumigation: getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.', 'CERTIFICADO DE FUMIGACAO']), 
-                    quality: getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA', 'CERTIFICADO DE QUALIDADE']), 
-                    invoice: getDocStatus(['INVOICE', 'FATURA', 'INV']),
-                    packing: getDocStatus(['PACKING', 'P.L.', 'LIST', 'PACKING LIST']),
-                  };
-
-                  // LPCO / Inspeção
-                  const lpcoDoc = findFiscalData('LPCO');
-                  const lpcoIdent = lpcoDoc?.identificacao || '---';
-                  const lpcoDate = lpcoDoc?.data ? formatDate(lpcoDoc.data) : '---';
-                  
-                  // DUE / Desembaraço
-                  const dueDoc = findFiscalData('DUE');
-                  const dueIdent = dueDoc?.identificacao || '---';
-                  
-                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'DEFERIDA', 'LIBERADA']);
-                  const desembaraçoDate = desembaraçoDoc?.data ? formatDate(desembaraçoDoc.data) : '---';
-                  
-                  const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERBACAO']);
-                  const averbaçãoDate = averbaçãoDoc?.data ? formatDate(averbaçãoDoc.data) : '---';
-                  
-                  // Tratamento
-                  const treatmentDoc = findFiscalData('TRATAMENTO');
-                  const treatmentDate = treatmentDoc?.data ? formatDate(treatmentDoc.data) : '---';
-
-                  // Lógica de Deadline: OK se houver anexo
+                  // Checkers de arquivos
                   const isDraftOk = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const isVgmOk = !!(processo.deadline_vgm_file?.downloadURL);
                   const isCargaOk = !!(processo.deadline_carga_file?.downloadURL);
+
+                  const remessaNF = processo.notas_fiscais?.find((n: any) => n.tipo === 'Remessa');
+                  const hasRemessaFile = !!remessaNF?.file?.downloadURL;
+
+                  const exportacaoNF = processo.notas_fiscais?.find((n: any) => n.tipo === 'Exportação');
+                  const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
+
+                  const lpcoDoc = findFiscalData('LPCO');
+                  const hasLpcoFile = !!lpcoDoc?.file?.downloadURL;
+
+                  const treatmentDoc = findFiscalData('TRATAMENTO');
+                  const hasTreatmentFile = !!treatmentDoc?.file?.downloadURL;
+
+                  const dueDoc = findFiscalData('DUE');
+                  const hasDueFile = !!dueDoc?.file?.downloadURL;
+
+                  const desembaraçoDoc = findFiscalData('DUE', ['DESEMBARAÇADA', 'AVERBADA', 'DEFERIDA', 'LIBERADA']);
+                  const hasDesembaracoFile = !!desembaraçoDoc?.file?.downloadURL;
+
+                  const averbaçãoDoc = findFiscalData('DUE', ['AVERBADA', 'AVERBACAO']);
+                  const hasAverbacaoFile = !!averbaçãoDoc?.file?.downloadURL;
 
                   return (
                     <tr key={processo.id} className="bg-card text-primary font-bold border-b border-primary/10 hover:bg-accent/5 transition-colors divide-x divide-primary/10 h-16">
@@ -393,46 +388,81 @@ export default function GestaoProcessosPage() {
                             <span>CONTAINERS</span> 
                             <span className={cn(
                               "font-bold",
-                              processo.containers?.length > 0 ? "text-primary" : "text-destructive"
+                              processo.containers?.length > 0 ? "text-green-600 font-extrabold" : "text-destructive"
                             )}>
-                              {processo.containers?.length > 0 ? formatDate(processo.data_containers) : '---'}
+                              {processo.containers?.length > 0 ? "OK" : "---"}
                             </span>
                           </div>
-                          <div className="flex justify-between px-2 py-0.5"><span>REMESSA</span> <span className="text-destructive font-bold">{formatDate(processo.notas_fiscais?.find((n:any)=>n.tipo === 'Remessa')?.data_recebida)}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>EXPORTAÇÃO</span> <span className="text-destructive font-bold">{formatDate(processo.notas_fiscais?.find((n:any)=>n.tipo === 'Exportação')?.data_recebida)}</span></div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>REMESSA</span> 
+                            <span className={cn(hasRemessaFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                              {hasRemessaFile ? "OK" : formatDate(remessaNF?.data_recebida)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>EXPORTAÇÃO</span> 
+                            <span className={cn(hasExportacaoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                              {hasExportacaoFile ? "OK" : formatDate(exportacaoNF?.data_recebida)}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>LPCO</span> <span className="text-muted-foreground font-bold">{lpcoIdent}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>INSPEÇÃO</span> <span className="text-destructive font-bold">{lpcoDate}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>TRATAMENTO</span> <span className="text-destructive font-bold">{treatmentDate}</span></div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>LPCO</span> 
+                            <span className={cn(hasLpcoFile ? "text-green-600 font-extrabold" : "text-muted-foreground font-bold")}>
+                              {hasLpcoFile ? "OK" : lpcoDoc?.identificacao || "---"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>INSPEÇÃO</span> 
+                            <span className={cn(hasLpcoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                              {hasLpcoFile ? "OK" : formatDate(lpcoDoc?.data)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>TRATAMENTO</span> 
+                            <span className={cn(hasTreatmentFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                              {hasTreatmentFile ? "OK" : formatDate(treatmentDoc?.data)}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
                       <td className="p-0">
                         <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted italic">
-                          <div className="flex justify-between px-2 py-0.5"><span>DUE</span> <span className="text-muted-foreground font-bold truncate max-w-[110px] uppercase">{dueIdent}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>DESEMBARAÇO</span> <span className="text-destructive font-bold">{desembaraçoDate}</span></div>
-                          <div className="flex justify-between px-2 py-0.5"><span>AVERBAÇÃO</span> <span className="text-destructive font-bold">{averbaçãoDate}</span></div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>DUE</span> 
+                            <span className={cn(hasDueFile ? "text-green-600 font-extrabold" : "text-muted-foreground font-bold")}>
+                              {hasDueFile ? "OK" : dueDoc?.identificacao || "---"}
+                            </span>
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>DESEMBARAÇO</span> 
+                            <span className={cn(hasDesembaracoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                              {hasDesembaracoFile ? "OK" : formatDate(desembaraçoDoc?.data)}
+                            </span>
+                          </div>
+                          <div className="flex justify-between px-2 py-0.5">
+                            <span>AVERBAÇÃO</span> 
+                            <span className={cn(hasAverbacaoFile ? "text-green-600 font-extrabold" : "text-destructive font-bold")}>
+                              {hasAverbacaoFile ? "OK" : formatDate(averbaçãoDoc?.data)}
+                            </span>
+                          </div>
                         </div>
                       </td>
 
                       {/* Renderização de Colunas de Documentos */}
-                      {[docs.bl, docs.origem, docs.fito, docs.health, docs.fumigation, docs.quality, docs.invoice, docs.packing].map((docItem, idx) => (
-                        <td key={idx} className="p-0 text-center">
-                          {docItem.status === 'APROVADO' ? (
-                            <div className="grid grid-rows-3 h-full divide-y divide-primary/5 divide-dotted">
-                              <div className="py-0.5 text-primary font-bold uppercase">APROVADO</div>
-                              <div className="py-0.5 text-red-600 font-bold uppercase">RECEBIDO</div>
-                              <div className="py-0.5 text-muted-foreground">{docItem.date}</div>
-                            </div>
-                          ) : (
-                            <div className="py-4 text-muted-foreground">---</div>
-                          )}
-                        </td>
-                      ))}
+                      <td className="p-0">{getDocStatus(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file)}</td>
+                      <td className="p-0">{getDocStatus(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
+                      <td className="p-0">{getDocStatus(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
+                      <td className="p-0">{getDocStatus(['HEALTH', 'PRAGAS', 'SAUDE', 'SANITARY', 'LAUDO PRAGAS'])}</td>
+                      <td className="p-0">{getDocStatus(['FUMIGATION', 'FUMIGACAO', 'FUMIG.', 'CERTIFICADO DE FUMIGACAO'])}</td>
+                      <td className="p-0">{getDocStatus(['QUALITY', 'QUALIDADE', 'SUPERV.', 'SUPERVISORA', 'CERTIFICADO DE QUALIDADE'])}</td>
+                      <td className="p-0">{getDocStatus(['INVOICE', 'FATURA', 'INV'])}</td>
+                      <td className="p-0">{getDocStatus(['PACKING', 'P.L.', 'LIST', 'PACKING LIST'])}</td>
 
                       <td className="px-2 py-1 text-center text-[8px] text-muted-foreground uppercase">
                         {processo.processo_interno || '---'}
