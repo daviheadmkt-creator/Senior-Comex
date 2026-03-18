@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Formata uma data de forma robusta (String ISO, JS Date ou Firebase Timestamp)
+ * Formata uma data de forma robusta
  */
 const formatDate = (dateInput: any, includeTime: boolean = false) => {
   if (!dateInput || dateInput === '---') return '---';
@@ -40,9 +40,12 @@ const formatDate = (dateInput: any, includeTime: boolean = false) => {
     if (dateInput instanceof Date) {
       date = dateInput;
     } else if (typeof dateInput === 'string') {
-      date = parseISO(dateInput);
+      date = new Date(dateInput);
+      if (isNaN(date.getTime())) {
+        if (/\d{2}\/\d{2}\/\d{4}/.test(dateInput)) return dateInput;
+        return '---';
+      }
     } else if (dateInput && typeof dateInput === 'object' && 'seconds' in dateInput) {
-      // Caso seja um Timestamp do Firebase
       date = new Date(dateInput.seconds * 1000);
     } else {
       return '---';
@@ -188,7 +191,7 @@ export default function GestaoProcessosPage() {
                 {isLoading && (
                   <tr>
                     <td colSpan={24} className="px-4 py-8 text-center bg-background">
-                      <div className='flex justify-center items-center gap-2'>
+                      <div className="flex justify-center items-center gap-2">
                         <Loader2 className="h-5 w-5 animate-spin text-primary" />
                         <span className="text-sm font-medium italic">Sincronizando dados em tempo real...</span>
                       </div>
@@ -196,17 +199,23 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  // Definição de variáveis para evitar erros de referência
                   const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
                   const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
 
-                  const lpco = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'LPCO');
-                  const due = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'DUE');
-                  const tratamento = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'TRATAMENTO');
-
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
+                  const hasRemessaFile = !!remessaNF?.file?.downloadURL;
+                  const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
+
+                  const lpcoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'LPCO');
+                  const hasLpcoFile = !!lpcoDoc?.file?.downloadURL;
+
+                  const dueDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'DUE');
+                  const hasDueFile = !!dueDoc?.file?.downloadURL;
+
+                  const tratamentoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'TRATAMENTO');
+                  const hasTratamentoFile = !!tratamentoDoc?.file?.downloadURL;
 
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
@@ -218,12 +227,13 @@ export default function GestaoProcessosPage() {
                     const fileObj = docItem?.file || fallbackFile;
 
                     if (fileObj && fileObj.downloadURL) {
-                      const dateDisplay = formatDate(docItem?.data_liberacao || docItem?.data_emissao || (docItem ? null : (fallbackFile ? processo.data_nomeacao : null)));
+                      const dateToFormat = docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao;
+                      const dateDisplay = formatDate(dateToFormat);
                       return (
                         <div className="flex flex-col items-center justify-center h-full py-1 text-center font-bold">
-                          <div className="text-primary">APROVADO</div>
-                          <div className="text-red-600">RECEBIDO</div>
-                          <div className="text-black font-normal">{dateDisplay}</div>
+                          <div className="text-primary text-[10px]">APROVADO</div>
+                          <div className="text-red-600 text-[10px]">RECEBIDO</div>
+                          <div className="text-black font-normal text-[9px]">{dateDisplay}</div>
                         </div>
                       );
                     }
@@ -257,7 +267,7 @@ export default function GestaoProcessosPage() {
                               <AlertDialogHeader>
                                 <AlertDialogTitle>Excluir Processo</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação nem pode ser desfeita.
+                                  Tem certeza que deseja excluir o processo {processo.processo_interno}? Esta ação não pode ser desfeita.
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
@@ -269,7 +279,9 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      <td className="px-2 py-1 text-center text-blue-700 uppercase sticky left-[80px] z-10 bg-white border-r">{processo.analistaNome || '---'}</td>
+                      <td className="px-2 py-1 text-center text-blue-700 uppercase sticky left-[80px] z-10 bg-white border-r">
+                        {processo.analistaNome || '---'}
+                      </td>
 
                       <td className="px-2 py-1 sticky left-[170px] z-10 bg-white shadow-md border-r">
                         <div className="flex flex-col">
@@ -279,20 +291,22 @@ export default function GestaoProcessosPage() {
                       </td>
 
                       <td className="px-2 py-1">
-                        <div className="flex flex-col">
+                        <div className="flex flex-col text-center">
                           <span className="uppercase text-gray-800">{processo.produtoNome || '---'}</span>
                           <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.data_nomeacao)}</span>
                         </div>
                       </td>
 
-                      <td className="px-2 py-1">
+                      <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-gray-800">{processo.booking_number || '---'}</span>
                           <span className="text-[9px] font-normal text-muted-foreground uppercase">{processo.armadorNome || '---'}</span>
                         </div>
                       </td>
 
-                      <td className="px-2 py-1 truncate max-w-[120px] uppercase text-gray-800">{processo.navio || '---'}</td>
+                      <td className="px-2 py-1 text-center truncate max-w-[120px] uppercase text-gray-800">
+                        {processo.navio || '---'}
+                      </td>
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
@@ -316,7 +330,6 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* DEAD LINE / PRAZO */}
                       <td className="p-0 border-r border-primary/10">
                         <div className="flex justify-between px-2 py-1">
                           <span>DRAFT</span>
@@ -352,9 +365,8 @@ export default function GestaoProcessosPage() {
                         </div>
                       </td>
 
-                      {/* CONTAINERS / NOTAS FISCAIS */}
                       <td className="p-0 border-r border-primary/10">
-                        <div className="flex justify-between px-2 py-1 italic">
+                        <div className="flex justify-between px-2 py-1">
                           <span>CONTAINERS</span>
                           <span className="text-destructive font-bold">
                             {formatDate(processo.data_containers)}
@@ -362,63 +374,60 @@ export default function GestaoProcessosPage() {
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>REMESSA</span>
-                          <span className="text-destructive font-bold">
-                            {formatDate(remessaNF?.data_recebida)}
+                          <span className={cn("font-bold", hasRemessaFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasRemessaFile ? "OK" : formatDate(remessaNF?.data_recebida)}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>EXPORTAÇÃO</span>
-                          <span className="text-destructive font-bold">
-                            {formatDate(exportacaoNF?.data_recebida)}
+                          <span className={cn("font-bold", hasExportacaoFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasExportacaoFile ? "OK" : formatDate(exportacaoNF?.data_recebida)}
                           </span>
                         </div>
                       </td>
 
-                      {/* LPCO / INSPEÇÃO (MAPA) */}
                       <td className="p-0 border-r border-primary/10">
                         <div className="flex justify-between px-2 py-1">
                           <span>LPCO</span>
-                          <span className="font-bold">
-                            {lpco?.identificacao || "---"}
+                          <span className={cn("font-bold", hasLpcoFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasLpcoFile ? "OK" : (lpcoDoc?.identificacao || "---")}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>INSPEÇÃO</span>
-                          <span className="font-bold">
-                            {formatDate(lpco?.data)}
+                          <span className="text-red-600 font-bold">
+                            {formatDate(lpcoDoc?.data)}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>TRATAMENTO</span>
-                          <span className="font-bold">
-                            {formatDate(tratamento?.data)}
+                          <span className="text-red-600 font-bold">
+                            {formatDate(tratamentoDoc?.data)}
                           </span>
                         </div>
                       </td>
 
-                      {/* DUE / DESEMBARAÇO */}
                       <td className="p-0 border-r border-primary/10">
                         <div className="flex justify-between px-2 py-1">
                           <span>DUE</span>
-                          <span className="font-bold">
-                            {due?.identificacao || "---"}
+                          <span className={cn("font-bold", hasDueFile ? "text-green-600 font-black" : "text-red-600")}>
+                            {hasDueFile ? "OK" : (dueDoc?.identificacao || "---")}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>DESEMBARAÇO</span>
-                          <span className="font-bold">
-                            {formatDate(due?.data)}
+                          <span className="text-red-600 font-bold">
+                            {formatDate(dueDoc?.data)}
                           </span>
                         </div>
                         <div className="flex justify-between px-2 py-1 border-t border-primary/10">
                           <span>AVERBAÇÃO</span>
-                          <span className="font-bold">
-                            {due?.status === 'AVERBADA' ? formatDate(due?.data) : "---"}
+                          <span className="text-red-600 font-bold">
+                            {dueDoc?.status === 'AVERBADA' ? formatDate(dueDoc?.data) : "---"}
                           </span>
                         </div>
                       </td>
 
-                      {/* COLUNAS DE DOCUMENTOS */}
                       <td className="p-0 border-r border-primary/10">{renderDocCell(['BL', 'BILL OF LADING', 'B.L.'], processo.draft_bl_file)}</td>
                       <td className="p-0 border-r border-primary/10">{renderDocCell(['ORIGEM', 'C.O.', 'ORIGIN', 'CERTIFICADO DE ORIGEM'], processo.draft_co_file)}</td>
                       <td className="p-0 border-r border-primary/10">{renderDocCell(['FITO', 'PHYTOSANITARY', 'FITOSSANITARIO', 'CERTIFICADO FITOSSANITARIO'], processo.draft_fito_file)}</td>
