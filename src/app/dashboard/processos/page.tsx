@@ -35,7 +35,7 @@ const formatDate = (dateString: any, includeTime: boolean = false) => {
     if (!dateString || dateString === '---') return '---';
     try {
         const date = typeof dateString === 'string' ? parseISO(dateString) : dateString;
-        if (isNaN(date.getTime())) return '---';
+        if (!date || isNaN(date.getTime())) return '---';
         return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
     } catch {
         return '---';
@@ -189,7 +189,7 @@ export default function GestaoProcessosPage() {
                       return keywords.some(k => name === k.toUpperCase() || name.includes(k.toUpperCase()));
                     });
                     
-                    if (docItem) {
+                    if (docItem && docItem.file?.downloadURL) {
                       const date = docItem.data_liberacao || docItem.data_emissao;
                       return { status: 'APROVADO', date: formatDate(date) };
                     }
