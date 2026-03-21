@@ -26,13 +26,14 @@ import {
 import { useMemo } from 'react';
 import { useCollection, useFirestore, useMemoFirebase, deleteDocumentNonBlocking } from '@/firebase';
 import { collection, doc } from 'firebase/firestore';
-import { format } from 'date-fns';
+import { format, parseISO, isValid } from 'date-fns';
 import { useSearch } from '@/components/search-provider';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
  * Formata uma data de forma robusta para o padrão brasileiro.
+ * Suporta Timestamps do Firebase, Objetos Date e Strings ISO.
  */
 const formatDate = (dateInput: any, includeTime: boolean = false) => {
   if (!dateInput) return '---';
@@ -44,11 +45,16 @@ const formatDate = (dateInput: any, includeTime: boolean = false) => {
       date = new Date(dateInput.seconds * 1000);
     } else if (dateInput instanceof Date) {
       date = dateInput;
+    } else if (typeof dateInput === 'string') {
+      date = parseISO(dateInput);
+      if (!isValid(date)) {
+        date = new Date(dateInput);
+      }
     } else {
       date = new Date(dateInput);
     }
 
-    if (isNaN(date.getTime())) return '---';
+    if (!isValid(date)) return '---';
     return format(date, includeTime ? 'dd/MM/yyyy HH:mm' : 'dd/MM/yyyy');
   } catch (err) {
     return '---';
@@ -311,14 +317,20 @@ export default function GestaoProcessosPage() {
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-red-600 font-bold">{processo.portoEmbarqueNome || '---'}</span>
-                          <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.etd)}</span>
+                          {/* Fallback para data_chegada_embarque se etd estiver vazio */}
+                          <span className="text-[9px] font-normal text-muted-foreground">
+                            {formatDate(processo.etd || processo.data_chegada_embarque)}
+                          </span>
                         </div>
                       </td>
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-gray-800 font-bold">{processo.portoDescargaNome || '---'}</span>
-                          <span className="text-[9px] font-normal text-muted-foreground">{formatDate(processo.eta)}</span>
+                          {/* Fallback para data_chegada_descarga se eta estiver vazio */}
+                          <span className="text-[9px] font-normal text-muted-foreground">
+                            {formatDate(processo.eta || processo.data_chegada_descarga || processo.data_chegada_destino)}
+                          </span>
                           <span className="text-blue-600 font-bold uppercase">{processo.destino || '---'}</span>
                         </div>
                       </td>
