@@ -200,16 +200,18 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  // Definição de flags de arquivos para as colunas automatizadas
+                  // Verificação de anexos para Deadlines
                   const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
                   const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
 
+                  // Verificação de Notas Fiscais
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
                   const hasRemessaFile = !!remessaNF?.file?.downloadURL;
                   const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
 
+                  // Verificação de Documentos Fiscais
                   const lpcoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'LPCO');
                   const hasLpcoFile = !!lpcoDoc?.file?.downloadURL;
 
@@ -219,6 +221,7 @@ export default function GestaoProcessosPage() {
                   const tratamentoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'TRATAMENTO');
                   const hasTratamentoFile = !!tratamentoDoc?.file?.downloadURL;
 
+                  // Função auxiliar para renderizar as colunas de documentos (3 linhas)
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
