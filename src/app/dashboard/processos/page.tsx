@@ -1,3 +1,4 @@
+
 'use client';
 
 import {
@@ -31,7 +32,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 
 /**
- * Formata uma data de forma robusta, lidando com Timestamps do Firebase, Strings ISO ou Objetos Date.
+ * Formata uma data de forma robusta para o padrão brasileiro.
  */
 const formatDate = (dateInput: any, includeTime: boolean = false) => {
   if (!dateInput) return '---';
@@ -39,16 +40,11 @@ const formatDate = (dateInput: any, includeTime: boolean = false) => {
   let date: Date;
   
   try {
-    // Caso seja um Timestamp do Firebase (possui propriedade seconds)
     if (dateInput && typeof dateInput === 'object' && 'seconds' in dateInput) {
       date = new Date(dateInput.seconds * 1000);
-    } 
-    // Caso seja uma instância de Date
-    else if (dateInput instanceof Date) {
+    } else if (dateInput instanceof Date) {
       date = dateInput;
-    } 
-    // Caso seja string ou número
-    else {
+    } else {
       date = new Date(dateInput);
     }
 
@@ -137,7 +133,7 @@ export default function GestaoProcessosPage() {
         <div>
           <h1 className="text-2xl font-bold tracking-tight">Gestão de Processos (Follow-up)</h1>
           <p className="text-muted-foreground">
-            Acompanhamento técnico e operacional detalhado de todos os processos.
+            Acompanhamento técnico e operacional detalhado de todos os processos em tempo real.
           </p>
         </div>
       </div>
@@ -200,18 +196,18 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  // Verificação de anexos para Deadlines
+                  // Variáveis de Controle de Arquivos para Deadlines
                   const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
                   const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
 
-                  // Verificação de Notas Fiscais
+                  // Variáveis de Notas Fiscais
                   const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
                   const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
                   const hasRemessaFile = !!remessaNF?.file?.downloadURL;
                   const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
 
-                  // Verificação de Documentos Fiscais
+                  // Variáveis de Documentos Fiscais
                   const lpcoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'LPCO');
                   const hasLpcoFile = !!lpcoDoc?.file?.downloadURL;
 
@@ -221,7 +217,7 @@ export default function GestaoProcessosPage() {
                   const tratamentoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'TRATAMENTO');
                   const hasTratamentoFile = !!tratamentoDoc?.file?.downloadURL;
 
-                  // Função auxiliar para renderizar as colunas de documentos (3 linhas)
+                  // Função para renderizar as colunas de documentos (3 linhas: APROVADO, RECEBIDO, DATA)
                   const renderDocCell = (keywords: string[], fallbackFile?: any) => {
                     const docsList = processo.documentos_pos_embarque || [];
                     const docItem = docsList.find((d: any) => {
@@ -235,8 +231,8 @@ export default function GestaoProcessosPage() {
                       const dateToFormat = docItem?.data_liberacao || docItem?.data_emissao || processo.data_nomeacao;
                       return (
                         <div className="flex flex-col items-center justify-center h-full py-1 text-center font-bold">
-                          <div className="text-blue-600 text-[10px]">APROVADO</div>
-                          <div className="text-red-600 text-[10px]">RECEBIDO</div>
+                          <div className="text-blue-600 text-[10px] uppercase">APROVADO</div>
+                          <div className="text-red-600 text-[10px] uppercase">RECEBIDO</div>
                           <div className="text-black font-normal text-[9px]">{formatDate(dateToFormat)}</div>
                         </div>
                       );
