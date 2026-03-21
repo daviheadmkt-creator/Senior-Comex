@@ -202,25 +202,27 @@ export default function GestaoProcessosPage() {
                   </tr>
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
-                  // Variáveis de Controle de Arquivos para Deadlines
+                  // Verificação de Arquivos para Deadlines
                   const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
                   const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
                   const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
 
-                  // Variáveis de Notas Fiscais
-                  const remessaNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Remessa');
-                  const exportacaoNF = (processo.notas_fiscais || []).find((n: any) => n.tipo === 'Exportação');
+                  // Verificação de Notas Fiscais (Robusta contra acentos)
+                  const nfList = processo.notas_fiscais || [];
+                  const remessaNF = nfList.find((n: any) => n.tipo?.toLowerCase().includes('remessa'));
+                  const exportacaoNF = nfList.find((n: any) => n.tipo?.toLowerCase().includes('exporta') || n.tipo?.toLowerCase().includes('exportação'));
                   const hasRemessaFile = !!remessaNF?.file?.downloadURL;
                   const hasExportacaoFile = !!exportacaoNF?.file?.downloadURL;
 
-                  // Variáveis de Documentos Fiscais
-                  const lpcoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'LPCO');
+                  // Verificação de Documentos Fiscais
+                  const fiscais = processo.documentos_fiscais || [];
+                  const lpcoDoc = fiscais.find((d: any) => d.tipo === 'LPCO');
                   const hasLpcoFile = !!lpcoDoc?.file?.downloadURL;
 
-                  const dueDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'DUE');
+                  const dueDoc = fiscais.find((d: any) => d.tipo === 'DUE');
                   const hasDueFile = !!dueDoc?.file?.downloadURL;
 
-                  const tratamentoDoc = (processo.documentos_fiscais || []).find((d: any) => d.tipo === 'TRATAMENTO');
+                  const tratamentoDoc = fiscais.find((d: any) => d.tipo === 'TRATAMENTO');
                   const hasTratamentoFile = !!tratamentoDoc?.file?.downloadURL;
 
                   // Função para renderizar as colunas de documentos (3 linhas: APROVADO, RECEBIDO, DATA)
@@ -317,7 +319,7 @@ export default function GestaoProcessosPage() {
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-red-600 font-bold">{processo.portoEmbarqueNome || '---'}</span>
-                          {/* Fallback para data_chegada_embarque se etd estiver vazio */}
+                          {/* Fallback inteligente para ETD */}
                           <span className="text-[9px] font-normal text-muted-foreground">
                             {formatDate(processo.etd || processo.data_chegada_embarque)}
                           </span>
@@ -327,7 +329,7 @@ export default function GestaoProcessosPage() {
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
                           <span className="text-gray-800 font-bold">{processo.portoDescargaNome || '---'}</span>
-                          {/* Fallback para data_chegada_descarga se eta estiver vazio */}
+                          {/* Fallback inteligente para ETA */}
                           <span className="text-[9px] font-normal text-muted-foreground">
                             {formatDate(processo.eta || processo.data_chegada_descarga || processo.data_chegada_destino)}
                           </span>
