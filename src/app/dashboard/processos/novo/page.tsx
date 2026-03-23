@@ -414,11 +414,14 @@ export default function NovoProcessoPage() {
             });
             syncData[key] = newState[key];
         }
-        updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), syncData);
         return newState;
     });
 
+    updateDocumentNonBlocking(doc(firestore, 'processos', pageProcessId), syncData);
+
     if (fileToRemove?.storagePath) deleteObject(ref(storage, fileToRemove.storagePath)).catch(() => {});
+
+    toast({ title: "Arquivo removido", description: "O arquivo foi removido com sucesso." });
   };
 
   const triggerFileUpload = (target: any) => { 
