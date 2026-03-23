@@ -32,11 +32,6 @@ const nextConfig: NextConfig = {
   },
   experimental: {
     // Broaden the wildcard to ensure all subdomains/ports are covered in the workstation environment
-    allowedDevOrigins: [
-      "*.cluster-zhw3w37rxzgkutusbbhib6qhra.cloudworkstations.dev",
-      "*.cloudworkstations.dev",
-      "localhost:3000"
-    ],
   }
 };
 

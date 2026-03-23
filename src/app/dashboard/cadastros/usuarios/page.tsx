@@ -32,7 +32,8 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog';
 import { useDoc, useFirestore, useUser, useMemoFirebase } from '@/firebase';
-import { deleteDoc, doc, getFunctions, httpsCallable } from 'firebase/firestore';
+import { deleteDoc, doc } from 'firebase/firestore';
+import { getFunctions, httpsCallable } from 'firebase/functions';
 import { useState, useEffect, useMemo } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { useSearch } from '@/components/search-provider';

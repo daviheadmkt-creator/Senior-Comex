@@ -19,15 +19,18 @@
       "runtime": "nodejs20"
     }
   ],
-  "apphosting": {
-    "backendId": "studio",
-    "rootDir": "/",
+  "hosting": {
+    "public": ".next/static",
     "ignore": [
-      "node_modules",
-      ".git",
-      "firebase-debug.log",
-      "firebase-debug.*.log",
-      "functions"
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "function": "nextjsFunc"
+      }
     ]
-  }
+  },
 }

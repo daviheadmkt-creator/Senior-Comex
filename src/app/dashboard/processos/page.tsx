@@ -203,7 +203,7 @@ export default function GestaoProcessosPage() {
                 )}
                 {!isLoading && filteredProcessos.map((processo) => {
                   // Verificação de Arquivos para Deadlines
-                  const hasDraftFile = !!(processo.deadline_draft_file?.downloadURL || processo.draft_bl_file?.downloadURL);
+                  const hasDraftFile = !!processo.draft_bl_file?.downloadURL;
                   const hasVgmFile = !!processo.deadline_vgm_file?.downloadURL;
                   const hasCargaFile = !!processo.deadline_carga_file?.downloadURL;
 
@@ -339,7 +339,7 @@ export default function GestaoProcessosPage() {
 
                       <td className="px-2 py-1 text-center">
                         <div className="flex flex-col">
-                          <span className="text-gray-800 uppercase">{processo.quantidade_escrito_ctr || (processo.containers?.length ? `${processo.containers.length} CTR` : '---')}</span>
+                          <span className="text-gray-800 uppercase">{processo.quantidade_escrito_ctr || (processo.containers ? `${processo.containers.length} CTR` : '---')}</span>
                           <span className="text-[9px] font-normal text-muted-foreground">{processo.quantidade || '---'}</span>
                         </div>
                       </td>
